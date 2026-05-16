@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/StatusBadge";
-import { learners } from "@/data/mockData";
+import { learners as seedLearners, Learner } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
 interface InviteForm {
@@ -44,7 +44,16 @@ const PATHWAYS_BY_PROGRAM: Record<string, string[]> = {
   data: ["Junior Data Operations Analyst"],
 };
 
+const PROGRAM_LABELS: Record<string, string> = {
+  tech: "Tech Career Launch",
+  cs: "Customer Success Accelerator",
+  data: "Data Operations Starter",
+};
+
 export default function Learners() {
+  const [allLearners, setAllLearners] = useState<Learner[]>(seedLearners);
+  const [newLearnerId, setNewLearnerId] = useState<string | null>(null);
+
   const [view, setView] = useState<"grid" | "list">("list");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -56,7 +65,7 @@ export default function Learners() {
   const [inviteForm, setInviteForm] = useState<InviteForm>(BLANK_INVITE);
   const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
 
-  const filtered = learners.filter((l) => {
+  const filtered = allLearners.filter((l) => {
     const matchSearch =
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.pathway.toLowerCase().includes(search.toLowerCase());
@@ -66,8 +75,8 @@ export default function Learners() {
     return matchSearch && matchStatus && matchCoach && matchPathway;
   });
 
-  const coaches = [...new Set(learners.map((l) => l.coach))];
-  const pathwayOptions = [...new Set(learners.map((l) => l.pathway))];
+  const coaches = [...new Set(allLearners.map((l) => l.coach))];
+  const pathwayOptions = [...new Set(allLearners.map((l) => l.pathway))];
 
   const setField = (field: keyof InviteForm, value: string) => {
     setInviteForm((f) => ({ ...f, [field]: value }));
@@ -87,7 +96,29 @@ export default function Learners() {
   };
 
   const handleSendInvite = () => {
-    if (validateInvite()) setInviteStep(1);
+    if (!validateInvite()) return;
+
+    const id = String(Date.now());
+    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    const newLearner: Learner = {
+      id,
+      name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
+      pathway: inviteForm.pathway || "Not yet assigned",
+      program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
+      coach: inviteForm.coach || "Unassigned",
+      progress: 0,
+      readiness: 0,
+      status: "New Learner",
+      lastActive: "Just invited",
+      nextAction: "Complete onboarding and career assessment",
+      joinDate: today,
+      email: inviteForm.email.trim(),
+    };
+
+    setAllLearners((prev) => [newLearner, ...prev]);
+    setNewLearnerId(id);
+    setInviteStep(1);
   };
 
   const closeInvite = () => {
@@ -110,7 +141,7 @@ export default function Learners() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Learners</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {learners.length} learners enrolled across 3 programs
+            {allLearners.length} learners enrolled across 3 programs
           </p>
         </div>
         <Button
@@ -188,7 +219,7 @@ export default function Learners() {
       </div>
 
       <p className="text-xs text-muted-foreground mb-3">
-        Showing {filtered.length} of {learners.length} learners
+        Showing {filtered.length} of {allLearners.length} learners
       </p>
 
       {view === "list" ? (
@@ -209,57 +240,69 @@ export default function Learners() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((learner, i) => (
-                    <tr
-                      key={learner.id}
-                      data-testid={`learner-row-${learner.id}`}
-                      className={cn("hover:bg-muted/20 transition-colors", i !== filtered.length - 1 && "border-b")}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {learner.photo
-                              ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-                              : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
-                            }
+                  {filtered.map((learner, i) => {
+                    const isNew = learner.id === newLearnerId;
+                    return (
+                      <tr
+                        key={learner.id}
+                        data-testid={`learner-row-${learner.id}`}
+                        className={cn(
+                          "hover:bg-muted/20 transition-colors",
+                          i !== filtered.length - 1 && "border-b",
+                          isNew && "bg-primary/5 ring-inset ring-1 ring-primary/20"
+                        )}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {learner.photo
+                                ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+                                : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
+                              }
+                            </div>
+                            <div>
+                              <div className="font-medium text-foreground flex items-center gap-1.5">
+                                {learner.name}
+                                {isNew && (
+                                  <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">New</span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{learner.program}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="font-medium text-foreground">{learner.name}</div>
-                            <div className="text-xs text-muted-foreground">{learner.program}</div>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs max-w-[160px] truncate">{learner.pathway}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{learner.coach}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Progress value={learner.progress} className="h-1.5 w-20" />
+                            <span className="text-xs text-muted-foreground">{learner.progress}%</span>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs max-w-[160px] truncate">{learner.pathway}</td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{learner.coach}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Progress value={learner.progress} className="h-1.5 w-20" />
-                          <span className="text-xs text-muted-foreground">{learner.progress}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
-                          learner.readiness >= 80 ? "bg-emerald-100 text-emerald-700" :
-                          learner.readiness >= 60 ? "bg-blue-100 text-blue-700" :
-                          "bg-amber-100 text-amber-700"
-                        )}>
-                          {learner.readiness}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={learner.status} />
-                      </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{learner.lastActive}</td>
-                      <td className="px-4 py-3">
-                        <Link href={`/learners/${learner.id}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs" data-testid={`view-learner-${learner.id}`}>
-                            View <ChevronRight size={12} className="ml-1" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
+                            learner.readiness >= 80 ? "bg-emerald-100 text-emerald-700" :
+                            learner.readiness >= 60 ? "bg-blue-100 text-blue-700" :
+                            "bg-amber-100 text-amber-700"
+                          )}>
+                            {learner.readiness}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={learner.status} />
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground">{learner.lastActive}</td>
+                        <td className="px-4 py-3">
+                          <Link href={`/learners/${learner.id}`}>
+                            <Button variant="ghost" size="sm" className="h-7 px-2.5 text-xs" data-testid={`view-learner-${learner.id}`}>
+                              View <ChevronRight size={12} className="ml-1" />
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -267,47 +310,58 @@ export default function Learners() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((learner) => (
-            <Link key={learner.id} href={`/learners/${learner.id}`}>
-              <Card
-                data-testid={`learner-card-${learner.id}`}
-                className="border-card-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                        {learner.photo
-                          ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-                          : <span className="text-sm font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
-                        }
+          {filtered.map((learner) => {
+            const isNew = learner.id === newLearnerId;
+            return (
+              <Link key={learner.id} href={`/learners/${learner.id}`}>
+                <Card
+                  data-testid={`learner-card-${learner.id}`}
+                  className={cn(
+                    "border-card-border shadow-sm hover:shadow-md transition-shadow cursor-pointer",
+                    isNew && "ring-2 ring-primary/30"
+                  )}
+                >
+                  <CardContent className="p-5">
+                    {isNew && (
+                      <div className="flex items-center gap-1 text-xs text-primary font-medium mb-2">
+                        <Check size={11} /> Newly added
                       </div>
+                    )}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                          {learner.photo
+                            ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+                            : <span className="text-sm font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
+                          }
+                        </div>
+                        <div>
+                          <div className="font-semibold text-foreground text-sm">{learner.name}</div>
+                          <div className="text-xs text-muted-foreground">{learner.coach}</div>
+                        </div>
+                      </div>
+                      <StatusBadge status={learner.status} />
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3 truncate">{learner.pathway}</p>
+                    <div className="space-y-2">
                       <div>
-                        <div className="font-semibold text-foreground text-sm">{learner.name}</div>
-                        <div className="text-xs text-muted-foreground">{learner.coach}</div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-muted-foreground">Roadmap progress</span>
+                          <span className="font-medium">{learner.progress}%</span>
+                        </div>
+                        <Progress value={learner.progress} className="h-1.5" />
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Readiness score</span>
+                        <span className="font-medium text-foreground">{learner.readiness}/100</span>
                       </div>
                     </div>
-                    <StatusBadge status={learner.status} />
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3 truncate">{learner.pathway}</p>
-                  <div className="space-y-2">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Roadmap progress</span>
-                        <span className="font-medium">{learner.progress}%</span>
-                      </div>
-                      <Progress value={learner.progress} className="h-1.5" />
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Readiness score</span>
-                      <span className="font-medium text-foreground">{learner.readiness}/100</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">Active {learner.lastActive}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <p className="text-xs text-muted-foreground mt-3">Active {learner.lastActive}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -324,13 +378,13 @@ export default function Learners() {
                 <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
                   <Check size={30} className="text-emerald-600" />
                 </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">Invitation sent</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Learner added</h2>
                 <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-                  An invitation has been sent to{" "}
                   <span className="font-medium text-foreground">
                     {inviteForm.firstName} {inviteForm.lastName}
                   </span>{" "}
-                  at <span className="font-medium text-foreground">{inviteForm.email}</span>.
+                  has been added to your learner list and an invitation email has been sent to{" "}
+                  <span className="font-medium text-foreground">{inviteForm.email}</span>.
                 </p>
 
                 <div className="w-full bg-muted/40 border border-border rounded-xl p-4 text-left mb-7 space-y-2.5">
@@ -351,11 +405,7 @@ export default function Learners() {
                   {inviteForm.program && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Program</span>
-                      <span className="font-medium text-foreground">
-                        {inviteForm.program === "tech" ? "Tech Career Launch" :
-                         inviteForm.program === "cs" ? "Customer Success Accelerator" :
-                         "Data Operations Starter"}
-                      </span>
+                      <span className="font-medium text-foreground">{PROGRAM_LABELS[inviteForm.program]}</span>
                     </div>
                   )}
                   {inviteForm.pathway && (
@@ -370,14 +420,18 @@ export default function Learners() {
                       <span className="font-medium text-foreground">{inviteForm.coach}</span>
                     </div>
                   )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Status</span>
+                    <span className="font-medium text-foreground">New Learner</span>
+                  </div>
                   <div className="flex items-center gap-2 pt-1 border-t border-border text-xs mt-1">
                     <Mail size={11} className="text-muted-foreground" />
-                    <span className="text-muted-foreground">Invitation email delivered</span>
+                    <span className="text-muted-foreground">Invitation email delivered · Learner record created</span>
                   </div>
                 </div>
 
                 <div className="flex gap-3 w-full">
-                  <Button variant="outline" className="flex-1" onClick={closeInvite}>Done</Button>
+                  <Button variant="outline" className="flex-1" onClick={closeInvite}>View Learner List</Button>
                   <Button className="flex-1" onClick={() => {
                     setInviteForm(BLANK_INVITE);
                     setInviteStep(0);
@@ -393,7 +447,7 @@ export default function Learners() {
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
                   <div>
                     <h2 className="text-base font-semibold text-foreground">Invite a Learner</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">Send a personal invitation to join the program</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Add them to the program and send a personal invitation</p>
                   </div>
                   <button onClick={closeInvite} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
                     <X size={18} />
@@ -511,6 +565,9 @@ export default function Learners() {
                         <SelectItem value="Denise Carter">Denise Carter — Program Manager</SelectItem>
                         <SelectItem value="Raymond Brooks">Raymond Brooks — Career Coach</SelectItem>
                         <SelectItem value="Alicia Monroe">Alicia Monroe — Career Coach</SelectItem>
+                        <SelectItem value="Marcus Webb">Marcus Webb — Career Coach</SelectItem>
+                        <SelectItem value="Tonya Fleming">Tonya Fleming — Career Coach</SelectItem>
+                        <SelectItem value="David Park">David Park — Career Coach</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -531,7 +588,7 @@ export default function Learners() {
                 <div className="flex gap-3 px-6 pb-6">
                   <Button variant="outline" onClick={closeInvite}>Cancel</Button>
                   <Button className="flex-1" onClick={handleSendInvite} data-testid="send-invite-btn">
-                    <Mail size={13} className="mr-2" /> Send Invitation
+                    <Mail size={13} className="mr-2" /> Add Learner & Send Invitation
                   </Button>
                 </div>
               </>

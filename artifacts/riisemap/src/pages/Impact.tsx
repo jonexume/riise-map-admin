@@ -188,6 +188,25 @@ export default function Impact() {
   const [includeStories, setIncludeStories] = useState(true);
   const [includeCharts, setIncludeCharts] = useState(true);
 
+  const [copied, setCopied] = useState(false);
+  const [grantCopied, setGrantCopied] = useState(false);
+
+  const handleCopyNarrative = () => {
+    const text = "This quarter, Atlanta Workforce Tech Alliance supported 50 learners across three technology pathways. Learners completed 63% of assigned roadmap milestones, participated in 18 career development events, and 5 learners reached placement-ready status. Average readiness score improved to 68/100, with 34 job applications submitted and 9 placements achieved.";
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleCopyGrantNarrative = () => {
+    const text = buildReportText(includeStories);
+    navigator.clipboard.writeText(text).then(() => {
+      setGrantCopied(true);
+      setTimeout(() => setGrantCopied(false), 2500);
+    });
+  };
+
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("");
@@ -274,8 +293,15 @@ export default function Impact() {
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="text-xs h-8">
-                  <Copy size={12} className="mr-1.5" /> Copy Narrative
+                <Button
+                  variant="outline" size="sm" className="text-xs h-8"
+                  onClick={handleCopyNarrative}
+                  data-testid="copy-narrative-btn"
+                >
+                  {copied
+                    ? <><Check size={12} className="mr-1.5 text-emerald-600" /><span className="text-emerald-600">Copied</span></>
+                    : <><Copy size={12} className="mr-1.5" /> Copy Narrative</>
+                  }
                 </Button>
                 <Button
                   variant="outline" size="sm" className="text-xs h-8"
@@ -478,8 +504,11 @@ export default function Impact() {
                       <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleExportSummary} data-testid="export-csv">
                         Export CSV
                       </Button>
-                      <Button variant="outline" size="sm" className="text-xs h-8" data-testid="copy-narrative">
-                        <Copy size={12} className="mr-1.5" />Copy Narrative
+                      <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleCopyGrantNarrative} data-testid="copy-narrative">
+                        {grantCopied
+                          ? <><Check size={12} className="mr-1.5 text-emerald-600" /><span className="text-emerald-600">Copied</span></>
+                          : <><Copy size={12} className="mr-1.5" />Copy Narrative</>
+                        }
                       </Button>
                       <Button size="sm" className="text-xs h-8" onClick={() => { setShowEmailModal(true); setEmailSent(false); }} data-testid="share-report">
                         <Mail size={12} className="mr-1.5" />Email
