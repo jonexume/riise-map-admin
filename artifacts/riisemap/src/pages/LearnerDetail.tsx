@@ -21,6 +21,12 @@ export default function LearnerDetail() {
   const [newNote, setNewNote] = useState("");
   const [notes, setNotes] = useState(details.notes);
   const [noteSaved, setNoteSaved] = useState(false);
+  const [flagged, setFlagged] = useState(false);
+
+  function handleFlag() {
+    setFlagged(true);
+    setTimeout(() => setFlagged(false), 3000);
+  }
 
   function handleSaveNote() {
     const trimmed = newNote.trim();
@@ -75,9 +81,26 @@ export default function LearnerDetail() {
           <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note">
             <Plus size={12} className="mr-1.5" /> Add Note
           </Button>
-          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-flag">
-            <Flag size={12} className="mr-1.5" /> Flag for Support
-          </Button>
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs h-8"
+              onClick={handleFlag}
+              data-testid="btn-flag"
+            >
+              {flagged
+                ? <><Check size={12} className="mr-1.5 text-emerald-600" /><span className="text-emerald-600">Support notified</span></>
+                : <><Flag size={12} className="mr-1.5" /> Flag for Support</>
+              }
+            </Button>
+            {flagged && (
+              <div className="absolute top-full left-0 mt-2 z-50 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 shadow-md whitespace-nowrap">
+                <p className="text-xs font-semibold text-emerald-800">Support team notified</p>
+                <p className="text-[11px] text-emerald-700 mt-0.5">{learner.name}'s coach has been alerted.</p>
+              </div>
+            )}
+          </div>
           <Button size="sm" className="text-xs h-8" data-testid="btn-success-story">
             <Sparkles size={12} className="mr-1.5" /> Create Success Story
           </Button>
