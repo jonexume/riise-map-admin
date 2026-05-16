@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Area, AreaChart
 } from "recharts";
 import {
   Download, Copy, Share2, Sparkles, FileText, CheckCircle2,
-  Mail, X, Send, Paperclip, Check
+  Mail, X, Send, Paperclip, Check, Plus, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,6 +192,42 @@ export default function Impact() {
   const [copied, setCopied] = useState(false);
   const [grantCopied, setGrantCopied] = useState(false);
 
+  const [storyList, setStoryList] = useState(successStories);
+  const [showCreateStory, setShowCreateStory] = useState(false);
+  const [storyLearner, setStoryLearner] = useState("");
+  const [storyHeadline, setStoryHeadline] = useState("");
+  const [storyPathway, setStoryPathway] = useState("");
+  const [storyNarrative, setStoryNarrative] = useState("");
+  const [storyDataPoints, setStoryDataPoints] = useState<string[]>([""]);
+  const [storyTags, setStoryTags] = useState<string[]>([""]);
+  const [storySaved, setStorySaved] = useState(false);
+
+  function handleSaveStory() {
+    if (!storyLearner.trim() || !storyNarrative.trim()) return;
+    const newStory = {
+      id: String(Date.now()),
+      learnerId: "",
+      learner: storyLearner.trim(),
+      headline: storyHeadline.trim() || storyPathway.trim() || "Success Story",
+      pathway: storyPathway.trim() || "General",
+      dataPoints: storyDataPoints.filter(d => d.trim()),
+      story: storyNarrative.trim(),
+      tags: storyTags.filter(t => t.trim()),
+    };
+    setStoryList(prev => [newStory, ...prev]);
+    setShowCreateStory(false);
+    setStoryLearner(""); setStoryHeadline(""); setStoryPathway("");
+    setStoryNarrative(""); setStoryDataPoints([""]); setStoryTags([""]);
+    setStorySaved(true);
+    setTimeout(() => setStorySaved(false), 3000);
+  }
+
+  function closeCreateStory() {
+    setShowCreateStory(false);
+    setStoryLearner(""); setStoryHeadline(""); setStoryPathway("");
+    setStoryNarrative(""); setStoryDataPoints([""]); setStoryTags([""]);
+  }
+
   const handleCopyNarrative = () => {
     const text = "This quarter, Atlanta Workforce Tech Alliance supported 50 learners across three technology pathways. Learners completed 63% of assigned roadmap milestones, participated in 18 career development events, and 5 learners reached placement-ready status. Average readiness score improved to 68/100, with 34 job applications submitted and 9 placements achieved.";
     navigator.clipboard.writeText(text).then(() => {
@@ -218,9 +255,9 @@ export default function Impact() {
   const [emailError, setEmailError] = useState("");
 
   const metrics = [
-    { label: "Total Learners Served", value: impactMetrics.totalLearnersServed, icon: Users },
-    { label: "Active Learners", value: impactMetrics.activeLearners, icon: Users },
-    { label: "Roadmap Completion", value: `${impactMetrics.roadmapCompletion}%`, icon: BookOpen },
+    { label: "Total Learners Served", value: impactMetrics.totalLearnersServed, icon: Users, href: "/learners" },
+    { label: "Active Learners", value: impactMetrics.activeLearners, icon: Users, href: "/learners" },
+    { label: "Roadmap Completion", value: `${impactMetrics.roadmapCompletion}%`, icon: BookOpen, href: "/learners" },
     { label: "Skill Milestones", value: `${impactMetrics.skillMilestoneCompletion}%`, icon: CheckCircle2 },
     { label: "Project Completion", value: `${impactMetrics.projectCompletionRate}%`, icon: Star },
     { label: "Event Participation", value: `${impactMetrics.eventParticipationRate}%`, icon: Calendar },
@@ -323,12 +360,12 @@ export default function Impact() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
             {metrics.slice(0, 6).map(m => (
-              <MetricCard key={m.label} label={m.label} value={m.value} icon={m.icon} />
+              <MetricCard key={m.label} label={m.label} value={m.value} icon={m.icon} href={m.href} />
             ))}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-3 mb-6">
             {metrics.slice(6).map(m => (
-              <MetricCard key={m.label} label={m.label} value={m.value} icon={m.icon} />
+              <MetricCard key={m.label} label={m.label} value={m.value} icon={m.icon} href={m.href} />
             ))}
           </div>
 
@@ -607,12 +644,19 @@ export default function Impact() {
               <h2 className="text-sm font-semibold text-foreground">Success Stories</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Real learner journeys for grant reporting and community storytelling</p>
             </div>
-            <Button size="sm" data-testid="create-story-btn">
-              <Sparkles size={13} className="mr-1.5" /> Create Story
-            </Button>
+            <div className="flex items-center gap-2">
+              {storySaved && (
+                <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                  <Check size={12} /> Story saved
+                </span>
+              )}
+              <Button size="sm" data-testid="create-story-btn" onClick={() => setShowCreateStory(true)}>
+                <Sparkles size={13} className="mr-1.5" /> Create Story
+              </Button>
+            </div>
           </div>
           <div className="space-y-4">
-            {successStories.map(story => (
+            {storyList.map(story => (
               <Card key={story.id} data-testid={`story-card-${story.id}`} className="border-card-border shadow-sm">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between gap-4 mb-3">
@@ -706,6 +750,148 @@ export default function Impact() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Create Story Modal */}
+      {showCreateStory && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4" onClick={closeCreateStory}>
+          <div
+            className="bg-background rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-primary" />
+                <h2 className="text-base font-semibold text-foreground">Create Success Story</h2>
+              </div>
+              <button onClick={closeCreateStory} className="text-muted-foreground hover:text-foreground transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Learner Name <span className="text-destructive">*</span></label>
+                  <Input
+                    placeholder="e.g. Jordan Lee"
+                    value={storyLearner}
+                    onChange={e => setStoryLearner(e.target.value)}
+                    className="text-sm h-9"
+                    data-testid="story-learner-input"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Pathway</label>
+                  <Select value={storyPathway} onValueChange={setStoryPathway}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select pathway..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Customer Success Pathway">Customer Success</SelectItem>
+                      <SelectItem value="Data Operations Pathway">Data Operations</SelectItem>
+                      <SelectItem value="Tech Support Pathway">Tech Support</SelectItem>
+                      <SelectItem value="IT Foundations Pathway">IT Foundations</SelectItem>
+                      <SelectItem value="Project Coordination Pathway">Project Coordination</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Headline</label>
+                <Input
+                  placeholder="e.g. From retail to tech in 12 weeks"
+                  value={storyHeadline}
+                  onChange={e => setStoryHeadline(e.target.value)}
+                  className="text-sm h-9"
+                  data-testid="story-headline-input"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Story Narrative <span className="text-destructive">*</span></label>
+                <Textarea
+                  placeholder="Describe this learner's journey, growth, and outcomes in 2–4 sentences..."
+                  value={storyNarrative}
+                  onChange={e => setStoryNarrative(e.target.value)}
+                  className="text-sm min-h-28 resize-none"
+                  data-testid="story-narrative-input"
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Data Points</label>
+                  <button
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                    onClick={() => setStoryDataPoints(prev => [...prev, ""])}
+                  >
+                    <Plus size={12} /> Add
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {storyDataPoints.map((dp, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Input
+                        placeholder={`e.g. Readiness score improved from 42 to 72`}
+                        value={dp}
+                        onChange={e => setStoryDataPoints(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+                        className="text-sm h-8 flex-1"
+                      />
+                      {storyDataPoints.length > 1 && (
+                        <button
+                          className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                          onClick={() => setStoryDataPoints(prev => prev.filter((_, idx) => idx !== i))}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-muted-foreground">Tags</label>
+                  <button
+                    className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                    onClick={() => setStoryTags(prev => [...prev, ""])}
+                  >
+                    <Plus size={12} /> Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {storyTags.map((tag, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <Input
+                        placeholder="e.g. Career Transition"
+                        value={tag}
+                        onChange={e => setStoryTags(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+                        className="text-sm h-7 w-40"
+                      />
+                      {storyTags.length > 1 && (
+                        <button
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                          onClick={() => setStoryTags(prev => prev.filter((_, idx) => idx !== i))}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={closeCreateStory}>Cancel</Button>
+              <Button
+                size="sm" className="text-xs h-8"
+                disabled={!storyLearner.trim() || !storyNarrative.trim()}
+                onClick={handleSaveStory}
+                data-testid="save-story-btn"
+              >
+                <Check size={12} className="mr-1.5" /> Save Story
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Email Report Modal */}
       {showEmailModal && (

@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -9,11 +10,16 @@ interface MetricCardProps {
   iconColor?: string;
   trend?: { value: number; positive: boolean };
   className?: string;
+  href?: string;
 }
 
-export function MetricCard({ label, value, subtitle, icon: Icon, iconColor, trend, className }: MetricCardProps) {
-  return (
-    <div className={cn("bg-card border border-card-border rounded-xl p-5 shadow-sm", className)}>
+export function MetricCard({ label, value, subtitle, icon: Icon, iconColor, trend, className, href }: MetricCardProps) {
+  const inner = (
+    <div className={cn(
+      "bg-card border border-card-border rounded-xl p-5 shadow-sm",
+      href && "cursor-pointer hover:shadow-md hover:border-primary/30 transition-all",
+      className
+    )}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{label}</p>
@@ -33,4 +39,9 @@ export function MetricCard({ label, value, subtitle, icon: Icon, iconColor, tren
       </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{inner}</Link>;
+  }
+  return inner;
 }
