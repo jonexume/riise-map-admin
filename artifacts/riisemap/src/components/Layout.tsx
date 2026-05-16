@@ -64,8 +64,8 @@ export function Layout({ children }: LayoutProps) {
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-sidebar-primary-foreground">RM</span>
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white">
+              <img src="/logo.png" alt="RiiseMap" className="w-full h-full object-cover" />
             </div>
             <div>
               <div className="text-sm font-semibold text-sidebar-foreground leading-tight">RiiseMap</div>

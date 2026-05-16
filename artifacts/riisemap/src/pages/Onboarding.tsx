@@ -66,8 +66,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       <div className="w-full max-w-lg">
         {/* Brand */}
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-sm font-bold text-white">RM</span>
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white">
+            <img src="/logo.png" alt="RiiseMap" className="w-full h-full object-cover" />
           </div>
           <span className="text-xl font-semibold text-foreground">RiiseMap</span>
         </div>
