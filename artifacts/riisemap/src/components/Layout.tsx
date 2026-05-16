@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const navItems = [
   { label: "Pathways", href: "/pathways", icon: GitBranch },
   { label: "Projects", href: "/projects", icon: FolderKanban },
   { label: "Events", href: "/events", icon: Calendar },
+  { label: "Jobs", href: "/jobs", icon: Briefcase },
   { label: "Coaches", href: "/coaches", icon: UserCheck },
   { label: "Alerts", href: "/alerts", icon: Bell, badge: 4 },
   { label: "Impact & Reporting", href: "/impact", icon: BarChart3 },

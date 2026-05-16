@@ -676,6 +676,217 @@ export const successStories = [
   },
 ];
 
+export interface Job {
+  id: string;
+  title: string;
+  employer: string;
+  location: string;
+  type: "Full-time" | "Part-time" | "Contract" | "Internship";
+  salary: string;
+  pathway: string;
+  description: string;
+  requirements: string[];
+  skills: string[];
+  posted: string;
+  status: "Open" | "Filled" | "Expired";
+}
+
+export const jobs: Job[] = [
+  {
+    id: "1",
+    title: "Customer Success Associate",
+    employer: "Brightpath SaaS",
+    location: "Atlanta, GA (Hybrid)",
+    type: "Full-time",
+    salary: "$42,000 – $50,000",
+    pathway: "Customer Success Associate",
+    description: "Brightpath SaaS is hiring an entry-level Customer Success Associate to join our Atlanta team. You will support new and existing customers through onboarding, training, and ongoing relationship management using our CRM platform. This is an excellent opportunity for someone transitioning into technology from a customer-facing background.",
+    requirements: [
+      "Experience in a customer-facing role (retail, hospitality, service industry accepted)",
+      "Comfortable learning new software platforms",
+      "Strong written and verbal communication",
+      "Ability to manage multiple customer accounts",
+      "CRM experience a plus but not required",
+    ],
+    skills: ["CRM platforms", "Customer communication", "Onboarding workflows", "Problem solving"],
+    posted: "May 12, 2025",
+    status: "Open",
+  },
+  {
+    id: "2",
+    title: "IT Help Desk Technician I",
+    employer: "Metro Atlanta Health Network",
+    location: "Atlanta, GA (On-site)",
+    type: "Full-time",
+    salary: "$38,000 – $45,000",
+    pathway: "IT Support Specialist",
+    description: "The Metro Atlanta Health Network is seeking a motivated Help Desk Technician I to support our IT operations across multiple clinic locations. You will handle tier-1 support tickets, assist staff with hardware and software issues, and document resolutions in our ticketing system.",
+    requirements: [
+      "Basic understanding of computer hardware and software",
+      "Experience with Windows operating systems",
+      "Strong communication and documentation skills",
+      "Ability to work independently and prioritize tasks",
+      "CompTIA A+ certification preferred or in progress",
+    ],
+    skills: ["Help desk fundamentals", "Ticketing systems", "Technical troubleshooting", "Documentation"],
+    posted: "May 8, 2025",
+    status: "Open",
+  },
+  {
+    id: "3",
+    title: "Junior Data Operations Analyst",
+    employer: "Peachtree Financial Partners",
+    location: "Atlanta, GA (Remote)",
+    type: "Full-time",
+    salary: "$45,000 – $54,000",
+    pathway: "Junior Data Operations Analyst",
+    description: "Peachtree Financial Partners is looking for a detail-oriented Junior Data Operations Analyst to support our reporting and data quality initiatives. You will clean and validate data, maintain spreadsheet trackers, and produce weekly operational reports for our operations team.",
+    requirements: [
+      "Proficiency in Excel or Google Sheets",
+      "Experience with data entry and data cleaning",
+      "Ability to identify and correct data quality issues",
+      "Basic understanding of reporting and dashboards",
+      "SQL knowledge a plus",
+    ],
+    skills: ["Excel/Google Sheets", "Data cleaning", "Reporting", "Attention to detail"],
+    posted: "May 5, 2025",
+    status: "Open",
+  },
+];
+
+export interface ProjectSubmission {
+  id: string;
+  projectId: string;
+  learnerName: string;
+  learnerPhoto?: string;
+  submittedAt: string;
+  status: "Submitted" | "Reviewed" | "Approved" | "Needs Revision";
+  score?: number;
+  notes: string;
+}
+
+export const projectSubmissions: ProjectSubmission[] = [
+  {
+    id: "s1",
+    projectId: "1",
+    learnerName: "Maya Thompson",
+    learnerPhoto: "/maya.jpg",
+    submittedAt: "May 14, 2025",
+    status: "Approved",
+    score: 91,
+    notes: "Strong simulation walkthrough with clear documentation. CRM entries were accurate and the reflection showed solid understanding of the onboarding process.",
+  },
+  {
+    id: "s2",
+    projectId: "1",
+    learnerName: "Alina Brooks",
+    submittedAt: "May 13, 2025",
+    status: "Reviewed",
+    score: 78,
+    notes: "Good effort. Reflection document could be more detailed. Recommend revisiting the welcome communication section before moving forward.",
+  },
+  {
+    id: "s3",
+    projectId: "1",
+    learnerName: "Camille Johnson",
+    submittedAt: "May 15, 2025",
+    status: "Submitted",
+    notes: "Submitted on time. Pending coach review.",
+  },
+  {
+    id: "s4",
+    projectId: "1",
+    learnerName: "DeShawn Price",
+    submittedAt: "May 11, 2025",
+    status: "Needs Revision",
+    score: 54,
+    notes: "CRM entries contained errors and the reflection was incomplete. Please resubmit with corrected data and a full written reflection.",
+  },
+  {
+    id: "s5",
+    projectId: "2",
+    learnerName: "Jordan Ellis",
+    submittedAt: "May 12, 2025",
+    status: "Reviewed",
+    score: 82,
+    notes: "10 tickets resolved with clear notes. A few escalation decisions could be explained better. Overall solid work.",
+  },
+  {
+    id: "s6",
+    projectId: "2",
+    learnerName: "Marcus Reed",
+    submittedAt: "May 10, 2025",
+    status: "Needs Revision",
+    score: 48,
+    notes: "Only 6 of 10 tickets completed. Notes were too brief to demonstrate the troubleshooting process. Please complete all tickets and resubmit.",
+  },
+  {
+    id: "s7",
+    projectId: "2",
+    learnerName: "Alina Brooks",
+    submittedAt: "May 14, 2025",
+    status: "Approved",
+    score: 88,
+    notes: "All 10 tickets completed with thorough documentation. Excellent troubleshooting logic.",
+  },
+  {
+    id: "s8",
+    projectId: "3",
+    learnerName: "Tasha Green",
+    submittedAt: "May 9, 2025",
+    status: "Approved",
+    score: 97,
+    notes: "Outstanding dataset cleanup. Summary of changes was thorough and well-organized. Best submission in the cohort.",
+  },
+  {
+    id: "s9",
+    projectId: "3",
+    learnerName: "Camille Johnson",
+    submittedAt: "May 13, 2025",
+    status: "Reviewed",
+    score: 74,
+    notes: "Dataset cleaned with good accuracy. A few remaining formatting inconsistencies. Summary document was clear.",
+  },
+  {
+    id: "s10",
+    projectId: "4",
+    learnerName: "Maya Thompson",
+    learnerPhoto: "/maya.jpg",
+    submittedAt: "May 10, 2025",
+    status: "Approved",
+    score: 85,
+    notes: "Workflow diagram was detailed and accurate. Written explanation clearly showed understanding of CRM lifecycle stages.",
+  },
+  {
+    id: "s11",
+    projectId: "5",
+    learnerName: "Maya Thompson",
+    learnerPhoto: "/maya.jpg",
+    submittedAt: "May 7, 2025",
+    status: "Approved",
+    score: 90,
+    notes: "All three STAR stories were specific and compelling. Strong self-advocacy language throughout.",
+  },
+  {
+    id: "s12",
+    projectId: "5",
+    learnerName: "Jordan Ellis",
+    submittedAt: "May 6, 2025",
+    status: "Needs Revision",
+    score: 61,
+    notes: "Stories lacked specificity — the situation and action components need more detail. Encourage Jordan to use the coaching worksheet before resubmitting.",
+  },
+  {
+    id: "s13",
+    projectId: "5",
+    learnerName: "Tasha Green",
+    submittedAt: "May 8, 2025",
+    status: "Approved",
+    score: 94,
+    notes: "Exceptional stories with strong quantified results. Ready to use in real interviews.",
+  },
+];
+
 export const recentMomentum = [
   { id: "m1", learner: "Tasha Green", event: "Reached Placement Ready status", time: "Today", positive: true },
   { id: "m2", learner: "Camille Johnson", event: "Completed final technical milestone", time: "Today", positive: true },

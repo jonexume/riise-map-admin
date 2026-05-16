@@ -1,16 +1,73 @@
 import { useState } from "react";
-import { ArrowLeft, Users, TrendingUp, Calendar, Star, ChevronRight } from "lucide-react";
+import { ArrowLeft, Users, TrendingUp, Calendar, Star, ChevronRight, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { programs, learners } from "@/data/mockData";
+import { programs as initialPrograms, learners } from "@/data/mockData";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
-export default function Programs() {
-  const [selected, setSelected] = useState<string | null>(null);
+type LocalProgram = (typeof initialPrograms)[number];
 
-  const program = programs.find(p => p.id === selected);
+const emptyForm = {
+  name: "",
+  description: "",
+  pathwayCategory: "",
+  cohort: "",
+  startDate: "",
+  endDate: "",
+  funderTag: "",
+  pathways: "",
+};
+
+export default function Programs() {
+  const [programList, setProgramList] = useState<LocalProgram[]>(initialPrograms);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const program = programList.find(p => p.id === selected);
+
+  const validateForm = () => {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Program name is required";
+    if (!form.description.trim()) errs.description = "Description is required";
+    if (!form.cohort.trim()) errs.cohort = "Cohort name is required";
+    if (!form.startDate.trim()) errs.startDate = "Start date is required";
+    if (!form.endDate.trim()) errs.endDate = "End date is required";
+    if (!form.funderTag.trim()) errs.funderTag = "Funder is required";
+    setFormErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleCreate = () => {
+    if (!validateForm()) return;
+    const newProgram: LocalProgram = {
+      id: String(Date.now()),
+      name: form.name,
+      description: form.description,
+      pathwayCategory: form.pathwayCategory || "General",
+      activeLearners: 0,
+      completionRate: 0,
+      readinessScore: 0,
+      eventParticipation: 0,
+      placementReady: 0,
+      funderTag: form.funderTag,
+      cohort: form.cohort,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      pathways: form.pathways.split(",").map(s => s.trim()).filter(Boolean),
+    };
+    setProgramList(prev => [...prev, newProgram]);
+    setForm(emptyForm);
+    setFormErrors({});
+    setShowCreate(false);
+    setSelected(newProgram.id);
+  };
 
   if (selected && program) {
     const programLearners = learners.filter(l => l.program === program.name);
@@ -62,7 +119,9 @@ export default function Programs() {
           <Card className="border-card-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Active Pathways</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {program.pathways.map(p => (
+              {program.pathways.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No pathways assigned yet.</p>
+              ) : program.pathways.map(p => (
                 <div key={p} className="flex items-center gap-2 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                   <span className="text-foreground">{p}</span>
@@ -81,8 +140,11 @@ export default function Programs() {
               <div className="space-y-4">
                 {programLearners.map(l => (
                   <div key={l.id} className="flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-bold text-primary">{l.name.split(" ").map(n => n[0]).join("")}</span>
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {l.photo
+                        ? <img src={l.photo} alt={l.name} className="w-full h-full object-cover" />
+                        : <span className="text-xs font-bold text-primary">{l.name.split(" ").map(n => n[0]).join("")}</span>
+                      }
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
@@ -109,13 +171,15 @@ export default function Programs() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Programs</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">3 active programs across Atlanta Workforce Tech Alliance</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{programList.length} programs across Atlanta Workforce Tech Alliance</p>
         </div>
-        <Button size="sm" data-testid="create-program-btn">Create Program</Button>
+        <Button size="sm" onClick={() => setShowCreate(true)} data-testid="create-program-btn">
+          <Plus size={14} className="mr-1.5" /> Create Program
+        </Button>
       </div>
 
       <div className="space-y-4">
-        {programs.map(p => (
+        {programList.map(p => (
           <Card key={p.id} data-testid={`program-card-${p.id}`} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-start gap-4">
@@ -168,6 +232,117 @@ export default function Programs() {
           </Card>
         ))}
       </div>
+
+      {/* Create Program Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4" onClick={() => setShowCreate(false)}>
+          <div
+            className="bg-background rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border sticky top-0 bg-background z-10">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Create Program</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Add a new workforce program to the platform.</p>
+              </div>
+              <button onClick={() => { setShowCreate(false); setFormErrors({}); setForm(emptyForm); }} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Program name</Label>
+                <Input
+                  className={cn("mt-1.5 h-10 text-sm", formErrors.name && "border-destructive")}
+                  placeholder="e.g. Cloud Operations Starter"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                />
+                {formErrors.name && <p className="text-xs text-destructive mt-1">{formErrors.name}</p>}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Description</Label>
+                <Textarea
+                  className={cn("mt-1.5 text-sm resize-none", formErrors.description && "border-destructive")}
+                  rows={3}
+                  placeholder="Describe the program's goals, structure, and target learner..."
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                />
+                {formErrors.description && <p className="text-xs text-destructive mt-1">{formErrors.description}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Cohort name</Label>
+                  <Input
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.cohort && "border-destructive")}
+                    placeholder="e.g. Summer 2025"
+                    value={form.cohort}
+                    onChange={e => setForm(f => ({ ...f, cohort: e.target.value }))}
+                  />
+                  {formErrors.cohort && <p className="text-xs text-destructive mt-1">{formErrors.cohort}</p>}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Funder / sponsor</Label>
+                  <Input
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.funderTag && "border-destructive")}
+                    placeholder="e.g. City Workforce Grant"
+                    value={form.funderTag}
+                    onChange={e => setForm(f => ({ ...f, funderTag: e.target.value }))}
+                  />
+                  {formErrors.funderTag && <p className="text-xs text-destructive mt-1">{formErrors.funderTag}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Start date</Label>
+                  <Input
+                    type="date"
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.startDate && "border-destructive")}
+                    value={form.startDate}
+                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  />
+                  {formErrors.startDate && <p className="text-xs text-destructive mt-1">{formErrors.startDate}</p>}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">End date</Label>
+                  <Input
+                    type="date"
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.endDate && "border-destructive")}
+                    value={form.endDate}
+                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                  />
+                  {formErrors.endDate && <p className="text-xs text-destructive mt-1">{formErrors.endDate}</p>}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Linked pathways</Label>
+                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
+                <Input
+                  className="h-10 text-sm"
+                  placeholder="e.g. Customer Success Associate, IT Support Specialist"
+                  value={form.pathways}
+                  onChange={e => setForm(f => ({ ...f, pathways: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 pb-6">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowCreate(false); setForm(emptyForm); setFormErrors({}); }}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleCreate} data-testid="submit-program-btn">
+                Create Program
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

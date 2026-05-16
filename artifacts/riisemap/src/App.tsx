@@ -12,6 +12,7 @@ import Programs from "@/pages/Programs";
 import Pathways from "@/pages/Pathways";
 import Projects from "@/pages/Projects";
 import Events from "@/pages/Events";
+import Jobs from "@/pages/Jobs";
 import Coaches from "@/pages/Coaches";
 import Alerts from "@/pages/Alerts";
 import Impact from "@/pages/Impact";
@@ -31,6 +32,7 @@ function Router() {
         <Route path="/pathways" component={Pathways} />
         <Route path="/projects" component={Projects} />
         <Route path="/events" component={Events} />
+        <Route path="/jobs" component={Jobs} />
         <Route path="/coaches" component={Coaches} />
         <Route path="/alerts" component={Alerts} />
         <Route path="/impact" component={Impact} />
