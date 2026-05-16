@@ -18,6 +18,8 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
+const DEFAULT_PHOTO = "/denise.jpg";
+
 const navItems = [
   { label: "Home", href: "/", icon: Home },
   { label: "Learners", href: "/learners", icon: Users },
@@ -31,6 +33,21 @@ const navItems = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+function getProfilePhoto(): string {
+  return localStorage.getItem("riisemap_profile_photo") || DEFAULT_PHOTO;
+}
+
+function getProfileName(): string {
+  try {
+    const data = localStorage.getItem("riisemap_onboarding");
+    if (data) {
+      const parsed = JSON.parse(data);
+      return parsed.name || "Denise Carter";
+    }
+  } catch {}
+  return "Denise Carter";
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -38,6 +55,8 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const profilePhoto = getProfilePhoto();
+  const profileName = getProfileName();
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
@@ -118,17 +137,26 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </nav>
 
-        {/* User */}
+        {/* User profile */}
         <div className="px-3 py-4 border-t border-sidebar-border">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-accent cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-semibold text-sidebar-primary">DC</span>
+          <Link href="/settings">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors group">
+              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-sidebar-primary/30 group-hover:ring-sidebar-primary/60 transition-all">
+                <img
+                  src={profilePhoto}
+                  alt={profileName}
+                  className="w-full h-full object-cover"
+                  data-testid="sidebar-profile-photo"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-sidebar-foreground truncate" data-testid="sidebar-profile-name">
+                  {profileName}
+                </div>
+                <div className="text-[11px] text-sidebar-foreground/50 truncate">Program Manager</div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-sidebar-foreground truncate">Denise Carter</div>
-              <div className="text-[11px] text-sidebar-foreground/50 truncate">Program Manager</div>
-            </div>
-          </div>
+          </Link>
         </div>
       </aside>
 

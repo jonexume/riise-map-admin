@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { ArrowRight, CheckSquare, Square } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowRight, CheckSquare, Square, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+
+const DEFAULT_PHOTO = "/denise.jpg";
 
 const orgTypes = [
   {
@@ -34,6 +36,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [orgType, setOrgType] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photo, setPhoto] = useState<string>(DEFAULT_PHOTO);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setPhoto(result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
@@ -58,6 +73,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       "riisemap_onboarding",
       JSON.stringify({ name, email, phone, orgType, completedAt: new Date().toISOString() })
     );
+    localStorage.setItem("riisemap_profile_photo", photo);
     onComplete();
   };
 
@@ -91,6 +107,43 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <p className="text-sm text-muted-foreground mb-8">
               Let's get your account set up. This takes about a minute.
             </p>
+
+            {/* Photo upload */}
+            <div className="flex flex-col items-center mb-7">
+              <div className="relative group">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-background shadow-md ring-2 ring-primary/20">
+                  <img
+                    src={photo}
+                    alt="Profile photo"
+                    className="w-full h-full object-cover"
+                    data-testid="profile-photo-preview"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-testid="photo-upload-btn"
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors border-2 border-background"
+                >
+                  <Camera size={13} className="text-white" />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-2.5 text-xs text-primary hover:underline font-medium"
+              >
+                {photo === DEFAULT_PHOTO ? "Change photo" : "Change photo"}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+                data-testid="photo-file-input"
+              />
+            </div>
 
             <div className="space-y-5">
               <div>
@@ -152,8 +205,19 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </div>
         ) : (
           <div>
+            {/* Mini profile recap */}
+            <div className="flex items-center gap-3 mb-7 p-3.5 bg-muted/40 rounded-xl border border-border">
+              <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
+                <img src={photo} alt={name} className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <p className="text-xs text-muted-foreground">{email}</p>
+              </div>
+            </div>
+
             <h1 className="text-2xl font-semibold text-foreground mb-1">What describes your organization?</h1>
-            <p className="text-sm text-muted-foreground mb-8">
+            <p className="text-sm text-muted-foreground mb-6">
               Select the option that best fits your work. This helps us tailor your RiiseMap experience.
             </p>
 
@@ -180,10 +244,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                         "mt-0.5 flex-shrink-0 transition-colors",
                         isSelected ? "text-primary" : "text-muted-foreground/40"
                       )}>
-                        {isSelected
-                          ? <CheckSquare size={18} />
-                          : <Square size={18} />
-                        }
+                        {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
                       </div>
                       <div>
                         <p className={cn(
