@@ -3,7 +3,7 @@ import { useParams, Link } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
   FileText, BarChart3, Activity, Plus, Flag, CheckSquare,
-  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle
+  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,23 @@ export default function LearnerDetail() {
   const learner = learners.find(l => l.id === id) ?? learners[0];
   const details = learnerDetails[learner.id] ?? learnerDetails["1"];
   const [newNote, setNewNote] = useState("");
+  const [notes, setNotes] = useState(details.notes);
+  const [noteSaved, setNoteSaved] = useState(false);
+
+  function handleSaveNote() {
+    const trimmed = newNote.trim();
+    if (!trimmed) return;
+    const saved = {
+      id: String(Date.now()),
+      author: "Denise Carter",
+      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      content: trimmed,
+    };
+    setNotes(prev => [saved, ...prev]);
+    setNewNote("");
+    setNoteSaved(true);
+    setTimeout(() => setNoteSaved(false), 2000);
+  }
 
   const milestoneIcon = (state: string) => {
     if (state === "completed") return <CheckCircle2 size={16} className="text-emerald-500 flex-shrink-0" />;
@@ -263,14 +280,19 @@ export default function LearnerDetail() {
                   className="text-sm min-h-20 resize-none"
                   data-testid="add-note-input"
                 />
-                <div className="flex justify-end mt-2">
-                  <Button size="sm" className="text-xs h-8" disabled={!newNote.trim()} data-testid="save-note-btn">
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  {noteSaved && (
+                    <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                      <Check size={12} /> Saved
+                    </span>
+                  )}
+                  <Button size="sm" className="text-xs h-8" disabled={!newNote.trim()} onClick={handleSaveNote} data-testid="save-note-btn">
                     Save Note
                   </Button>
                 </div>
               </CardContent>
             </Card>
-            {details.notes.map(n => (
+            {notes.map(n => (
               <Card key={n.id} className="border-card-border">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
