@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 const DEFAULT_PHOTO = "/denise.jpg";
+const DEFAULT_ORG_LOGO = "/blueworkforce-logo.png";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
@@ -39,15 +40,28 @@ function getProfilePhoto(): string {
   return localStorage.getItem("riisemap_profile_photo") || DEFAULT_PHOTO;
 }
 
-function getProfileName(): string {
+function getOrgLogo(): string {
+  return localStorage.getItem("riisemap_org_logo") || DEFAULT_ORG_LOGO;
+}
+
+function getOrgData(): { name: string; title: string; role: string; profileName: string } {
   try {
     const data = localStorage.getItem("riisemap_onboarding");
     if (data) {
       const parsed = JSON.parse(data);
-      return parsed.name || "Denise Carter";
+      return {
+        name: parsed.name || "Denise Carter",
+        title: parsed.title || "Program Manager",
+        role: parsed.role || "admin",
+        profileName: parsed.name || "Denise Carter",
+      };
     }
   } catch {}
-  return "Denise Carter";
+  return { name: "Denise Carter", title: "Program Manager", role: "admin", profileName: "Denise Carter" };
+}
+
+function getOrgName(): string {
+  return localStorage.getItem("riisemap_org_name") || "BlueWorkforce";
 }
 
 interface LayoutProps {
@@ -58,7 +72,9 @@ export function Layout({ children }: LayoutProps) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const profilePhoto = getProfilePhoto();
-  const profileName = getProfileName();
+  const orgLogo = getOrgLogo();
+  const orgName = getOrgName();
+  const { profileName, title, role } = getOrgData();
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
@@ -83,15 +99,15 @@ export function Layout({ children }: LayoutProps) {
         )}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between px-5 py-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white">
-              <img src="/logo.png" alt="RiiseMap" className="w-full h-full object-cover" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-sidebar-border">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-sidebar-border/50 flex items-center justify-center">
+              <img src={orgLogo} alt={orgName} className="w-full h-full object-contain p-0.5" />
             </div>
-            <div>
-              <div className="text-sm font-semibold text-sidebar-foreground leading-tight">RiiseMap</div>
-              <div className="text-[10px] text-sidebar-foreground/50 leading-tight truncate max-w-[130px]">
-                Atlanta Workforce Tech
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-sidebar-foreground leading-tight truncate max-w-[130px]">{orgName}</div>
+              <div className="text-[10px] text-sidebar-foreground/50 leading-tight">
+                {role === "admin" ? "Admin" : "Viewer"}
               </div>
             </div>
           </div>
@@ -155,7 +171,7 @@ export function Layout({ children }: LayoutProps) {
                 <div className="text-sm font-medium text-sidebar-foreground truncate" data-testid="sidebar-profile-name">
                   {profileName}
                 </div>
-                <div className="text-[11px] text-sidebar-foreground/50 truncate">Program Manager</div>
+                <div className="text-[11px] text-sidebar-foreground/50 truncate">{title}</div>
               </div>
             </div>
           </Link>
