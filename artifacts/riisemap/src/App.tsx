@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +16,7 @@ import Coaches from "@/pages/Coaches";
 import Alerts from "@/pages/Alerts";
 import Impact from "@/pages/Impact";
 import SettingsPage from "@/pages/Settings";
+import Onboarding from "@/pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -40,12 +42,22 @@ function Router() {
 }
 
 function App() {
+  const [onboarded, setOnboarded] = useState<boolean>(
+    () => !!localStorage.getItem("riisemap_onboarding")
+  );
+
+  const handleOnboardingComplete = () => setOnboarded(true);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        {!onboarded ? (
+          <Onboarding onComplete={handleOnboardingComplete} />
+        ) : (
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        )}
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
