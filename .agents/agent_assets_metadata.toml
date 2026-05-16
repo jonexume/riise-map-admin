@@ -1,0 +1,302 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "w0upv7HbzvWYT35NeuB2s"
+uri = "file://artifacts/riisemap/public/learners/1.png"
+type = "image"
+title = "maya-thompson"
+
+[[generated]]
+id = "wrJfXJ6CW6lY8a84s-kEt"
+uri = "file://artifacts/riisemap/public/learners/2.png"
+type = "image"
+title = "jordan-ellis"
+
+[[generated]]
+id = "Qogxe74Gae288bxwMuwdh"
+uri = "file://artifacts/riisemap/public/learners/3.png"
+type = "image"
+title = "tasha-green"
+
+[[generated]]
+id = "PzFJT2T8emRnX7NojV5Vz"
+uri = "file://artifacts/riisemap/public/learners/4.png"
+type = "image"
+title = "marcus-reed"
+
+[[generated]]
+id = "wuReL-grEEDosydE3v4Nx"
+uri = "file://artifacts/riisemap/public/learners/5.png"
+type = "image"
+title = "alina-brooks"
+
+[[generated]]
+id = "DQRfRdHuXBrP7JEeWQRv9"
+uri = "file://artifacts/riisemap/public/learners/6.png"
+type = "image"
+title = "deshawn-price"
+
+[[generated]]
+id = "Y_UUniyQLYvHGfWvc6ChK"
+uri = "file://artifacts/riisemap/public/learners/7.png"
+type = "image"
+title = "camille-johnson"
+
+[[generated]]
+id = "fI6WFKiPeMv78NIFBwGPt"
+uri = "file://artifacts/riisemap/public/learners/8.png"
+type = "image"
+title = "antoine-walker"
+
+[[generated]]
+id = "LKdfUa0K5uSY-HF4ZgpJi"
+uri = "file://artifacts/riisemap/public/learners/9.png"
+type = "image"
+title = "keisha-davis"
+
+[[generated]]
+id = "sdYzxLlOri1Pfs8dxl1BK"
+uri = "file://artifacts/riisemap/public/learners/10.png"
+type = "image"
+title = "darius-mitchell"
+
+[[generated]]
+id = "PzJpazpObknEIEnEGDGg6"
+uri = "file://artifacts/riisemap/public/learners/11.png"
+type = "image"
+title = "simone-washington"
+
+[[generated]]
+id = "XsUNBbPYIz5oRvEsd57oo"
+uri = "file://artifacts/riisemap/public/learners/12.png"
+type = "image"
+title = "kevin-brown"
+
+[[generated]]
+id = "T5Odsn83z7dQExkZ451_c"
+uri = "file://artifacts/riisemap/public/learners/13.png"
+type = "image"
+title = "brianna-foster"
+
+[[generated]]
+id = "hu0Mhit-JC_R_PCROCfCP"
+uri = "file://artifacts/riisemap/public/learners/14.png"
+type = "image"
+title = "terrance-holmes"
+
+[[generated]]
+id = "A-FNYtLiqomDhDbo15I01"
+uri = "file://artifacts/riisemap/public/learners/15.png"
+type = "image"
+title = "destiny-clark"
+
+[[generated]]
+id = "bsNQ6rEyE7FDVzYR-uy_E"
+uri = "file://artifacts/riisemap/public/learners/16.png"
+type = "image"
+title = "elijah-scott"
+
+[[generated]]
+id = "4Cotujo0f4hOiMJM8iiQy"
+uri = "file://artifacts/riisemap/public/learners/17.png"
+type = "image"
+title = "brandon-turner"
+
+[[generated]]
+id = "pNLxlvJHSCT0dG2svHuUn"
+uri = "file://artifacts/riisemap/public/learners/18.png"
+type = "image"
+title = "monique-harris"
+
+[[generated]]
+id = "l3PAp-xxTty5Pp6Sap05Z"
+uri = "file://artifacts/riisemap/public/learners/19.png"
+type = "image"
+title = "isaiah-coleman"
+
+[[generated]]
+id = "o-VE2LAgFcVx9klXybO0G"
+uri = "file://artifacts/riisemap/public/learners/20.png"
+type = "image"
+title = "andre-davis"
+
+[[generated]]
+id = "7kf30a_tbuiLAz-spBK81"
+uri = "file://artifacts/riisemap/public/learners/21.png"
+type = "image"
+title = "jasmine-parker"
+
+[[generated]]
+id = "zx0vF7Fkt6kEPMpNpkWJt"
+uri = "file://artifacts/riisemap/public/learners/22.png"
+type = "image"
+title = "latoya-williams"
+
+[[generated]]
+id = "-czMcJLvq0YkWK6LXyfiX"
+uri = "file://artifacts/riisemap/public/learners/23.png"
+type = "image"
+title = "christopher-lee"
+
+[[generated]]
+id = "vV5ZIz1wUZUcKYQvpmzyb"
+uri = "file://artifacts/riisemap/public/learners/24.png"
+type = "image"
+title = "maria-rodriguez"
+
+[[generated]]
+id = "iUa3MjM4O-viz4rlzaxoI"
+uri = "file://artifacts/riisemap/public/learners/25.png"
+type = "image"
+title = "nathaniel-cross"
+
+[[generated]]
+id = "QtPKrk32cEHH_CAGA7hp_"
+uri = "file://artifacts/riisemap/public/learners/26.png"
+type = "image"
+title = "amber-reid"
+
+[[generated]]
+id = "FyVIbibj7KQKgJPS-DUJc"
+uri = "file://artifacts/riisemap/public/learners/27.png"
+type = "image"
+title = "victor-nguyen"
+
+[[generated]]
+id = "R7mdEeTfwhC9-KZbtWnAV"
+uri = "file://artifacts/riisemap/public/learners/28.png"
+type = "image"
+title = "chantel-jackson"
+
+[[generated]]
+id = "4vc1XAuiIPSgk6e5wUPTW"
+uri = "file://artifacts/riisemap/public/learners/29.png"
+type = "image"
+title = "james-harrison"
+
+[[generated]]
+id = "5aeUJMoBjdOZ8-IgWii4r"
+uri = "file://artifacts/riisemap/public/learners/30.png"
+type = "image"
+title = "priya-patel"
+
+[[generated]]
+id = "PGNwBM9n4PaycaJartnkB"
+uri = "file://artifacts/riisemap/public/learners/31.png"
+type = "image"
+title = "emmanuel-okafor"
+
+[[generated]]
+id = "cc2eWi8YhHJ3mFwMouhUY"
+uri = "file://artifacts/riisemap/public/learners/32.png"
+type = "image"
+title = "whitney-thomas"
+
+[[generated]]
+id = "cbaVXOUJp8pThhtrgXYAN"
+uri = "file://artifacts/riisemap/public/learners/33.png"
+type = "image"
+title = "michael-jenkins"
+
+[[generated]]
+id = "96Y3BZ4uZwi9gVsDRsZ-P"
+uri = "file://artifacts/riisemap/public/learners/34.png"
+type = "image"
+title = "evelyn-torres"
+
+[[generated]]
+id = "ptjx8ZqFiINmwhJo_dbnZ"
+uri = "file://artifacts/riisemap/public/learners/35.png"
+type = "image"
+title = "carlos-rivera"
+
+[[generated]]
+id = "Bh6Z5YFLAMpxAJuGczxIa"
+uri = "file://artifacts/riisemap/public/learners/36.png"
+type = "image"
+title = "angela-robinson"
+
+[[generated]]
+id = "TTrxteYeBqgmIF5feJn7k"
+uri = "file://artifacts/riisemap/public/learners/37.png"
+type = "image"
+title = "patrick-osei"
+
+[[generated]]
+id = "kJQNMnGFoCSg8Jg8P7jpF"
+uri = "file://artifacts/riisemap/public/learners/38.png"
+type = "image"
+title = "bethany-moore"
+
+[[generated]]
+id = "9zDpDg5n5Am7EDfUVWQhE"
+uri = "file://artifacts/riisemap/public/learners/39.png"
+type = "image"
+title = "darrell-washington"
+
+[[generated]]
+id = "13_2NYgg4dBbB__A4lTgr"
+uri = "file://artifacts/riisemap/public/learners/40.png"
+type = "image"
+title = "fatima-ali"
+
+[[generated]]
+id = "L6wSDOiTpLgZ1s4zWfaYn"
+uri = "file://artifacts/riisemap/public/learners/41.png"
+type = "image"
+title = "samuel-obi"
+
+[[generated]]
+id = "c8gA8Pfvw3FAgMjNW_777"
+uri = "file://artifacts/riisemap/public/learners/42.png"
+type = "image"
+title = "renee-simmons"
+
+[[generated]]
+id = "KAu9jSwUu87NSnxE6VgxK"
+uri = "file://artifacts/riisemap/public/learners/43.png"
+type = "image"
+title = "tyrone-bailey"
+
+[[generated]]
+id = "8rysBQm-qWGG_XVWwaq_7"
+uri = "file://artifacts/riisemap/public/learners/44.png"
+type = "image"
+title = "sarah-chen"
+
+[[generated]]
+id = "O6LrqAnKXMunQGNMu2vcg"
+uri = "file://artifacts/riisemap/public/learners/45.png"
+type = "image"
+title = "kwame-johnson"
+
+[[generated]]
+id = "ISfiS9OEJAiibWae8Gj1z"
+uri = "file://artifacts/riisemap/public/learners/46.png"
+type = "image"
+title = "crystal-bell"
+
+[[generated]]
+id = "kUGzUB2YhWN5jwD1v8yrc"
+uri = "file://artifacts/riisemap/public/learners/47.png"
+type = "image"
+title = "nicole-adams"
+
+[[generated]]
+id = "XQWNpphegXPjipy6j6bzK"
+uri = "file://artifacts/riisemap/public/learners/48.png"
+type = "image"
+title = "darryl-foster"
+
+[[generated]]
+id = "GHQnStUFItBhKGv97V4i9"
+uri = "file://artifacts/riisemap/public/learners/49.png"
+type = "image"
+title = "maria-santos"
+
+[[generated]]
+id = "6AvCWCllFsYw6PbhSXiF_"
+uri = "file://artifacts/riisemap/public/learners/50.png"
+type = "image"
+title = "isaiah-park"
