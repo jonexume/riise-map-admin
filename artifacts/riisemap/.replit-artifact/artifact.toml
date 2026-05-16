@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "RiiseMap Admin"
+version = "1.0.0"
+id = "artifacts/riisemap"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21283
+
+[services.development]
+run = "pnpm --filter @workspace/riisemap run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/riisemap", "run", "build" ]
+publicDir = "artifacts/riisemap/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21283"
+BASE_PATH = "/"

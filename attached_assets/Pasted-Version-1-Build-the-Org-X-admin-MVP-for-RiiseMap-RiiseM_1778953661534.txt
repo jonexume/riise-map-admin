@@ -1,0 +1,894 @@
+Version 1
+Build the Org X admin MVP for RiiseMap.
+
+RiiseMap is a workforce pathway and career mobility platform. It helps organizations guide learners into tech careers through roadmaps, projects, events, coaching, community support, readiness tracking, and impact reporting.
+
+Org X represents the organization using RiiseMap. Org X may be:
+- a nonprofit
+- workforce board
+- college
+- community organization
+- employer-sponsored workforce program
+
+The primary admin persona is Denise Carter, a workforce program manager.
+
+Denise is:
+- mission-driven
+- overloaded
+- moderately technical
+- responsible for learner outcomes
+- responsible for funder and grant reporting
+- using spreadsheets, email, calendars, and CRMs today
+
+She needs the app to feel:
+- professional
+- calm
+- intuitive
+- trustworthy
+- useful every day
+- low-friction
+- board-ready
+- grant-ready
+
+Avoid:
+- enterprise software clutter
+- Salesforce-style density
+- complex configuration screens
+- technical jargon
+- overwhelming dashboards
+- raw BI-tool aesthetics
+
+The app should feel closer to:
+- Notion
+- Linear
+- Airtable
+- Asana
+- modern HubSpot
+- modern nonprofit impact dashboards
+
+Use mock data.
+
+--------------------------------------------------
+TECH STACK
+--------------------------------------------------
+
+Use a modern full-stack web app.
+
+Recommended:
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui components
+- Recharts for charts
+- Local mock data or simple JSON data store
+- Responsive desktop-first layout
+
+Build clickable prototype behavior.
+
+No authentication required for MVP unless easy to stub.
+
+--------------------------------------------------
+CORE PRODUCT IDEA
+--------------------------------------------------
+
+This is not just an admin dashboard.
+
+It is a calm operational command center that helps Denise:
+
+1. See what needs attention today
+2. Support learners before they drop off
+3. Track program momentum
+4. Manage coaches, events, projects, and pathways
+5. Measure workforce readiness
+6. Create grant-ready reports
+7. Turn concrete learner data into impact stories
+
+The system should answer these questions quickly:
+
+- Who needs support?
+- Are learners progressing?
+- Which programs are working?
+- What outcomes can we report?
+- How do we justify funding?
+- What stories show real impact?
+
+--------------------------------------------------
+MAIN NAVIGATION
+--------------------------------------------------
+
+Create a left sidebar with these sections:
+
+1. Home
+2. Learners
+3. Programs
+4. Pathways
+5. Projects
+6. Events
+7. Coaches
+8. Alerts
+9. Impact & Reporting
+10. Settings
+
+Use clear human-centered labels.
+
+--------------------------------------------------
+GLOBAL DESIGN DIRECTION
+--------------------------------------------------
+
+Use:
+- spacious layouts
+- readable typography
+- card-based summaries
+- soft but professional color palette
+- clear hierarchy
+- status badges
+- gentle alerts
+- simple charts
+- helpful empty states
+- action-oriented language
+
+The dashboard should not feel like surveillance.
+
+Use language like:
+- “Learners who may need support”
+- “Momentum slowing”
+- “Ready for next step”
+- “Program progress”
+- “Impact this quarter”
+
+Avoid language like:
+- “low performers”
+- “resource allocation”
+- “workflow orchestration”
+- “deficient learners”
+
+--------------------------------------------------
+HOME SCREEN: DAILY COMMAND CENTER
+--------------------------------------------------
+
+Create a Home screen for Denise.
+
+Top greeting:
+“Good morning, Denise”
+
+Show a Today’s Priorities panel with:
+- 3 learners may need support
+- 2 milestones overdue
+- Customer Success cohort engagement is down 8%
+- Mock Interview Night starts tomorrow
+- Quarterly funder report is due in 12 days
+
+Each item should have an action button:
+- Review learners
+- View milestones
+- Open cohort
+- View event
+- Start report
+
+Below that, show simple cards:
+
+1. Active Learners
+2. Learners At Risk
+3. Average Readiness Score
+4. Roadmap Completion
+5. Event Participation
+6. Placement-Ready Learners
+
+Add a “Quick Actions” section:
+- Invite Learners
+- Add Event
+- Review At-Risk Learners
+- Export Report
+- Create Impact Story
+
+Add a “Recent Momentum” section showing recent learner progress.
+
+--------------------------------------------------
+LEARNERS SCREEN
+--------------------------------------------------
+
+Create a Learners screen.
+
+Show learner cards and a simple table toggle.
+
+Each learner should show:
+- name
+- pathway
+- assigned coach
+- roadmap progress
+- readiness score
+- last active date
+- current status
+- recommended next action
+
+Use status badges:
+- On Track
+- Needs Support
+- Stalled
+- Placement Ready
+- New Learner
+
+Include filters:
+- Program
+- Pathway
+- Coach
+- Status
+- Readiness Level
+
+Include search.
+
+Use sample learners:
+- Maya Thompson
+- Jordan Ellis
+- Tasha Green
+- Marcus Reed
+- Alina Brooks
+- DeShawn Price
+- Camille Johnson
+
+--------------------------------------------------
+LEARNER DETAIL SCREEN
+--------------------------------------------------
+
+Create a Learner Detail View.
+
+Use Maya Thompson as the main example.
+
+Header:
+- Maya Thompson
+- Customer Success Associate pathway
+- Assigned coach: Denise Carter
+- Readiness score: 72
+- Roadmap progress: 64%
+- Status: On Track
+
+Tabs:
+1. Overview
+2. Roadmap
+3. Projects
+4. Events
+5. Notes
+6. Readiness
+7. Activity
+
+Overview should show:
+- current pathway
+- profile strength
+- next recommended action
+- risk indicators
+- strengths summary
+- recent activity
+
+Roadmap tab should show:
+- milestones completed
+- milestones in progress
+- upcoming milestones
+- overdue milestones
+
+Projects tab should show:
+- Customer Onboarding Simulation
+- Support Ticket Exercise
+- CRM Workflow Mapping
+
+Events tab should show:
+- attended events
+- upcoming events
+- missed events
+
+Notes tab should allow mock notes.
+
+Readiness tab should show:
+- resume readiness
+- interview readiness
+- portfolio readiness
+- technical confidence
+- communication readiness
+- application readiness
+
+Activity tab should show timeline events.
+
+Actions:
+- Add Note
+- Schedule Check-In
+- Mark Milestone Complete
+- Adjust Roadmap
+- Flag for Support
+- Create Success Story
+
+--------------------------------------------------
+PROGRAMS SCREEN
+--------------------------------------------------
+
+Create a Programs screen.
+
+Programs:
+1. Tech Career Launch
+2. Customer Success Accelerator
+3. Data Operations Starter
+
+Each program card should show:
+- program name
+- description
+- active learners
+- completion rate
+- readiness score
+- event participation
+- placement-ready learners
+- funder/reporting tag
+
+Actions:
+- View Program
+- Edit Program
+- Create Report
+
+Program detail should show:
+- cohort health
+- active pathways
+- required milestones
+- required projects
+- upcoming events
+- learner progress
+- outcome metrics
+
+--------------------------------------------------
+PATHWAYS SCREEN
+--------------------------------------------------
+
+Create a Career Pathway Management screen.
+
+Starter pathways:
+1. Customer Success Associate
+2. IT Support Specialist
+3. Junior Data Operations Analyst
+4. Project Coordinator
+5. Technical Support Associate
+
+Each pathway card should show:
+- description
+- target learner profile
+- estimated completion time
+- key skills
+- required milestones
+- recommended projects
+- related events
+- readiness criteria
+- number of active learners
+
+Actions:
+- Edit Pathway
+- Preview Learner View
+- View Outcomes
+
+Keep editing simple.
+
+--------------------------------------------------
+PROJECTS SCREEN
+--------------------------------------------------
+
+Create a Projects screen.
+
+Project examples:
+- Customer Onboarding Simulation
+- Support Ticket Troubleshooting Exercise
+- Data Cleanup Spreadsheet Challenge
+- CRM Workflow Mapping Exercise
+- Interview Story Builder
+
+Each project should show:
+- title
+- associated pathway
+- estimated time
+- completion rate
+- evidence required
+- readiness skills measured
+
+Include filters:
+- pathway
+- status
+- required/optional
+
+Add a button:
+- Create Project
+
+Project completion should contribute to readiness metrics.
+
+--------------------------------------------------
+EVENTS SCREEN
+--------------------------------------------------
+
+Create an Events screen.
+
+Show calendar view and list view.
+
+Events:
+- Resume Translation Workshop
+- CRM Basics Lab
+- Mock Interview Night
+- Employer Panel: Careers in SaaS
+- Customer Success Office Hours
+- Networking Practice Session
+
+Each event should show:
+- event title
+- date and time
+- type
+- pathway
+- host
+- capacity
+- registered learners
+- attendance rate
+- linked milestone
+
+Actions:
+- Add Event
+- View Attendance
+- Message Participants
+
+Event types:
+- Workshop
+- Office Hours
+- Networking Event
+- Employer Panel
+- Resume Review
+- Mock Interview
+- Cohort Meetup
+
+--------------------------------------------------
+COACHES SCREEN
+--------------------------------------------------
+
+Create a Coaches & Mentors screen.
+
+Coaches:
+- Denise Carter
+- Raymond Brooks
+- Alicia Monroe
+
+Each coach card should show:
+- assigned learners
+- at-risk learners
+- upcoming check-ins
+- overdue check-ins
+- workload indicator
+
+Add workload states:
+- Healthy
+- Near Capacity
+- Overloaded
+
+Actions:
+- Assign Learners
+- View Caseload
+- Schedule Check-In
+
+--------------------------------------------------
+ALERTS SCREEN
+--------------------------------------------------
+
+Create an Intervention Alerts screen.
+
+This screen should help Denise act quickly.
+
+Alert triggers:
+- no login in 10 days
+- missed milestone deadline
+- low roadmap progress
+- missed event
+- no coach interaction
+- low confidence check-in
+- incomplete profile
+- stalled project
+
+Each alert should show:
+- learner name
+- alert reason
+- severity
+- last activity
+- assigned coach
+- recommended action
+- status
+
+Statuses:
+- New
+- In Progress
+- Resolved
+- Dismissed
+
+Severity:
+- Low
+- Medium
+- High
+
+Use supportive language.
+
+Example:
+“Maya missed her networking milestone. Suggested action: send encouragement and offer the next available event.”
+
+--------------------------------------------------
+IMPACT & REPORTING SCREEN
+--------------------------------------------------
+
+Create a major section called Impact & Reporting.
+
+This is very important.
+
+This section helps Denise justify resource spending to funders, leadership, workforce boards, and grant reviewers.
+
+It should feel:
+- board-ready
+- grant-ready
+- polished
+- easy to export
+- easy to understand
+
+Create tabs:
+1. Impact Dashboard
+2. Grant Report Builder
+3. Outcome Metrics
+4. Success Stories
+5. Exports
+
+--------------------------------------------------
+IMPACT DASHBOARD TAB
+--------------------------------------------------
+
+Show high-level impact metrics:
+
+- Total learners served
+- Active learners
+- Roadmap completion rate
+- Skill milestone completion
+- Project completion rate
+- Event participation rate
+- Placement-ready learners
+- Job applications submitted
+- Interviews completed
+- Placements achieved
+- Average time to readiness
+
+Add trend charts for:
+- learner engagement over time
+- roadmap completion by cohort
+- readiness score improvement
+- event participation
+- placement-ready learners
+
+Add a polished summary card:
+
+“Quarterly Impact Summary”
+
+Example text:
+“This quarter, Atlanta Workforce Tech Alliance supported 127 learners across three technology pathways. Learners completed 78% of assigned roadmap milestones, participated in 43 career development events, and 31 learners reached placement-ready status.”
+
+--------------------------------------------------
+GRANT REPORT BUILDER TAB
+--------------------------------------------------
+
+Create a Grant Report Builder.
+
+The user should be able to select:
+
+- Program
+- Cohort
+- Date range
+- Grant category
+- Outcome focus
+- Include demographics toggle
+- Include success stories toggle
+- Include charts toggle
+
+Grant categories:
+- Workforce readiness
+- Digital skills development
+- Career mobility
+- Community economic development
+- Employer pipeline development
+- Youth/young adult career pathways
+
+Generate a mock report preview.
+
+Report sections:
+1. Executive Summary
+2. Learners Served
+3. Program Activities
+4. Roadmap Progress
+5. Skill Milestones
+6. Project Completion
+7. Event Participation
+8. Workforce Readiness
+9. Placement Outcomes
+10. Success Stories
+11. Recommended Next Investments
+
+Buttons:
+- Generate Report
+- Export PDF
+- Export CSV
+- Copy Narrative
+- Share Report
+
+--------------------------------------------------
+OUTCOME METRICS TAB
+--------------------------------------------------
+
+Show detailed metrics.
+
+Filters:
+- program
+- cohort
+- pathway
+- date range
+- coach
+- learner status
+
+Metric groups:
+
+Engagement:
+- active learners
+- login consistency
+- event participation
+- coach check-ins
+
+Progress:
+- roadmap completion
+- milestone completion
+- project completion
+- profile completion
+
+Readiness:
+- resume readiness
+- interview readiness
+- portfolio readiness
+- technical confidence
+- communication readiness
+
+Workforce:
+- applications submitted
+- interviews completed
+- offers received
+- placements achieved
+- average time to placement
+
+Funding:
+- cost per active learner
+- cost per placement-ready learner
+- cost per placement
+- program retention rate
+- completion rate by pathway
+
+--------------------------------------------------
+SUCCESS STORIES TAB
+--------------------------------------------------
+
+Create a Success Stories screen.
+
+The system should help Denise turn concrete learner data into narrative impact stories.
+
+Show story candidates based on data:
+- high roadmap progress
+- project completion
+- strong attendance
+- readiness improvement
+- placement achieved
+- successful intervention
+
+Example story card:
+
+Maya Thompson
+“Retail supervisor progressing toward Customer Success”
+
+Data points:
+- 64% roadmap completion
+- 3 projects completed
+- 5 events attended
+- readiness score improved from 42 to 72
+- completed CRM simulation
+- attended mock interview night
+
+Generated story:
+“Maya entered the program with retail leadership experience and limited confidence about entering technology. Through RiiseMap, she translated her customer-facing experience into a Customer Success pathway, completed three applied projects, attended five professional development events, and improved her readiness score from 42 to 72.”
+
+Actions:
+- Edit Story
+- Copy Story
+- Add to Grant Report
+- Export Story
+
+Include privacy-safe language.
+
+Do not include sensitive personal details.
+
+--------------------------------------------------
+EXPORTS TAB
+--------------------------------------------------
+
+Create an Exports tab.
+
+Export options:
+- Quarterly Impact Report
+- Annual Grant Report
+- Cohort Progress Report
+- Learner Readiness Report
+- Event Participation Report
+- Placement Outcomes Report
+- Funder Summary
+- Board Presentation Summary
+
+Each export card should show:
+- report type
+- last generated date
+- included metrics
+- export button
+
+--------------------------------------------------
+SETTINGS SCREEN
+--------------------------------------------------
+
+Create basic Settings.
+
+Sections:
+- Organization profile
+- Branding
+- Staff accounts
+- Program defaults
+- Reporting defaults
+- Data definitions
+
+Reporting defaults should allow Org X to define:
+- what counts as roadmap completion
+- what counts as placement-ready
+- what counts as active learner
+- what counts as successful completion
+- what counts as intervention resolved
+
+This creates trust in the metrics.
+
+--------------------------------------------------
+DATA DEFINITIONS
+--------------------------------------------------
+
+Use clear metric definitions.
+
+Examples:
+
+Active learner:
+A learner who has logged in, completed a milestone, attended an event, or interacted with a coach in the last 14 days.
+
+Roadmap completion:
+Percentage of assigned roadmap milestones completed.
+
+Readiness score:
+Composite score based on profile completion, project completion, milestone progress, event participation, and coach readiness review.
+
+Placement-ready:
+Learner has completed required roadmap milestones, resume review, interview prep, at least one project, and coach approval.
+
+At-risk learner:
+Learner with inactivity, missed milestones, low progress, or low confidence check-ins.
+
+--------------------------------------------------
+MOCK DATA
+--------------------------------------------------
+
+Organization:
+Atlanta Workforce Tech Alliance
+
+Programs:
+1. Tech Career Launch
+2. Customer Success Accelerator
+3. Data Operations Starter
+
+Learners:
+1. Maya Thompson
+   - pathway: Customer Success Associate
+   - progress: 64%
+   - readiness: 72
+   - status: On Track
+   - coach: Denise Carter
+
+2. Jordan Ellis
+   - pathway: IT Support Specialist
+   - progress: 38%
+   - readiness: 55
+   - status: Needs Support
+   - coach: Raymond Brooks
+
+3. Tasha Green
+   - pathway: Junior Data Operations Analyst
+   - progress: 81%
+   - readiness: 84
+   - status: Placement Ready
+   - coach: Denise Carter
+
+4. Marcus Reed
+   - pathway: Technical Support Associate
+   - progress: 22%
+   - readiness: 41
+   - status: Stalled
+   - coach: Alicia Monroe
+
+5. Alina Brooks
+   - pathway: Project Coordinator
+   - progress: 57%
+   - readiness: 68
+   - status: On Track
+   - coach: Raymond Brooks
+
+Coaches:
+- Denise Carter
+- Raymond Brooks
+- Alicia Monroe
+
+Events:
+- Resume Translation Workshop
+- CRM Basics Lab
+- Mock Interview Night
+- Employer Panel: Careers in SaaS
+- Customer Success Office Hours
+- Networking Practice Session
+
+Projects:
+- Customer Onboarding Simulation
+- Support Ticket Exercise
+- Data Cleanup Challenge
+- CRM Workflow Mapping Exercise
+- Interview Story Builder
+
+--------------------------------------------------
+MVP BOUNDARIES
+--------------------------------------------------
+
+Build only the Org X admin MVP.
+
+Include:
+- Home command center
+- Learners
+- Learner detail
+- Programs
+- Pathways
+- Projects
+- Events
+- Coaches
+- Alerts
+- Impact & Reporting
+- Settings
+
+Do not build:
+- employer marketplace
+- payments
+- native mobile app
+- advanced AI coaching
+- LMS integrations
+- real authentication
+- real PDF generation unless simple
+- full messaging system
+- predictive analytics
+
+Mock interactions are acceptable.
+
+Prioritize:
+- realistic workflows
+- polished UI
+- trust-building metrics
+- impact reporting
+- grant-ready storytelling
+- daily usefulness for Denise
+
+--------------------------------------------------
+FINAL EXPERIENCE GOAL
+--------------------------------------------------
+
+When Denise logs in, she should feel:
+
+“I know what needs attention today.”
+
+When she opens Impact & Reporting, she should feel:
+
+“I can prove this program is working.”
+
+When she creates a grant report, she should feel:
+
+“I have credible data and human stories to justify continued funding.”
+
+Build the app around those outcomes.
+
