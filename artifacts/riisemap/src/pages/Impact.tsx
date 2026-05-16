@@ -46,7 +46,7 @@ function buildReportText(includeStories: boolean): string {
     "",
     "1. EXECUTIVE SUMMARY",
     "---------------------",
-    "Atlanta Workforce Tech Alliance delivered technology career programming to 127 learners",
+    "Atlanta Workforce Tech Alliance delivered technology career programming to 50 learners",
     "during Q2 2026 across three cohort programs. This report documents measurable outcomes",
     "in learner engagement, skill development, workforce readiness, and placement.",
     "",
@@ -55,14 +55,14 @@ function buildReportText(includeStories: boolean): string {
     `Total Learners Served:          ${impactMetrics.totalLearnersServed}`,
     `Active Learners:                ${impactMetrics.activeLearners}`,
     `Placement-Ready Learners:       ${impactMetrics.placementReadyLearners}`,
-    `New Enrollments (Q2):           7`,
+    `New Enrollments (Q2):           3`,
     "",
     "3. PROGRAM ACTIVITIES",
     "----------------------",
     "Active Programs:                3",
     "Active Pathways:                5",
-    "Career Development Events:      43",
-    "Total Event Seats Filled:       127",
+    "Career Development Events:      18",
+    "Total Event Seats Filled:       50",
     "",
     "Programs delivered:",
     "  - Tech Career Launch",
@@ -269,7 +269,7 @@ export default function Impact() {
                 <div>
                   <h2 className="text-sm font-semibold text-foreground">Quarterly Impact Summary — Q2 2026</h2>
                   <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-3xl">
-                    This quarter, Atlanta Workforce Tech Alliance supported <strong className="text-foreground">127 learners</strong> across three technology pathways. Learners completed <strong className="text-foreground">78% of assigned roadmap milestones</strong>, participated in <strong className="text-foreground">43 career development events</strong>, and <strong className="text-foreground">31 learners reached placement-ready status</strong>.
+                    This quarter, Atlanta Workforce Tech Alliance supported <strong className="text-foreground">50 learners</strong> across three technology pathways. Learners completed <strong className="text-foreground">63% of assigned roadmap milestones</strong>, participated in <strong className="text-foreground">18 career development events</strong>, and <strong className="text-foreground">5 learners reached placement-ready status</strong>.
                   </p>
                 </div>
               </div>
@@ -489,9 +489,9 @@ export default function Impact() {
                   <Card className="border-card-border shadow-sm">
                     <CardContent className="p-6 space-y-5">
                       {[
-                        { num: "1", title: "Executive Summary", content: "Atlanta Workforce Tech Alliance delivered technology career programming to 127 learners during Q2 2026 across three cohort programs. This report documents measurable outcomes in learner engagement, skill development, workforce readiness, and placement." },
-                        { num: "2", title: "Learners Served", content: "127 total learners enrolled. 83 active learners (65% active rate). 12 learners achieved placement-ready status. 7 learners enrolled in target quarter." },
-                        { num: "3", title: "Program Activities", content: "3 active programs delivered across 5 career pathways. 43 career development events held. 127 total event seats filled. Programs include Tech Career Launch, Customer Success Accelerator, and Data Operations Starter." },
+                        { num: "1", title: "Executive Summary", content: "Atlanta Workforce Tech Alliance delivered technology career programming to 50 learners during Q2 2026 across three cohort programs. This report documents measurable outcomes in learner engagement, skill development, workforce readiness, and placement." },
+                        { num: "2", title: "Learners Served", content: "50 total learners enrolled. 45 active learners (90% active rate). 5 learners achieved placement-ready status. 3 learners enrolled in target quarter." },
+                        { num: "3", title: "Program Activities", content: "3 active programs delivered across 5 career pathways. 18 career development events held. 50 total event seats filled. Programs include Tech Career Launch, Customer Success Accelerator, and Data Operations Starter." },
                         { num: "4", title: "Roadmap Progress", content: "Average roadmap completion: 63%. 71% of skill milestones completed. Learners progressed through structured pathway milestones with weekly coach support." },
                         { num: "5", title: "Skill Milestones", content: "478 individual milestones completed across all cohorts. Top milestone categories: CRM proficiency, technical troubleshooting, resume development, and interview preparation." },
                         { num: "6", title: "Project Completion", content: "68% overall project completion rate. 5 applied learning projects active. Highest completion: Data Cleanup Challenge (82%). Projects provide evidence of applied skill mastery." },
@@ -530,10 +530,10 @@ export default function Impact() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {[
-              { group: "Engagement", metrics: [{ name: "Active Learners", value: 83, max: 127 }, { name: "Login Consistency", value: 74, max: 100 }, { name: "Event Participation", value: 74, max: 100 }, { name: "Coach Check-ins", value: 82, max: 100 }] },
+              { group: "Engagement", metrics: [{ name: "Active Learners", value: 45, max: 50 }, { name: "Login Consistency", value: 74, max: 100 }, { name: "Event Participation", value: 74, max: 100 }, { name: "Coach Check-ins", value: 82, max: 100 }] },
               { group: "Progress", metrics: [{ name: "Roadmap Completion", value: 63, max: 100 }, { name: "Milestone Completion", value: 71, max: 100 }, { name: "Project Completion", value: 68, max: 100 }, { name: "Profile Completion", value: 76, max: 100 }] },
               { group: "Readiness", metrics: [{ name: "Resume Readiness", value: 72, max: 100 }, { name: "Interview Readiness", value: 65, max: 100 }, { name: "Portfolio Readiness", value: 70, max: 100 }, { name: "Technical Confidence", value: 68, max: 100 }, { name: "Communication Readiness", value: 74, max: 100 }] },
-              { group: "Workforce Outcomes", metrics: [{ name: "Applications Submitted", value: 34, max: 83 }, { name: "Interviews Completed", value: 28, max: 34 }, { name: "Offers Received", value: 12, max: 28 }, { name: "Placements Achieved", value: 9, max: 12 }, { name: "Avg Weeks to Placement", value: 6, max: 20 }] },
+              { group: "Workforce Outcomes", metrics: [{ name: "Applications Submitted", value: 18, max: 45 }, { name: "Interviews Completed", value: 14, max: 18 }, { name: "Offers Received", value: 5, max: 14 }, { name: "Placements Achieved", value: 4, max: 5 }, { name: "Avg Weeks to Placement", value: 6, max: 20 }] },
             ].map(group => (
               <Card key={group.group} className="border-card-border">
                 <CardHeader className="pb-3"><CardTitle className="text-sm">{group.group}</CardTitle></CardHeader>
