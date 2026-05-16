@@ -223,7 +223,7 @@ export default function Jobs() {
               className="flex-shrink-0"
               data-testid="invite-maya-btn"
             >
-              <Mail size={14} className="mr-2" /> Invite Maya to Apply
+              <Mail size={14} className="mr-2" /> Apply
             </Button>
           )}
         </div>
