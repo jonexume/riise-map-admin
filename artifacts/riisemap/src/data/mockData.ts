@@ -1,10 +1,10 @@
 export const organization = {
-  name: "Atlanta Workforce Tech Alliance",
+  name: "BlueWorkforce",
   tagline: "Empowering careers in technology",
   location: "Atlanta, GA",
   founded: "2018",
-  website: "atltechalliance.org",
-  logo: "AWTA",
+  website: "blueworkforce.com",
+  logo: "BW",
 };
 
 export type LearnerStatus = "On Track" | "Needs Support" | "Stalled" | "Placement Ready" | "New Learner";
