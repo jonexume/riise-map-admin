@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAlertCount } from "@/contexts/AlertContext";
 import { Badge } from "@/components/ui/badge";
 
 const DEFAULT_PHOTO = "/denise.jpg";
@@ -75,6 +76,7 @@ export function Layout({ children }: LayoutProps) {
   const orgLogo = getOrgLogo();
   const orgName = getOrgName();
   const { profileName, title, role } = getOrgData();
+  const { unresolvedCount } = useAlertCount();
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
@@ -142,9 +144,9 @@ export function Layout({ children }: LayoutProps) {
                   >
                     <Icon size={16} className="flex-shrink-0" />
                     <span className="flex-1">{item.label}</span>
-                    {item.badge && (
+                    {item.href === "/alerts" && unresolvedCount > 0 && (
                       <Badge className="bg-destructive/80 text-destructive-foreground text-[10px] px-1.5 py-0 h-4 min-w-[16px] flex items-center justify-center">
-                        {item.badge}
+                        {unresolvedCount}
                       </Badge>
                     )}
                     {active && <ChevronRight size={12} className="text-sidebar-primary" />}

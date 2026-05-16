@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { AlertTriangle, Filter, CheckCircle2, XCircle, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/StatusBadge";
 import { alerts } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import { useAlertCount } from "@/contexts/AlertContext";
 
 type AlertStatus = "New" | "In Progress" | "Resolved" | "Dismissed";
 
@@ -16,6 +17,15 @@ export default function Alerts() {
   const [alertStatuses, setAlertStatuses] = useState<Record<string, AlertStatus>>(
     Object.fromEntries(alerts.map(a => [a.id, a.status as AlertStatus]))
   );
+  const { setUnresolvedCount } = useAlertCount();
+
+  useEffect(() => {
+    const count = alerts.filter(a => {
+      const s = alertStatuses[a.id];
+      return s !== "Resolved" && s !== "Dismissed";
+    }).length;
+    setUnresolvedCount(count);
+  }, [alertStatuses, setUnresolvedCount]);
 
   const filtered = alerts.filter(a => {
     const matchSeverity = filterSeverity === "all" || a.severity === filterSeverity;
