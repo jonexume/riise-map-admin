@@ -190,16 +190,17 @@ export default function Home() {
           <CardContent className="pt-4">
             <div className="space-y-4">
               {[
-                { name: "Maya Thompson", pathway: "Customer Success Associate", progress: 64, status: "On Track" as const },
+                { name: "Maya Thompson", pathway: "Customer Success Associate", progress: 64, status: "On Track" as const, photo: "/maya.jpg" },
                 { name: "Tasha Green", pathway: "Junior Data Operations Analyst", progress: 81, status: "Placement Ready" as const },
                 { name: "Jordan Ellis", pathway: "IT Support Specialist", progress: 38, status: "Needs Support" as const },
                 { name: "Marcus Reed", pathway: "Technical Support Associate", progress: 22, status: "Stalled" as const },
               ].map((learner) => (
                 <div key={learner.name} className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-semibold text-primary">
-                      {learner.name.split(" ").map(n => n[0]).join("")}
-                    </span>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {"photo" in learner && learner.photo
+                      ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+                      : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">

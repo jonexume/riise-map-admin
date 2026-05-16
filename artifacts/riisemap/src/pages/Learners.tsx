@@ -133,10 +133,11 @@ export default function Learners() {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-semibold text-primary">
-                              {learner.name.split(" ").map(n => n[0]).join("")}
-                            </span>
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {learner.photo
+                              ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+                              : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+                            }
                           </div>
                           <div>
                             <div className="font-medium text-foreground">{learner.name}</div>
@@ -193,10 +194,11 @@ export default function Learners() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-semibold text-primary">
-                          {learner.name.split(" ").map(n => n[0]).join("")}
-                        </span>
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {learner.photo
+                          ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+                          : <span className="text-sm font-semibold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+                        }
                       </div>
                       <div>
                         <div className="font-semibold text-foreground text-sm">{learner.name}</div>

@@ -22,6 +22,7 @@ export interface Learner {
   nextAction: string;
   joinDate: string;
   email: string;
+  photo?: string;
 }
 
 export const learners: Learner[] = [
@@ -38,6 +39,7 @@ export const learners: Learner[] = [
     nextAction: "Complete CRM Workflow Mapping Exercise",
     joinDate: "Jan 15, 2025",
     email: "m.thompson@email.com",
+    photo: "/maya.jpg",
   },
   {
     id: "2",

@@ -98,7 +98,7 @@ export default function Coaches() {
             <p className="text-xs text-amber-600 mt-0.5">Near Capacity</p>
           </div>
           <div className="p-3 rounded-lg bg-red-50 border border-red-100">
-            <p className="text-2xl font-semibold text-red-700">{coaches.filter(c => c.workload === "Overloaded").length}</p>
+            <p className="text-2xl font-semibold text-red-700">{coaches.filter(c => (c.workload as string) === "Overloaded").length}</p>
             <p className="text-xs text-red-600 mt-0.5">Overloaded</p>
           </div>
         </div>

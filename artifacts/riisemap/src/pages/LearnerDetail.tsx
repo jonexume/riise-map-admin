@@ -40,10 +40,11 @@ export default function LearnerDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-xl font-bold text-primary">
-              {learner.name.split(" ").map(n => n[0]).join("")}
-            </span>
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {learner.photo
+              ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
+              : <span className="text-xl font-bold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+            }
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
