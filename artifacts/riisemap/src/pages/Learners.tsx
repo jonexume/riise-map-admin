@@ -1,14 +1,48 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Search, LayoutGrid, List, ChevronRight, SlidersHorizontal } from "lucide-react";
+import {
+  Search, LayoutGrid, List, ChevronRight, X,
+  Check, Mail, UserPlus
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/StatusBadge";
 import { learners } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+
+interface InviteForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  program: string;
+  pathway: string;
+  coach: string;
+  message: string;
+}
+
+const BLANK_INVITE: InviteForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  program: "",
+  pathway: "",
+  coach: "",
+  message:
+    "Hi,\n\nYou've been invited to join the Atlanta Workforce Tech Alliance's workforce development program.\n\nThrough RiiseMap, you'll have access to career pathways, coaching, projects, and events designed to help you break into tech.\n\nClick the link below to get started.\n\nLooking forward to supporting your journey,\nDenise Carter\nProgram Manager, Atlanta Workforce Tech Alliance",
+};
+
+const PATHWAYS_BY_PROGRAM: Record<string, string[]> = {
+  tech: ["IT Support Specialist", "Technical Support Associate", "Project Coordinator"],
+  cs: ["Customer Success Associate"],
+  data: ["Junior Data Operations Analyst"],
+};
 
 export default function Learners() {
   const [view, setView] = useState<"grid" | "list">("list");
@@ -17,8 +51,14 @@ export default function Learners() {
   const [filterCoach, setFilterCoach] = useState("all");
   const [filterPathway, setFilterPathway] = useState("all");
 
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteStep, setInviteStep] = useState<0 | 1>(0);
+  const [inviteForm, setInviteForm] = useState<InviteForm>(BLANK_INVITE);
+  const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
+
   const filtered = learners.filter((l) => {
-    const matchSearch = l.name.toLowerCase().includes(search.toLowerCase()) ||
+    const matchSearch =
+      l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.pathway.toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || l.status === filterStatus;
     const matchCoach = filterCoach === "all" || l.coach === filterCoach;
@@ -26,18 +66,59 @@ export default function Learners() {
     return matchSearch && matchStatus && matchCoach && matchPathway;
   });
 
-  const coaches = [...new Set(learners.map(l => l.coach))];
-  const pathways = [...new Set(learners.map(l => l.pathway))];
+  const coaches = [...new Set(learners.map((l) => l.coach))];
+  const pathwayOptions = [...new Set(learners.map((l) => l.pathway))];
+
+  const setField = (field: keyof InviteForm, value: string) => {
+    setInviteForm((f) => ({ ...f, [field]: value }));
+    setInviteErrors((e) => ({ ...e, [field]: "" }));
+    if (field === "program") setInviteForm((f) => ({ ...f, program: value, pathway: "" }));
+  };
+
+  const validateInvite = () => {
+    const e: typeof inviteErrors = {};
+    if (!inviteForm.firstName.trim()) e.firstName = "First name is required";
+    if (!inviteForm.lastName.trim()) e.lastName = "Last name is required";
+    if (!inviteForm.email.trim()) e.email = "Email address is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteForm.email.trim()))
+      e.email = "Please enter a valid email address";
+    setInviteErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const handleSendInvite = () => {
+    if (validateInvite()) setInviteStep(1);
+  };
+
+  const closeInvite = () => {
+    setShowInvite(false);
+    setTimeout(() => {
+      setInviteStep(0);
+      setInviteForm(BLANK_INVITE);
+      setInviteErrors({});
+    }, 300);
+  };
+
+  const availablePathways =
+    inviteForm.program && PATHWAYS_BY_PROGRAM[inviteForm.program]
+      ? PATHWAYS_BY_PROGRAM[inviteForm.program]
+      : pathwayOptions;
 
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Learners</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{learners.length} learners enrolled across 3 programs</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {learners.length} learners enrolled across 3 programs
+          </p>
         </div>
-        <Button size="sm" data-testid="invite-learners-btn">
-          Invite Learners
+        <Button
+          size="sm"
+          data-testid="invite-learners-btn"
+          onClick={() => { setInviteStep(0); setShowInvite(true); }}
+        >
+          <UserPlus size={13} className="mr-1.5" /> Invite Learners
         </Button>
       </div>
 
@@ -72,7 +153,9 @@ export default function Learners() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Coaches</SelectItem>
-            {coaches.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {coaches.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Select value={filterPathway} onValueChange={setFilterPathway}>
@@ -81,7 +164,9 @@ export default function Learners() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Pathways</SelectItem>
-            {pathways.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            {pathwayOptions.map((p) => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <div className="flex items-center gap-1 border rounded-lg p-0.5">
@@ -102,7 +187,6 @@ export default function Learners() {
         </div>
       </div>
 
-      {/* Results count */}
       <p className="text-xs text-muted-foreground mb-3">
         Showing {filtered.length} of {learners.length} learners
       </p>
@@ -136,7 +220,7 @@ export default function Learners() {
                           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {learner.photo
                               ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-                              : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+                              : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
                             }
                           </div>
                           <div>
@@ -154,15 +238,13 @@ export default function Learners() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <div className={cn(
-                            "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
-                            learner.readiness >= 80 ? "bg-emerald-100 text-emerald-700" :
-                            learner.readiness >= 60 ? "bg-blue-100 text-blue-700" :
-                            "bg-amber-100 text-amber-700"
-                          )}>
-                            {learner.readiness}
-                          </div>
+                        <div className={cn(
+                          "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold",
+                          learner.readiness >= 80 ? "bg-emerald-100 text-emerald-700" :
+                          learner.readiness >= 60 ? "bg-blue-100 text-blue-700" :
+                          "bg-amber-100 text-amber-700"
+                        )}>
+                          {learner.readiness}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -197,7 +279,7 @@ export default function Learners() {
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                         {learner.photo
                           ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-                          : <span className="text-sm font-semibold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+                          : <span className="text-sm font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
                         }
                       </div>
                       <div>
@@ -226,6 +308,235 @@ export default function Learners() {
               </Card>
             </Link>
           ))}
+        </div>
+      )}
+
+      {/* ── Invite Learner Modal ─────────────────────────────── */}
+      {showInvite && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4" onClick={closeInvite}>
+          <div
+            className="bg-background rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {inviteStep === 1 ? (
+              /* ── Confirmation ── */
+              <div className="flex flex-col items-center text-center px-8 py-12">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
+                  <Check size={30} className="text-emerald-600" />
+                </div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Invitation sent</h2>
+                <p className="text-sm text-muted-foreground mb-6 max-w-xs">
+                  An invitation has been sent to{" "}
+                  <span className="font-medium text-foreground">
+                    {inviteForm.firstName} {inviteForm.lastName}
+                  </span>{" "}
+                  at <span className="font-medium text-foreground">{inviteForm.email}</span>.
+                </p>
+
+                <div className="w-full bg-muted/40 border border-border rounded-xl p-4 text-left mb-7 space-y-2.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Name</span>
+                    <span className="font-medium text-foreground">{inviteForm.firstName} {inviteForm.lastName}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Email</span>
+                    <span className="font-medium text-foreground">{inviteForm.email}</span>
+                  </div>
+                  {inviteForm.phone && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Phone</span>
+                      <span className="font-medium text-foreground">{inviteForm.phone}</span>
+                    </div>
+                  )}
+                  {inviteForm.program && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Program</span>
+                      <span className="font-medium text-foreground">
+                        {inviteForm.program === "tech" ? "Tech Career Launch" :
+                         inviteForm.program === "cs" ? "Customer Success Accelerator" :
+                         "Data Operations Starter"}
+                      </span>
+                    </div>
+                  )}
+                  {inviteForm.pathway && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Pathway</span>
+                      <span className="font-medium text-foreground">{inviteForm.pathway}</span>
+                    </div>
+                  )}
+                  {inviteForm.coach && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Assigned coach</span>
+                      <span className="font-medium text-foreground">{inviteForm.coach}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 pt-1 border-t border-border text-xs mt-1">
+                    <Mail size={11} className="text-muted-foreground" />
+                    <span className="text-muted-foreground">Invitation email delivered</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 w-full">
+                  <Button variant="outline" className="flex-1" onClick={closeInvite}>Done</Button>
+                  <Button className="flex-1" onClick={() => {
+                    setInviteForm(BLANK_INVITE);
+                    setInviteStep(0);
+                    setInviteErrors({});
+                  }}>
+                    Invite Another
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* ── Compose invitation ── */
+              <>
+                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">Invite a Learner</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Send a personal invitation to join the program</p>
+                  </div>
+                  <button onClick={closeInvite} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                  {/* Name row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        First name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        className={`mt-1.5 h-10 text-sm ${inviteErrors.firstName ? "border-destructive" : ""}`}
+                        placeholder="First name"
+                        value={inviteForm.firstName}
+                        onChange={(e) => setField("firstName", e.target.value)}
+                        data-testid="invite-first-name"
+                      />
+                      {inviteErrors.firstName && <p className="text-xs text-destructive mt-1">{inviteErrors.firstName}</p>}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Last name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        className={`mt-1.5 h-10 text-sm ${inviteErrors.lastName ? "border-destructive" : ""}`}
+                        placeholder="Last name"
+                        value={inviteForm.lastName}
+                        onChange={(e) => setField("lastName", e.target.value)}
+                        data-testid="invite-last-name"
+                      />
+                      {inviteErrors.lastName && <p className="text-xs text-destructive mt-1">{inviteErrors.lastName}</p>}
+                    </div>
+                  </div>
+
+                  {/* Email & phone */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Email address <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="email"
+                        className={`mt-1.5 h-10 text-sm ${inviteErrors.email ? "border-destructive" : ""}`}
+                        placeholder="learner@email.com"
+                        value={inviteForm.email}
+                        onChange={(e) => setField("email", e.target.value)}
+                        data-testid="invite-email"
+                      />
+                      {inviteErrors.email && <p className="text-xs text-destructive mt-1">{inviteErrors.email}</p>}
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">
+                        Phone <span className="text-muted-foreground font-normal">(optional)</span>
+                      </Label>
+                      <Input
+                        type="tel"
+                        className="mt-1.5 h-10 text-sm"
+                        placeholder="(404) 555-0100"
+                        value={inviteForm.phone}
+                        onChange={(e) => setField("phone", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Program & Pathway */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">Program</Label>
+                      <Select
+                        value={inviteForm.program}
+                        onValueChange={(v) => {
+                          setInviteForm((f) => ({ ...f, program: v, pathway: "" }));
+                        }}
+                      >
+                        <SelectTrigger className="mt-1.5 h-10 text-sm">
+                          <SelectValue placeholder="Select program..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tech">Tech Career Launch</SelectItem>
+                          <SelectItem value="cs">Customer Success Accelerator</SelectItem>
+                          <SelectItem value="data">Data Operations Starter</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">Pathway</Label>
+                      <Select
+                        value={inviteForm.pathway}
+                        onValueChange={(v) => setField("pathway", v)}
+                        disabled={!inviteForm.program}
+                      >
+                        <SelectTrigger className="mt-1.5 h-10 text-sm">
+                          <SelectValue placeholder={inviteForm.program ? "Select pathway..." : "Select program first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availablePathways.map((p) => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Coach */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">Assign Coach</Label>
+                    <Select value={inviteForm.coach} onValueChange={(v) => setField("coach", v)}>
+                      <SelectTrigger className="mt-1.5 h-10 text-sm">
+                        <SelectValue placeholder="Select a coach..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Denise Carter">Denise Carter — Program Manager</SelectItem>
+                        <SelectItem value="Raymond Brooks">Raymond Brooks — Career Coach</SelectItem>
+                        <SelectItem value="Alicia Monroe">Alicia Monroe — Career Coach</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Personal message */}
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">Personal Message</Label>
+                    <Textarea
+                      className="mt-1.5 text-sm resize-none"
+                      rows={6}
+                      value={inviteForm.message}
+                      onChange={(e) => setField("message", e.target.value)}
+                      data-testid="invite-message"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 px-6 pb-6">
+                  <Button variant="outline" onClick={closeInvite}>Cancel</Button>
+                  <Button className="flex-1" onClick={handleSendInvite} data-testid="send-invite-btn">
+                    <Mail size={13} className="mr-2" /> Send Invitation
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
