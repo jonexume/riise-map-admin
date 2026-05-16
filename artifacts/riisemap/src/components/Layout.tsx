@@ -98,14 +98,14 @@ export function Layout({ children }: LayoutProps) {
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Brand */}
+        {/* Brand — RiiseMap logo + name, top left */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-sidebar-border/50 flex items-center justify-center">
-              <img src={orgLogo} alt={orgName} className="w-full h-full object-contain p-0.5" />
+              <img src="/logo.png" alt="RiiseMap" className="w-full h-full object-contain p-0.5" />
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-sidebar-foreground leading-tight truncate max-w-[130px]">{orgName}</div>
+              <div className="text-sm font-semibold text-sidebar-foreground leading-tight">RiiseMap</div>
               <div className="text-[10px] text-sidebar-foreground/50 leading-tight">
                 {role === "admin" ? "Admin" : "Viewer"}
               </div>
@@ -155,7 +155,7 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </nav>
 
-        {/* User profile */}
+        {/* User profile — name, title, then org name below */}
         <div className="px-3 py-4 border-t border-sidebar-border">
           <Link href="/settings">
             <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors group">
@@ -172,23 +172,44 @@ export function Layout({ children }: LayoutProps) {
                   {profileName}
                 </div>
                 <div className="text-[11px] text-sidebar-foreground/50 truncate">{title}</div>
+                <div className="text-[10px] text-sidebar-foreground/35 truncate">{orgName}</div>
               </div>
             </div>
           </Link>
         </div>
       </aside>
 
-      {/* Main */}
+      {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Desktop top bar — BlueWorkforce logo top right */}
+        <div className="hidden lg:flex items-center justify-end px-5 py-2.5 border-b border-border bg-background/80 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-border/60 flex items-center justify-center">
+              <img src={orgLogo} alt={orgName} className="w-full h-full object-contain p-0.5" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">{orgName}</span>
+          </div>
+        </div>
+
         {/* Mobile header */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b bg-background">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="text-foreground/60 hover:text-foreground"
-          >
-            <Menu size={20} />
-          </button>
-          <span className="font-semibold text-sm">RiiseMap</span>
+        <div className="lg:hidden flex items-center justify-between gap-3 px-4 py-3 border-b bg-background flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="text-foreground/60 hover:text-foreground"
+            >
+              <Menu size={20} />
+            </button>
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="RiiseMap" className="w-6 h-6 object-contain" />
+              <span className="font-semibold text-sm">RiiseMap</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <img src={orgLogo} alt={orgName} className="w-6 h-6 object-contain" />
+            <span className="text-sm font-medium text-foreground">{orgName}</span>
+          </div>
         </div>
 
         {/* Page content */}
