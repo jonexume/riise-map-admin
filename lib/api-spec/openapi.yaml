@@ -10,6 +10,14 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: learners
+    description: Learner operations
+  - name: programs
+    description: Program operations
+  - name: pathways
+    description: Pathway operations
+  - name: funding-sources
+    description: Funding Source operations
 paths:
   /healthz:
     get:
@@ -24,6 +32,321 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /learners:
+    get:
+      operationId: getLearners
+      tags: [learners]
+      summary: List all learners
+      responses:
+        "200":
+          description: A list of learners
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Learner"
+    post:
+      operationId: createLearner
+      tags: [learners]
+      summary: Create a new learner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLearner"
+      responses:
+        "201":
+          description: Learner created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+
+  /learners/{id}:
+    get:
+      operationId: getLearner
+      tags: [learners]
+      summary: Get a single learner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A single learner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+        "404":
+          description: Learner not found
+    put:
+      operationId: updateLearner
+      tags: [learners]
+      summary: Update a learner
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLearner"
+      responses:
+        "200":
+          description: Learner updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Learner"
+        "404":
+          description: Learner not found
+
+  /programs:
+    get:
+      operationId: getPrograms
+      tags: [programs]
+      summary: List all programs
+      responses:
+        "200":
+          description: A list of programs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Program"
+    post:
+      operationId: createProgram
+      tags: [programs]
+      summary: Create a new program
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProgram"
+      responses:
+        "201":
+          description: Program created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Program"
+
+  /programs/{id}:
+    get:
+      operationId: getProgram
+      tags: [programs]
+      summary: Get a single program
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A single program
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Program"
+        "404":
+          description: Program not found
+    put:
+      operationId: updateProgram
+      tags: [programs]
+      summary: Update a program
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProgram"
+      responses:
+        "200":
+          description: Program updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Program"
+        "404":
+          description: Program not found
+
+  /pathways:
+    get:
+      operationId: getPathways
+      tags: [pathways]
+      summary: List all pathways
+      responses:
+        "200":
+          description: A list of pathways
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pathway"
+    post:
+      operationId: createPathway
+      tags: [pathways]
+      summary: Create a new pathway
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePathway"
+      responses:
+        "201":
+          description: Pathway created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pathway"
+
+  /pathways/{id}:
+    get:
+      operationId: getPathway
+      tags: [pathways]
+      summary: Get a single pathway
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A single pathway
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pathway"
+        "404":
+          description: Pathway not found
+    put:
+      operationId: updatePathway
+      tags: [pathways]
+      summary: Update a pathway
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePathway"
+      responses:
+        "200":
+          description: Pathway updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pathway"
+        "404":
+          description: Pathway not found
+
+  /funding-sources:
+    get:
+      operationId: getFundingSources
+      tags: [funding-sources]
+      summary: List all funding sources
+      responses:
+        "200":
+          description: A list of funding sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundingSource"
+    post:
+      operationId: createFundingSource
+      tags: [funding-sources]
+      summary: Create a new funding source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFundingSource"
+      responses:
+        "201":
+          description: Funding source created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundingSource"
+
+  /funding-sources/{id}:
+    get:
+      operationId: getFundingSource
+      tags: [funding-sources]
+      summary: Get a single funding source
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: A single funding source
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundingSource"
+        "404":
+          description: Funding source not found
+    put:
+      operationId: updateFundingSource
+      tags: [funding-sources]
+      summary: Update a funding source
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFundingSource"
+      responses:
+        "200":
+          description: Funding source updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundingSource"
+        "404":
+          description: Funding source not found
+
 components:
   schemas:
     HealthStatus:
@@ -33,4 +356,535 @@ components:
           type: string
       required:
         - status
+
+    Learner:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        pathway:
+          type: string
+        program:
+          type: string
+        coach:
+          type: string
+        progress:
+          type: integer
+        readiness:
+          type: integer
+        status:
+          type: string
+        lastActive:
+          type: string
+        nextAction:
+          type: string
+        joinDate:
+          type: string
+        email:
+          type: string
+        photo:
+          type: string
+          nullable: true
+        background:
+          type: string
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        risks:
+          type: array
+          items:
+            type: string
+          nullable: true
+        profileStrength:
+          type: integer
+          nullable: true
+      required:
+        - id
+        - name
+        - pathway
+        - program
+        - coach
+        - progress
+        - readiness
+        - status
+        - lastActive
+        - nextAction
+        - joinDate
+        - email
+
+    CreateLearner:
+      type: object
+      properties:
+        name:
+          type: string
+        pathway:
+          type: string
+        program:
+          type: string
+        coach:
+          type: string
+        progress:
+          type: integer
+        readiness:
+          type: integer
+        status:
+          type: string
+        lastActive:
+          type: string
+        nextAction:
+          type: string
+        joinDate:
+          type: string
+        email:
+          type: string
+        photo:
+          type: string
+          nullable: true
+        background:
+          type: string
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        risks:
+          type: array
+          items:
+            type: string
+          nullable: true
+        profileStrength:
+          type: integer
+          nullable: true
+      required:
+        - name
+        - pathway
+        - program
+        - coach
+        - progress
+        - readiness
+        - status
+        - lastActive
+        - nextAction
+        - joinDate
+        - email
+
+    UpdateLearner:
+      type: object
+      properties:
+        name:
+          type: string
+        pathway:
+          type: string
+        program:
+          type: string
+        coach:
+          type: string
+        progress:
+          type: integer
+        readiness:
+          type: integer
+        status:
+          type: string
+        lastActive:
+          type: string
+        nextAction:
+          type: string
+        joinDate:
+          type: string
+        email:
+          type: string
+        photo:
+          type: string
+          nullable: true
+        background:
+          type: string
+          nullable: true
+        strengths:
+          type: array
+          items:
+            type: string
+          nullable: true
+        risks:
+          type: array
+          items:
+            type: string
+          nullable: true
+        profileStrength:
+          type: integer
+          nullable: true
+
+    Program:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        pathwayCategory:
+          type: string
+        activeLearners:
+          type: integer
+        completionRate:
+          type: integer
+        readinessScore:
+          type: integer
+        eventParticipation:
+          type: integer
+        placementReady:
+          type: integer
+        funderTag:
+          type: string
+        cohort:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        pathways:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - description
+        - pathwayCategory
+        - activeLearners
+        - completionRate
+        - readinessScore
+        - eventParticipation
+        - placementReady
+        - funderTag
+        - cohort
+        - startDate
+        - endDate
+
+    CreateProgram:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        pathwayCategory:
+          type: string
+        activeLearners:
+          type: integer
+        completionRate:
+          type: integer
+        readinessScore:
+          type: integer
+        eventParticipation:
+          type: integer
+        placementReady:
+          type: integer
+        funderTag:
+          type: string
+        cohort:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        pathways:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - name
+        - description
+        - pathwayCategory
+        - activeLearners
+        - completionRate
+        - readinessScore
+        - eventParticipation
+        - placementReady
+        - funderTag
+        - cohort
+        - startDate
+        - endDate
+
+    UpdateProgram:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        pathwayCategory:
+          type: string
+        activeLearners:
+          type: integer
+        completionRate:
+          type: integer
+        readinessScore:
+          type: integer
+        eventParticipation:
+          type: integer
+        placementReady:
+          type: integer
+        funderTag:
+          type: string
+        cohort:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        pathways:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    Pathway:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        targetProfile:
+          type: string
+        estimatedWeeks:
+          type: integer
+        activeLearners:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+          nullable: true
+        milestones:
+          type: array
+          items:
+            type: string
+          nullable: true
+        projects:
+          type: array
+          items:
+            type: string
+          nullable: true
+        readinessCriteria:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - description
+        - targetProfile
+        - estimatedWeeks
+        - activeLearners
+
+    CreatePathway:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetProfile:
+          type: string
+        estimatedWeeks:
+          type: integer
+        activeLearners:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+          nullable: true
+        milestones:
+          type: array
+          items:
+            type: string
+          nullable: true
+        projects:
+          type: array
+          items:
+            type: string
+          nullable: true
+        readinessCriteria:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - name
+        - description
+        - targetProfile
+        - estimatedWeeks
+        - activeLearners
+
+    UpdatePathway:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetProfile:
+          type: string
+        estimatedWeeks:
+          type: integer
+        activeLearners:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+          nullable: true
+        milestones:
+          type: array
+          items:
+            type: string
+          nullable: true
+        projects:
+          type: array
+          items:
+            type: string
+          nullable: true
+        readinessCriteria:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    FundingSource:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        objectives:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        amount:
+          type: number
+          format: float
+          nullable: true
+        learnerCount:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        associatedLearners:
+          type: array
+          items:
+            type: integer
+        associatedPrograms:
+          type: array
+          items:
+            type: integer
+        associatedPathways:
+          type: array
+          items:
+            type: integer
+      required:
+        - id
+        - name
+        - createdAt
+        - updatedAt
+
+    CreateFundingSource:
+      type: object
+      properties:
+        name:
+          type: string
+        objectives:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        amount:
+          type: number
+          format: float
+          nullable: true
+        learnerCount:
+          type: integer
+          nullable: true
+        associatedLearners:
+          type: array
+          items:
+            type: integer
+        associatedPrograms:
+          type: array
+          items:
+            type: integer
+        associatedPathways:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+
+    UpdateFundingSource:
+      type: object
+      properties:
+        name:
+          type: string
+        objectives:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+          nullable: true
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        amount:
+          type: number
+          format: float
+          nullable: true
+        learnerCount:
+          type: integer
+          nullable: true
+        associatedLearners:
+          type: array
+          items:
+            type: integer
+        associatedPrograms:
+          type: array
+          items:
+            type: integer
+        associatedPathways:
+          type: array
+          items:
+            type: integer
 
