@@ -9,7 +9,7 @@ frontend:
       commands:
         - pnpm --filter @workspace/riisemap build
   artifacts:
-    baseDirectory: artifacts/riisemap/dist
+    baseDirectory: artifacts/riisemap/dist/public
     files:
       - '**/*'
   cache:
