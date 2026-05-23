@@ -6,13 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  fundingSources as initialFundingSources,
-  learners,
-  programs,
-  pathways,
-  FundingSource,
-} from "@/data/mockData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getFundingSources, createFundingSource, getFundingSource, updateFundingSource, getLearners, getPrograms, getPathways } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 
 type View = "list" | "detail" | "create" | "edit";
@@ -24,9 +19,9 @@ interface FormData {
   endDate: string;
   amount: string;
   learnerCount: string;
-  associatedLearners: string[];
-  associatedPrograms: string[];
-  associatedPathways: string[];
+  associatedLearners: number[];
+  associatedPrograms: number[];
+  associatedPathways: number[];
 }
 
 const EMPTY_FORM: FormData = {
@@ -42,14 +37,63 @@ const EMPTY_FORM: FormData = {
 };
 
 export default function FundingSources() {
-  const [fundingList, setFundingList] = useState<FundingSource[]>(initialFundingSources);
+  const queryClient = useQueryClient();
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const selectedFunding = fundingList.find(f => f.id === selectedId);
+  // Queries
+  const { data: fundingSources = [], isLoading: fundingLoading } = useQuery({
+    queryKey: ["fundingSources"],
+    queryFn: getFundingSources,
+  });
+
+  const { data: learners = [], isLoading: learnersLoading } = useQuery({
+    queryKey: ["learners"],
+    queryFn: getLearners,
+  });
+
+  const { data: programs = [], isLoading: programsLoading } = useQuery({
+    queryKey: ["programs"],
+    queryFn: getPrograms,
+  });
+
+  const { data: pathways = [], isLoading: pathwaysLoading } = useQuery({
+    queryKey: ["pathways"],
+    queryFn: getPathways,
+  });
+
+  const { data: selectedFunding } = useQuery({
+    queryKey: ["fundingSource", selectedId],
+    queryFn: () => selectedId ? getFundingSource({ id: selectedId }) : null,
+    enabled: !!selectedId && view === "detail",
+  });
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: createFundingSource,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fundingSources"] });
+      setShowModal(false);
+      setView("list");
+      setForm(EMPTY_FORM);
+      setFormErrors({});
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => updateFundingSource({ id }, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fundingSources"] });
+      queryClient.invalidateQueries({ queryKey: ["fundingSource", selectedId] });
+      setShowModal(false);
+      setView("list");
+      setForm(EMPTY_FORM);
+      setFormErrors({});
+    },
+  });
 
   const validateForm = () => {
     const errs: Record<string, string> = {};
@@ -60,47 +104,24 @@ export default function FundingSources() {
 
   const handleSave = () => {
     if (!validateForm()) return;
-    const now = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+    const data = {
+      name: form.name,
+      objectives: form.objectives || undefined,
+      startDate: form.startDate || undefined,
+      endDate: form.endDate || undefined,
+      amount: form.amount ? parseFloat(form.amount) : undefined,
+      learnerCount: form.learnerCount ? parseInt(form.learnerCount) : undefined,
+      associatedLearners: form.associatedLearners,
+      associatedPrograms: form.associatedPrograms,
+      associatedPathways: form.associatedPathways,
+    };
+
     if (view === "create") {
-      const newFunding: FundingSource = {
-        id: String(Date.now()),
-        name: form.name,
-        objectives: form.objectives || undefined,
-        startDate: form.startDate || undefined,
-        endDate: form.endDate || undefined,
-        amount: form.amount ? parseFloat(form.amount) : undefined,
-        learnerCount: form.learnerCount ? parseInt(form.learnerCount) : undefined,
-        createdAt: now,
-        updatedAt: now,
-        associatedLearners: form.associatedLearners,
-        associatedPrograms: form.associatedPrograms,
-        associatedPathways: form.associatedPathways,
-      };
-      setFundingList(prev => [...prev, newFunding]);
-    } else if (view === "edit" && selectedFunding) {
-      setFundingList(prev => prev.map(f => {
-        if (f.id === selectedId) {
-          return {
-            ...f,
-            name: form.name,
-            objectives: form.objectives || undefined,
-            startDate: form.startDate || undefined,
-            endDate: form.endDate || undefined,
-            amount: form.amount ? parseFloat(form.amount) : undefined,
-            learnerCount: form.learnerCount ? parseInt(form.learnerCount) : undefined,
-            updatedAt: now,
-            associatedLearners: form.associatedLearners,
-            associatedPrograms: form.associatedPrograms,
-            associatedPathways: form.associatedPathways,
-          };
-        }
-        return f;
-      }));
+      createMutation.mutate(data);
+    } else if (view === "edit" && selectedId) {
+      updateMutation.mutate({ id: selectedId, data });
     }
-    setShowModal(false);
-    setView("list");
-    setForm(EMPTY_FORM);
-    setFormErrors({});
   };
 
   const handleCreate = () => {
@@ -111,7 +132,7 @@ export default function FundingSources() {
   };
 
   const handleEdit = (id: string) => {
-    const funding = fundingList.find(f => f.id === id);
+    const funding = fundingSources.find(f => f.id === id);
     if (funding) {
       setView("edit");
       setSelectedId(id);
@@ -122,9 +143,9 @@ export default function FundingSources() {
         endDate: funding.endDate || "",
         amount: funding.amount ? String(funding.amount) : "",
         learnerCount: funding.learnerCount ? String(funding.learnerCount) : "",
-        associatedLearners: funding.associatedLearners,
-        associatedPrograms: funding.associatedPrograms,
-        associatedPathways: funding.associatedPathways,
+        associatedLearners: funding.associatedLearners || [],
+        associatedPrograms: funding.associatedPrograms || [],
+        associatedPathways: funding.associatedPathways || [],
       });
       setShowModal(true);
     }
@@ -135,7 +156,7 @@ export default function FundingSources() {
     setView("detail");
   };
 
-  const toggleAssociation = (type: "associatedLearners" | "associatedPrograms" | "associatedPathways", id: string) => {
+  const toggleAssociation = (type: "associatedLearners" | "associatedPrograms" | "associatedPathways", id: number) => {
     setForm(prev => {
       const current = prev[type];
       if (current.includes(id)) {
@@ -147,9 +168,9 @@ export default function FundingSources() {
   };
 
   if (view === "detail" && selectedFunding) {
-    const associatedLearners = learners.filter(l => selectedFunding.associatedLearners.includes(l.id));
-    const associatedPrograms = programs.filter(p => selectedFunding.associatedPrograms.includes(p.id));
-    const associatedPathways = pathways.filter(p => selectedFunding.associatedPathways.includes(p.id));
+    const associatedLearnersList = learners.filter(l => selectedFunding.associatedLearners?.includes(l.id));
+    const associatedProgramsList = programs.filter(p => selectedFunding.associatedPrograms?.includes(p.id));
+    const associatedPathwaysList = pathways.filter(p => selectedFunding.associatedPathways?.includes(p.id));
 
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
@@ -170,10 +191,10 @@ export default function FundingSources() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: "Amount", value: selectedFunding.amount ? `$${selectedFunding.amount.toLocaleString()}` : "—", icon: DollarSign },
+            { label: "Amount", value: selectedFunding.amount ? `$${Number(selectedFunding.amount).toLocaleString()}` : "—", icon: DollarSign },
             { label: "Learner Count", value: selectedFunding.learnerCount || 0, icon: Users },
-            { label: "Associated Learners", value: associatedLearners.length, icon: Users },
-            { label: "Associated Programs", value: associatedPrograms.length, icon: BookOpen },
+            { label: "Associated Learners", value: associatedLearnersList.length, icon: Users },
+            { label: "Associated Programs", value: associatedProgramsList.length, icon: BookOpen },
           ].map((m, i) => (
             <div key={i} className="bg-card border border-card-border rounded-lg p-4">
               <p className="text-xs text-muted-foreground">{m.label}</p>
@@ -201,9 +222,9 @@ export default function FundingSources() {
           <Card className="border-card-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Associated Pathways</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {associatedPathways.length === 0 ? (
+              {associatedPathwaysList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No pathways associated yet.</p>
-              ) : associatedPathways.map(p => (
+              ) : associatedPathwaysList.map(p => (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                   <span className="text-foreground">{p.name}</span>
@@ -214,9 +235,9 @@ export default function FundingSources() {
           <Card className="border-card-border md:col-span-2">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Associated Programs</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {associatedPrograms.length === 0 ? (
+              {associatedProgramsList.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No programs associated yet.</p>
-              ) : associatedPrograms.map(p => (
+              ) : associatedProgramsList.map(p => (
                 <div key={p.id} className="flex items-center gap-2 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                   <span className="text-foreground">{p.name}</span>
@@ -235,72 +256,78 @@ export default function FundingSources() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Funding Sources</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {fundingList.length} funding sources managing {fundingList.reduce((a, f) => a + (f.learnerCount || 0), 0)} learners
+            {fundingSources.length} funding sources managing {fundingSources.reduce((a, f) => a + (f.learnerCount || 0), 0)} learners
           </p>
         </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus size={14} className="mr-1.5" /> Create Funding Source
         </Button>
       </div>
-      <div className="space-y-4">
-        {fundingList.map(f => (
-          <Card key={f.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row md:items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-base font-semibold text-foreground mb-1">{f.name}</h2>
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{f.objectives}</p>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Amount</p>
-                      <p className="text-lg font-semibold text-foreground flex items-center gap-1">
-                        <DollarSign size={14} className="text-primary" />
-                        {f.amount ? `$${f.amount.toLocaleString()}` : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Duration</p>
-                      <p className="text-sm font-semibold text-foreground flex items-center gap-1">
-                        <Calendar size={14} className="text-primary" />
-                        {f.startDate && f.endDate ? `${f.startDate} - ${f.endDate}` : "—"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Learner Count</p>
-                      <p className="text-lg font-semibold text-foreground flex items-center gap-1">
-                        <Users size={14} className="text-primary" />
-                        {f.learnerCount || 0}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Associated Learners</p>
-                      <p className="text-lg font-semibold text-foreground flex items-center gap-1">
-                        <Users size={14} className="text-primary" />
-                        {f.associatedLearners.length}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Associated Programs</p>
-                      <p className="text-lg font-semibold text-foreground flex items-center gap-1">
-                        <BookOpen size={14} className="text-primary" />
-                        {f.associatedPrograms.length}
-                      </p>
+      {fundingLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {fundingSources.map(f => (
+            <Card key={f.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-base font-semibold text-foreground mb-1">{f.name}</h2>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{f.objectives}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Amount</p>
+                        <p className="text-lg font-semibold text-foreground flex items-center gap-1">
+                          <DollarSign size={14} className="text-primary" />
+                          {f.amount ? `$${Number(f.amount).toLocaleString()}` : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Duration</p>
+                        <p className="text-sm font-semibold text-foreground flex items-center gap-1">
+                          <Calendar size={14} className="text-primary" />
+                          {f.startDate && f.endDate ? `${f.startDate} - ${f.endDate}` : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Learner Count</p>
+                        <p className="text-lg font-semibold text-foreground flex items-center gap-1">
+                          <Users size={14} className="text-primary" />
+                          {f.learnerCount || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Associated Learners</p>
+                        <p className="text-lg font-semibold text-foreground flex items-center gap-1">
+                          <Users size={14} className="text-primary" />
+                          {f.associatedLearners?.length || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Associated Programs</p>
+                        <p className="text-lg font-semibold text-foreground flex items-center gap-1">
+                          <BookOpen size={14} className="text-primary" />
+                          {f.associatedPrograms?.length || 0}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex gap-2 flex-shrink-0">
+                    <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleDetail(f.id)}>
+                      View <ChevronRight size={12} className="ml-1" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleEdit(f.id)}>
+                      Edit
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleDetail(f.id)}>
-                    View <ChevronRight size={12} className="ml-1" />
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => handleEdit(f.id)}>
-                    Edit
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {showModal && (
@@ -398,7 +425,11 @@ export default function FundingSources() {
                 <div>
                   <Label className="text-sm font-medium">Associated Learners</Label>
                   <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
-                    {learners.map(learner => (
+                    {learnersLoading ? (
+                      <div className="col-span-2 flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      </div>
+                    ) : learners.map(learner => (
                       <label key={learner.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
                         <input
                           type="checkbox"
@@ -415,7 +446,11 @@ export default function FundingSources() {
                 <div>
                   <Label className="text-sm font-medium">Associated Programs</Label>
                   <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
-                    {programs.map(program => (
+                    {programsLoading ? (
+                      <div className="col-span-2 flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      </div>
+                    ) : programs.map(program => (
                       <label key={program.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
                         <input
                           type="checkbox"
@@ -432,7 +467,11 @@ export default function FundingSources() {
                 <div>
                   <Label className="text-sm font-medium">Associated Pathways</Label>
                   <div className="mt-1.5 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
-                    {pathways.map(pathway => (
+                    {pathwaysLoading ? (
+                      <div className="col-span-2 flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      </div>
+                    ) : pathways.map(pathway => (
                       <label key={pathway.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-2 py-1">
                         <input
                           type="checkbox"
@@ -456,8 +495,14 @@ export default function FundingSources() {
               >
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleSave}>
-                {view === "create" ? "Create Funding Source" : "Save Changes"}
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : view === "create" ? "Create Funding Source" : "Save Changes"}
               </Button>
             </div>
           </div>

@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, varchar, date, boolean, jsonb, foreignKey, primaryKey } from "drizzle-orm/pg-core";
+/Users/batman/Downloads/ReplitExport-JonExume/Riise-Map-Admin/lib/db/src/schema/index.ts
+import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -161,3 +162,56 @@ export const learnerActivitiesTable = pgTable("learner_activities", {
 export const insertLearnerActivitySchema = createInsertSchema(learnerActivitiesTable).omit({ id: true });
 export type InsertLearnerActivity = z.infer<typeof insertLearnerActivitySchema>;
 export type LearnerActivity = typeof learnerActivitiesTable.$inferSelect;
+
+// Funding Sources Table
+export const fundingSourcesTable = pgTable("funding_sources", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  objectives: text("objectives"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  amount: numeric("amount", { precision: 12, scale: 2 }),
+  learnerCount: integer("learner_count"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertFundingSourceSchema = createInsertSchema(fundingSourcesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertFundingSource = z.infer<typeof insertFundingSourceSchema>;
+export type FundingSource = typeof fundingSourcesTable.$inferSelect;
+
+// Funding Source Learners Join Table
+export const fundingSourceLearnersTable = pgTable("funding_source_learners", {
+  id: serial("id").primaryKey(),
+  fundingSourceId: integer("funding_source_id").notNull().references(() => fundingSourcesTable.id, { onDelete: "cascade" }),
+  learnerId: integer("learner_id").notNull().references(() => learnersTable.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertFundingSourceLearnerSchema = createInsertSchema(fundingSourceLearnersTable).omit({ id: true, createdAt: true });
+export type InsertFundingSourceLearner = z.infer<typeof insertFundingSourceLearnerSchema>;
+export type FundingSourceLearner = typeof fundingSourceLearnersTable.$inferSelect;
+
+// Funding Source Programs Join Table
+export const fundingSourceProgramsTable = pgTable("funding_source_programs", {
+  id: serial("id").primaryKey(),
+  fundingSourceId: integer("funding_source_id").notNull().references(() => fundingSourcesTable.id, { onDelete: "cascade" }),
+  programId: integer("program_id").notNull().references(() => programsTable.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertFundingSourceProgramSchema = createInsertSchema(fundingSourceProgramsTable).omit({ id: true, createdAt: true });
+export type InsertFundingSourceProgram = z.infer<typeof insertFundingSourceProgramSchema>;
+export type FundingSourceProgram = typeof fundingSourceProgramsTable.$inferSelect;
+
+// Funding Source Pathways Join Table
+export const fundingSourcePathwaysTable = pgTable("funding_source_pathways", {
+  id: serial("id").primaryKey(),
+  fundingSourceId: integer("funding_source_id").notNull().references(() => fundingSourcesTable.id, { onDelete: "cascade" }),
+  pathwayId: integer("pathway_id").notNull().references(() => pathwaysTable.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertFundingSourcePathwaySchema = createInsertSchema(fundingSourcePathwaysTable).omit({ id: true, createdAt: true });
+export type InsertFundingSourcePathway = z.infer<typeof insertFundingSourcePathwaySchema>;
+export type FundingSourcePathway = typeof fundingSourcePathwaysTable.$inferSelect;
