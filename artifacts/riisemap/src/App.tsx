@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,6 +19,7 @@ import Alerts from "@/pages/Alerts";
 import Impact from "@/pages/Impact";
 import SettingsPage from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
+import { setBaseUrl } from "@workspace/api-client-react";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,12 @@ function App() {
   const [onboarded, setOnboarded] = useState<boolean>(
     () => !!localStorage.getItem("riisemap_onboarding")
   );
+
+  useEffect(() => {
+    // Set API base URL - in production, this should be your deployed API URL
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    setBaseUrl(baseUrl);
+  }, []);
 
   const handleOnboardingComplete = () => setOnboarded(true);
 

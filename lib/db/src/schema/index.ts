@@ -1,4 +1,3 @@
-/Users/batman/Downloads/ReplitExport-JonExume/Riise-Map-Admin/lib/db/src/schema/index.ts
 import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";

@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/StatusBadge";
-import { learners as seedLearners, Learner } from "@/data/mockData";
+import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
 interface InviteForm {
@@ -51,7 +52,15 @@ const PROGRAM_LABELS: Record<string, string> = {
 };
 
 export default function Learners() {
-  const [allLearners, setAllLearners] = useState<Learner[]>(seedLearners);
+  const queryClient = useQueryClient();
+  const { data: allLearners = [], isLoading } = useGetLearners();
+  const createLearnerMutation = useCreateLearner({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/learners'] });
+      }
+    }
+  });
   const [newLearnerId, setNewLearnerId] = useState<string | null>(null);
 
   const [view, setView] = useState<"grid" | "list">("list");
@@ -98,27 +107,28 @@ export default function Learners() {
   const handleSendInvite = () => {
     if (!validateInvite()) return;
 
-    const id = String(Date.now());
     const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-    const newLearner: Learner = {
-      id,
-      name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
-      pathway: inviteForm.pathway || "Not yet assigned",
-      program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
-      coach: inviteForm.coach || "Unassigned",
-      progress: 0,
-      readiness: 0,
-      status: "New Learner",
-      lastActive: "Just invited",
-      nextAction: "Complete onboarding and career assessment",
-      joinDate: today,
-      email: inviteForm.email.trim(),
-    };
-
-    setAllLearners((prev) => [newLearner, ...prev]);
-    setNewLearnerId(id);
-    setInviteStep(1);
+    createLearnerMutation.mutate({
+      data: {
+        name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
+        pathway: inviteForm.pathway || "Not yet assigned",
+        program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
+        coach: inviteForm.coach || "Unassigned",
+        progress: 0,
+        readiness: 0,
+        status: "New Learner",
+        lastActive: "Just invited",
+        nextAction: "Complete onboarding and career assessment",
+        joinDate: today,
+        email: inviteForm.email.trim(),
+      }
+    }, {
+      onSuccess: (newLearner) => {
+        setNewLearnerId(String(newLearner.id));
+        setInviteStep(1);
+      }
+    });
   };
 
   const closeInvite = () => {
@@ -141,7 +151,7 @@ export default function Learners() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Learners</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {allLearners.length} learners enrolled across 3 programs
+            {isLoading ? "Loading..." : `${allLearners.length} learners enrolled across 3 programs`}
           </p>
         </div>
         <Button

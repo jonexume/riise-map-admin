@@ -10,7 +10,7 @@
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
-    "seed": "node seed-db.js"
+    "seed": "node seed-db-simple.js"
   },
   "dependencies": {
     "drizzle-orm": "catalog:",
