@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, Link } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
   FileText, BarChart3, Activity, Plus, Flag, CheckSquare,
-  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check
+  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check,
+  Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearner, type Learner } from "@workspace/api-client-react";
+import { useGetLearner, useUpdateLearner, type Learner } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
 // Mock details structure (will be replaced with real API data later)
@@ -70,11 +73,27 @@ function getMockDetails(learner: Learner): MockLearnerDetails {
 export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
   const learnerId = parseInt(id || "0");
+  const queryClient = useQueryClient();
   const { data: learner, isLoading } = useGetLearner(learnerId);
+  const updateLearnerMutation = useUpdateLearner({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/learners/${learnerId}`] }) } });
   const [newNote, setNewNote] = useState("");
   const [notes, setNotes] = useState<MockLearnerDetails["notes"]>([]);
   const [noteSaved, setNoteSaved] = useState(false);
   const [flagged, setFlagged] = useState(false);
+  const [showSuccessStory, setShowSuccessStory] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const photoUrl = reader.result as string;
+        updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, photo: photoUrl } });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -143,10 +162,20 @@ export default function LearnerDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div 
+            className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:bg-primary/20 transition-colors"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
             {learner.photo
               ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-              : <span className="text-xl font-bold text-primary">{learner.name.split(" ").map(n => n[0]).join("")}</span>
+              : <Upload size={24} className="text-primary/60" />
             }
           </div>
           <div>
@@ -158,7 +187,7 @@ export default function LearnerDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note">
+          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => document.querySelector('[data-testid="add-note-input"]')?.scrollIntoView({ behavior: 'smooth' })}>
             <Plus size={12} className="mr-1.5" /> Add Note
           </Button>
           <div className="relative">
@@ -181,7 +210,7 @@ export default function LearnerDetail() {
               </div>
             )}
           </div>
-          <Button size="sm" className="text-xs h-8" data-testid="btn-success-story">
+          <Button size="sm" className="text-xs h-8" data-testid="btn-success-story" onClick={() => setShowSuccessStory(true)}>
             <Sparkles size={12} className="mr-1.5" /> Create Success Story
           </Button>
         </div>
@@ -472,6 +501,23 @@ export default function LearnerDetail() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Success Story Dialog */}
+      <Dialog open={showSuccessStory} onOpenChange={setShowSuccessStory}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Success Story</DialogTitle>
+            <DialogDescription>Create a success story to celebrate {learner.name}'s achievements!</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-muted-foreground">Success story functionality coming soon!</p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowSuccessStory(false)}>Cancel</Button>
+            <Button onClick={() => setShowSuccessStory(false)}>Create</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,13 +1,13 @@
-/Users/batman/Downloads/ReplitExport-JonExume/Riise-Map-Admin/artifacts/riisemap/src/pages/FundingSources.tsx
+// /Users/batman/Downloads/ReplitExport-JonExume/Riise-Map-Admin/artifacts/riisemap/src/pages/FundingSources.tsx
 import { useState } from "react";
-import { ArrowLeft, DollarSign, Users, BookOpen, GitBranch, Calendar, ChevronRight, Plus, X } from "lucide-react";
+import { ArrowLeft, DollarSign, Users, BookOpen, Calendar, ChevronRight, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFundingSources, createFundingSource, getFundingSource, updateFundingSource, getLearners, getPrograms, getPathways } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGetFundingSources, useCreateFundingSource, useGetFundingSource, useUpdateFundingSource, useGetLearners, useGetPrograms, useGetPathways } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 
 type View = "list" | "detail" | "create" | "edit";
@@ -39,59 +39,43 @@ const EMPTY_FORM: FormData = {
 export default function FundingSources() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<View>("list");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Queries
-  const { data: fundingSources = [], isLoading: fundingLoading } = useQuery({
-    queryKey: ["fundingSources"],
-    queryFn: getFundingSources,
-  });
-
-  const { data: learners = [], isLoading: learnersLoading } = useQuery({
-    queryKey: ["learners"],
-    queryFn: getLearners,
-  });
-
-  const { data: programs = [], isLoading: programsLoading } = useQuery({
-    queryKey: ["programs"],
-    queryFn: getPrograms,
-  });
-
-  const { data: pathways = [], isLoading: pathwaysLoading } = useQuery({
-    queryKey: ["pathways"],
-    queryFn: getPathways,
-  });
-
-  const { data: selectedFunding } = useQuery({
-    queryKey: ["fundingSource", selectedId],
-    queryFn: () => selectedId ? getFundingSource({ id: selectedId }) : null,
-    enabled: !!selectedId && view === "detail",
-  });
+  const { data: fundingSources = [], isLoading: fundingLoading } = useGetFundingSources();
+  const { data: learners = [], isLoading: learnersLoading } = useGetLearners();
+  const { data: programs = [], isLoading: programsLoading } = useGetPrograms();
+  const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
+  const { data: selectedFunding } = useGetFundingSource(selectedId || 0, { query: { enabled: !!selectedId && view === "detail" } });
 
   // Mutations
-  const createMutation = useMutation({
-    mutationFn: createFundingSource,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fundingSources"] });
-      setShowModal(false);
-      setView("list");
-      setForm(EMPTY_FORM);
-      setFormErrors({});
+  const createMutation = useCreateFundingSource({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
+        setShowModal(false);
+        setView("list");
+        setForm(EMPTY_FORM);
+        setFormErrors({});
+      },
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateFundingSource({ id }, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["fundingSources"] });
-      queryClient.invalidateQueries({ queryKey: ["fundingSource", selectedId] });
-      setShowModal(false);
-      setView("list");
-      setForm(EMPTY_FORM);
-      setFormErrors({});
+  const updateMutation = useUpdateFundingSource({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
+        if (selectedId) {
+          queryClient.invalidateQueries({ queryKey: [`/api/funding-sources/${selectedId}`] });
+        }
+        setShowModal(false);
+        setView("list");
+        setForm(EMPTY_FORM);
+        setFormErrors({});
+      },
     },
   });
 
@@ -118,7 +102,7 @@ export default function FundingSources() {
     };
 
     if (view === "create") {
-      createMutation.mutate(data);
+      createMutation.mutate({ data });
     } else if (view === "edit" && selectedId) {
       updateMutation.mutate({ id: selectedId, data });
     }
@@ -131,7 +115,7 @@ export default function FundingSources() {
     setShowModal(true);
   };
 
-  const handleEdit = (id: string) => {
+  const handleEdit = (id: number) => {
     const funding = fundingSources.find(f => f.id === id);
     if (funding) {
       setView("edit");
@@ -151,7 +135,7 @@ export default function FundingSources() {
     }
   };
 
-  const handleDetail = (id: string) => {
+  const handleDetail = (id: number) => {
     setSelectedId(id);
     setView("detail");
   };
@@ -196,7 +180,7 @@ export default function FundingSources() {
             { label: "Associated Learners", value: associatedLearnersList.length, icon: Users },
             { label: "Associated Programs", value: associatedProgramsList.length, icon: BookOpen },
           ].map((m, i) => (
-            <div key={i} className="bg-card border border-card-border rounded-lg p-4">
+            <div key={i} className="bg-card border border-border rounded-lg p-4">
               <p className="text-xs text-muted-foreground">{m.label}</p>
               <p className="text-2xl font-semibold text-foreground mt-0.5 flex items-center gap-1">
                 <m.icon size={16} className="text-primary" />
@@ -206,7 +190,7 @@ export default function FundingSources() {
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Card className="border-card-border">
+          <Card className="border-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Funding Details</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2 text-sm">
               <div className="flex justify-between">
@@ -219,7 +203,7 @@ export default function FundingSources() {
               </div>
             </CardContent>
           </Card>
-          <Card className="border-card-border">
+          <Card className="border-border">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Associated Pathways</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
               {associatedPathwaysList.length === 0 ? (
@@ -232,7 +216,7 @@ export default function FundingSources() {
               ))}
             </CardContent>
           </Card>
-          <Card className="border-card-border md:col-span-2">
+          <Card className="border-border md:col-span-2">
             <CardHeader className="pb-3"><CardTitle className="text-sm">Associated Programs</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
               {associatedProgramsList.length === 0 ? (
@@ -270,7 +254,7 @@ export default function FundingSources() {
       ) : (
         <div className="space-y-4">
           {fundingSources.map(f => (
-            <Card key={f.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
+            <Card key={f.id} className="border-border shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   <div className="flex-1 min-w-0">

@@ -11,6 +11,7 @@ import Learners from "@/pages/Learners";
 import LearnerDetail from "@/pages/LearnerDetail";
 import Programs from "@/pages/Programs";
 import Pathways from "@/pages/Pathways";
+import FundingSources from "@/pages/FundingSources";
 import Projects from "@/pages/Projects";
 import Events from "@/pages/Events";
 import Jobs from "@/pages/Jobs";
@@ -32,6 +33,7 @@ function Router() {
         <Route path="/learners" component={Learners} />
         <Route path="/programs" component={Programs} />
         <Route path="/pathways" component={Pathways} />
+        <Route path="/funding-sources" component={FundingSources} />
         <Route path="/projects" component={Projects} />
         <Route path="/events" component={Events} />
         <Route path="/jobs" component={Jobs} />
