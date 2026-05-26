@@ -55,6 +55,7 @@ function App() {
   useEffect(() => {
     // Set API base URL - in production, this should be your deployed API URL
     const baseUrl = import.meta.env.VITE_API_URL || "";
+    console.log(`Using API base URL: ${baseUrl}`); // Added for debugging
     setBaseUrl(baseUrl);
   }, []);
 
