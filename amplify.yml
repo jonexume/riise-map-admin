@@ -2,10 +2,9 @@ version: 1
 backend:
   phases:
     build:
-      commands:
-        - npm install -g pnpm@9
-        - pnpm install --no-frozen-lockfile
-        - pnpm --filter @workspace/api-server build
+      - npm install -g pnpm@9
+      - pnpm install --no-frozen-lockfile
+      - pnpm --filter @workspace/api-server build
   artifacts:
     baseDirectory: artifacts/api-server
     files:
@@ -18,12 +17,10 @@ backend:
 frontend:
   phases:
     preBuild:
-      commands:
-        - npm install -g pnpm@9
-        - pnpm install --no-frozen-lockfile
+      - npm install -g pnpm@9
+      - pnpm install --no-frozen-lockfile
     build:
-      commands:
-        - pnpm --filter @workspace/riisemap build
+      - pnpm --filter @workspace/riisemap build
   artifacts:
     baseDirectory: artifacts/riisemap/dist/public
     files:
