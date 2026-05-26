@@ -1,4 +1,3 @@
-artifacts/api-server/src/routes/learners.ts
 import { Router, type IRouter } from "express";
 import { db, learnersTable, insertLearnerSchema } from "@workspace/db";
 import { eq } from "drizzle-orm";

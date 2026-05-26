@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { programs as initialPrograms, learners } from "@/data/mockData";
+import { useGetPrograms, useGetLearners, type Program, type Learner } from "@workspace/api-client-react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
-
-type LocalProgram = (typeof initialPrograms)[number];
 
 const emptyForm = {
   name: "",
@@ -24,8 +22,9 @@ const emptyForm = {
 };
 
 export default function Programs() {
-  const [programList, setProgramList] = useState<LocalProgram[]>(initialPrograms);
-  const [selected, setSelected] = useState<string | null>(null);
+  const { data: programList = [], isLoading: programsLoading } = useGetPrograms();
+  const { data: learners = [] } = useGetLearners();
+  const [selected, setSelected] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -45,29 +44,19 @@ export default function Programs() {
   };
 
   const handleCreate = () => {
-    if (!validateForm()) return;
-    const newProgram: LocalProgram = {
-      id: String(Date.now()),
-      name: form.name,
-      description: form.description,
-      pathwayCategory: form.pathwayCategory || "General",
-      activeLearners: 0,
-      completionRate: 0,
-      readinessScore: 0,
-      eventParticipation: 0,
-      placementReady: 0,
-      funderTag: form.funderTag,
-      cohort: form.cohort,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      pathways: form.pathways.split(",").map(s => s.trim()).filter(Boolean),
-    };
-    setProgramList(prev => [...prev, newProgram]);
-    setForm(emptyForm);
-    setFormErrors({});
+    // TODO: Implement createProgram mutation
     setShowCreate(false);
-    setSelected(newProgram.id);
   };
+
+  if (programsLoading) {
+    return (
+      <div className="px-6 py-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading programs...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (selected && program) {
     const programLearners = learners.filter(l => l.program === program.name);

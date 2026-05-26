@@ -11,17 +11,97 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/StatusBadge";
-import { learners, learnerDetails } from "@/data/mockData";
+import { useGetLearner, type Learner } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
+
+// Mock details structure (will be replaced with real API data later)
+interface MockLearnerDetails {
+  profileStrength: number;
+  background: string | null;
+  strengths: string[];
+  risks: string[];
+  roadmap: Array<{ id: string; title: string; dueDate: string; state: "completed" | "in-progress" | "overdue" | "upcoming" }>;
+  projects: Array<{ id: string; title: string; completion: number; status: "completed" | "in-progress" | "upcoming" }>;
+  events: Array<{ id: string; title: string; date: string; status: "attended" | "upcoming" | "missed" }>;
+  notes: Array<{ id: string; author: string; date: string; content: string }>;
+  readiness: Array<{ dimension: string; score: number }>;
+  activity: Array<{ id: string; type: string; event: string; date: string }>;
+}
+
+function getMockDetails(learner: Learner): MockLearnerDetails {
+  // Parse JSON fields if they exist
+  const strengths = typeof learner.strengths === 'string' ? JSON.parse(learner.strengths) : learner.strengths || [];
+  const risks = typeof learner.risks === 'string' ? JSON.parse(learner.risks) : learner.risks || [];
+
+  return {
+    profileStrength: learner.profileStrength || 0,
+    background: learner.background || "Background information not yet added.",
+    strengths,
+    risks,
+    roadmap: [
+      { id: "1", title: "Career Assessment", dueDate: "2 weeks ago", state: "completed" },
+      { id: "2", title: "Resume Review", dueDate: "1 week ago", state: "in-progress" },
+      { id: "3", title: "LinkedIn Optimization", dueDate: "Tomorrow", state: "upcoming" },
+    ],
+    projects: [
+      { id: "1", title: "Customer Onboarding Simulation", completion: 75, status: "in-progress" },
+      { id: "2", title: "Help Ticket System Walkthrough", completion: 100, status: "completed" },
+    ],
+    events: [
+      { id: "1", title: "Career Readiness Workshop", date: "Last week", status: "attended" },
+      { id: "2", title: "Mock Interview Session", date: "Next Tuesday", status: "upcoming" },
+    ],
+    notes: [
+      { id: "1", author: "Denise Carter", date: "May 20, 2025", content: "Great progress on the career assessment! Very thoughtful responses to the situational questions." },
+    ],
+    readiness: [
+      { dimension: "Technical Skills", score: 65 },
+      { dimension: "Communication", score: 85 },
+      { dimension: "Professionalism", score: 80 },
+      { dimension: "Interview Readiness", score: 55 },
+    ],
+    activity: [
+      { id: "1", type: "login", event: "Logged into RiiseMap", date: "2 hours ago" },
+      { id: "2", type: "milestone", event: "Completed Career Assessment", date: "2 days ago" },
+    ],
+  };
+}
 
 export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
-  const learner = learners.find(l => l.id === id) ?? learners[0];
-  const details = learnerDetails[learner.id] ?? learnerDetails["1"];
+  const learnerId = parseInt(id || "0");
+  const { data: learner, isLoading } = useGetLearner(learnerId);
   const [newNote, setNewNote] = useState("");
-  const [notes, setNotes] = useState(details.notes);
+  const [notes, setNotes] = useState<MockLearnerDetails["notes"]>([]);
   const [noteSaved, setNoteSaved] = useState(false);
   const [flagged, setFlagged] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="px-6 py-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading learner details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!learner) {
+    return (
+      <div className="px-6 py-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Learner not found</p>
+          <Link href="/learners">
+            <Button variant="outline" size="sm" className="mt-4">
+              Back to Learners
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const details = getMockDetails(learner);
 
   function handleFlag() {
     setFlagged(true);

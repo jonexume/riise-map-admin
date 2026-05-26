@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { pathways as seedPathways } from "@/data/mockData";
+import { useGetPathways, type Pathway } from "@workspace/api-client-react";
 
 type View = "list" | "detail" | "add";
 
@@ -104,9 +104,9 @@ function TagInput({
 }
 
 export default function Pathways() {
-  const [pathways, setPathways] = useState<PathwayData[]>(seedPathways);
+  const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
   const [view, setView] = useState<View>("list");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(BLANK);
   const [submitted, setSubmitted] = useState(false);
@@ -116,6 +116,16 @@ export default function Pathways() {
   const [milestoneInput, setMilestoneInput] = useState("");
   const [projectInput, setProjectInput] = useState("");
   const [criteriaInput, setCriteriaInput] = useState("");
+
+  if (pathwaysLoading) {
+    return (
+      <div className="px-6 py-8 max-w-5xl mx-auto">
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Loading pathways...</p>
+        </div>
+      </div>
+    );
+  }
 
   const pathway = pathways.find(p => p.id === selectedId);
 
