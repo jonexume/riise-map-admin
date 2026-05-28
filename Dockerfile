@@ -16,7 +16,7 @@ COPY lib/db/package.json ./lib/db/
 COPY artifacts/riisemap/package.json ./artifacts/riisemap/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 # Install only production dependencies. The --prod flag is crucial.
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --prod
 
 # Stage 3: Build - Build the TypeScript source into JavaScript.
 # This stage uses a separate node_modules layer with dev dependencies.
@@ -24,7 +24,7 @@ FROM base AS build
 # Copy the entire repository source code.
 COPY . .
 # Install ALL dependencies, including dev dependencies needed for building (like TypeScript and esbuild).
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 # Run the build script for the api-server workspace.
 RUN pnpm --filter @workspace/api-server build
 
