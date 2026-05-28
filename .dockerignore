@@ -1,0 +1,8 @@
+# Ignore the node_modules directory to prevent local dependencies from being copied
+node_modules
+
+# Ignore git and IDE files
+.git
+.gitignore
+.idea
+.vscode
