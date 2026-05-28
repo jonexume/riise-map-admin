@@ -30,7 +30,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (_req, res) => {
-  res.send("OK");
+  res.status(200).json({ status: "ok" });
 });
 
 app.use("/api", router);
