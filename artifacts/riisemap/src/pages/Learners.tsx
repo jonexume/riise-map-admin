@@ -104,31 +104,53 @@ export default function Learners() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSendInvite = () => {
+import { useToast } from "@/hooks/use-toast";
+
+// ... inside the component
+
+  const { toast } = useToast();
+
+// ... in the component
+
+  const handleSendInvite = async () => {
     if (!validateInvite()) return;
 
     const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-    createLearnerMutation.mutate({
-      data: {
-        name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
-        pathway: inviteForm.pathway || "Not yet assigned",
-        program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
-        coach: inviteForm.coach || "Unassigned",
-        progress: 0,
-        readiness: 0,
-        status: "New Learner",
-        lastActive: "Just invited",
-        nextAction: "Complete onboarding and career assessment",
-        joinDate: today,
-        email: inviteForm.email.trim(),
+    try {
+      const newLearner = await createLearnerMutation.mutateAsync({
+        data: {
+          name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
+          pathway: inviteForm.pathway || "Not yet assigned",
+          program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
+          coach: inviteForm.coach || "Unassigned",
+          progress: 0,
+          readiness: 0,
+          status: "New Learner",
+          lastActive: "Just invited",
+          nextAction: "Complete onboarding and career assessment",
+          joinDate: today,
+          email: inviteForm.email.trim(),
+        }
+      });
+      setNewLearnerId(String(newLearner.id));
+      setInviteStep(1);
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        toast({
+          title: "Duplicate Learner",
+          description: "A learner with this email already exists.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error Creating Learner",
+          description: "An unexpected error occurred. Please try again later.",
+          variant: "destructive",
+        });
       }
-    }, {
-      onSuccess: (newLearner) => {
-        setNewLearnerId(String(newLearner.id));
-        setInviteStep(1);
-      }
-    });
+      console.error("Failed to create learner:", error);
+    }
   };
 
   const closeInvite = () => {

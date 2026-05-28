@@ -35,6 +35,17 @@ router.get("/learners/:id", async (req, res) => {
 router.post("/learners", async (req, res) => {
   try {
     const data = insertLearnerSchema.parse(req.body);
+
+    // Check for existing learner with the same email
+    const existingLearner = await db
+      .select()
+      .from(learnersTable)
+      .where(eq(learnersTable.email, data.email));
+
+    if (existingLearner.length > 0) {
+      return res.status(409).json({ error: "A learner with this email already exists." });
+    }
+
     const [newLearner] = await db.insert(learnersTable).values(data).returning();
     res.status(201).json(newLearner);
   } catch (error) {
