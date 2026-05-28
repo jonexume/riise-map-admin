@@ -1,44 +1,26 @@
-# Dockerfile for api-server
+# Dockerfile for api-server (Single-Stage for Cache Busting)
 
-# Stage 1: Base - A slim Node.js image with pnpm installed globally.
-FROM node:20-slim AS base
+# Use a single stage to ensure all commands are run without caching issues.
+FROM node:20-slim
+
+# Install pnpm
 WORKDIR /usr/src/app
 RUN npm install -g pnpm@9
 
-# Stage 2: Dependencies - Install only PRODUCTION dependencies for a lean final image.
-# This stage is separate so we can cache the node_modules layer effectively.
-FROM base AS deps
-# Copy only the package manager and dependency definition files.
-# The glob patterns (*) handle optional files like .npmrc.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* .npmrc* ./
-# Create the directory structure for pnpm workspaces and copy their package.json files.
-COPY lib/db/package.json ./lib/db/
-COPY artifacts/riisemap/package.json ./artifacts/riisemap/
-COPY artifacts/api-server/package.json ./artifacts/api-server/
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY lib/api-zod/package.json ./lib/api-zod/
-# Install only production dependencies. The --prod flag is crucial.
-RUN pnpm install --prod
-
-# Stage 3: Build - Build the TypeScript source into JavaScript.
-# This stage uses a separate node_modules layer with dev dependencies.
-FROM base AS build
-# Copy the entire repository source code.
+# Copy all source code into the image.
+# The .dockerignore file will prevent node_modules from being copied.
 COPY . .
-# Install ALL dependencies, including dev dependencies needed for building (like TypeScript and esbuild).
+
+# Install all dependencies (dev and prod) and build the application.
 RUN pnpm install
-# Run the build script for the api-server workspace.
 RUN pnpm --filter @workspace/api-server build
 
-# Stage 4: Final - Assemble the lean production image.
-FROM base AS final
+# Set the final environment and command
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
-# Copy the compiled JavaScript from the 'build' stage.
-COPY --from=build /usr/src/app/artifacts/api-server/dist ./dist
-# Copy the lean, production-only node_modules from the 'deps' stage.
-COPY --from=deps /usr/src/app/node_modules ./node_modules
+
 # The api-server listens on port 3001.
 EXPOSE 3001
-# The command to start the production server.
-CMD ["node", "dist/index.js"]
+
+# The command to start the production server from the correct location.
+CMD ["node", "artifacts/api-server/dist/index.js"]
