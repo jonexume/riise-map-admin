@@ -16,6 +16,7 @@ COPY lib/db/package.json ./lib/db/
 COPY artifacts/riisemap/package.json ./artifacts/riisemap/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
+COPY lib/api-zod/package.json ./lib/api-zod/
 # Install only production dependencies. The --prod flag is crucial.
 RUN pnpm install --prod
 
