@@ -1,26 +1,13 @@
 version: 1
-backend:
-  phases:
-    build:
-      - npm install -g pnpm@9
-      - pnpm install --no-frozen-lockfile
-      - pnpm --filter @workspace/api-server build
-  artifacts:
-    baseDirectory: artifacts/api-server
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - node_modules/**/*
-  start:
-    command: node dist/index.js
 frontend:
   phases:
     preBuild:
-      - npm install -g pnpm@9
-      - pnpm install --no-frozen-lockfile
+      commands:
+        - npm install -g pnpm@9
+        - pnpm install --no-frozen-lockfile
     build:
-      - pnpm --filter @workspace/riisemap build
+      commands:
+        - pnpm --filter @workspace/riisemap build
   artifacts:
     baseDirectory: artifacts/riisemap/dist/public
     files:
