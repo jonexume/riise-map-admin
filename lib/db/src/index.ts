@@ -1,18 +1,21 @@
 import { config } from "dotenv";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { join } from "path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 
-// This is the definitive path to the .env file for the api-server.
-// By setting this explicitly, we avoid searching multiple locations and prevent errors.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const envPath = join(__dirname, "..", "..", "artifacts", "api-server", ".env");
+// When the api-server runs, its current working directory is `artifacts/api-server`.
+// Therefore, the .env file is located in the current directory.
+const envPath = join(process.cwd(), ".env");
 
-// Load the environment variables from the specific path.
-config({ path: envPath });
+const result = config({ path: envPath });
+
+if (result.error) {
+  // If there's an error loading the .env file, we throw a detailed error.
+  throw new Error(
+    `Failed to load .env file from path: ${envPath}. Error: ${result.error.message}`
+  );
+}
 
 // Now, we can safely check for the DATABASE_URL.
 if (!process.env.DATABASE_URL) {
