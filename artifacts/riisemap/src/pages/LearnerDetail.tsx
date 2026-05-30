@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearner, useUpdateLearner, type Learner } from "@workspace/api-client-react";
+import { useGetLearner, useUpdateLearner, useGetLearnerProjects, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 
@@ -74,7 +74,9 @@ export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
   const learnerId = parseInt(id || "0");
   const queryClient = useQueryClient();
-  const { data: learner, isLoading } = useGetLearner(learnerId);
+  const { data: learner, isLoading: isLearnerLoading } = useGetLearner(learnerId);
+  const { data: projectsData, isLoading: areProjectsLoading } = useGetLearnerProjects(learnerId);
+  const projects = projectsData?.data || [];
   const updateLearnerMutation = useUpdateLearner({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/learners/${learnerId}`] }) } });
   const [newNote, setNewNote] = useState("");
   const [notes, setNotes] = useState<MockLearnerDetails["notes"]>([]);
@@ -95,7 +97,7 @@ export default function LearnerDetail() {
     }
   };
 
-  if (isLoading) {
+  if (isLearnerLoading) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <div className="text-center py-12">
@@ -344,9 +346,11 @@ export default function LearnerDetail() {
         {/* Projects */}
         <TabsContent value="projects">
           <div className="space-y-3">
-            {details.projects.length === 0 ? (
+            {areProjectsLoading ? (
+              <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading projects...</CardContent></Card>
+            ) : projects.length === 0 ? (
               <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">No projects assigned yet.</CardContent></Card>
-            ) : details.projects.map(p => (
+            ) : projects.map(p => (
               <Card key={p.id} className="border-card-border">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">

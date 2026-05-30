@@ -29,12 +29,6 @@ const navItems = [
   { label: "Learners", href: "/learners", icon: Users },
   { label: "Programs", href: "/programs", icon: BookOpen },
   { label: "Pathways", href: "/pathways", icon: GitBranch },
-  { label: "Funding Sources", href: "/funding-sources", icon: DollarSign },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
-  { label: "Events", href: "/events", icon: Calendar },
-  { label: "Jobs", href: "/jobs", icon: Briefcase },
-  { label: "Coaches", href: "/coaches", icon: UserCheck },
-  { label: "Alerts", href: "/alerts", icon: Bell, badge: 4 },
   { label: "Impact & Reporting", href: "/impact", icon: BarChart3 },
   { label: "Settings", href: "/settings", icon: Settings },
 ];

@@ -1,0 +1,979 @@
+{
+  "id": "3d8dd209-7a1c-4c30-9c92-59b057e49871",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.coaches": {
+      "name": "coaches",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "learnersCount": {
+          "name": "learnersCount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "atRisk": {
+          "name": "atRisk",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "workload": {
+          "name": "workload",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "upcomingCheckIns": {
+          "name": "upcomingCheckIns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "overdueCheckIns": {
+          "name": "overdueCheckIns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assignedLearners": {
+          "name": "assignedLearners",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "coaches_email_unique": {
+          "name": "coaches_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.funding_source_learners": {
+      "name": "funding_source_learners",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "funding_source_id": {
+          "name": "funding_source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "learner_id": {
+          "name": "learner_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "funding_source_learners_funding_source_id_funding_sources_id_fk": {
+          "name": "funding_source_learners_funding_source_id_funding_sources_id_fk",
+          "tableFrom": "funding_source_learners",
+          "tableTo": "funding_sources",
+          "columnsFrom": [
+            "funding_source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funding_source_learners_learner_id_learners_id_fk": {
+          "name": "funding_source_learners_learner_id_learners_id_fk",
+          "tableFrom": "funding_source_learners",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.funding_source_pathways": {
+      "name": "funding_source_pathways",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "funding_source_id": {
+          "name": "funding_source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pathway_id": {
+          "name": "pathway_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "funding_source_pathways_funding_source_id_funding_sources_id_fk": {
+          "name": "funding_source_pathways_funding_source_id_funding_sources_id_fk",
+          "tableFrom": "funding_source_pathways",
+          "tableTo": "funding_sources",
+          "columnsFrom": [
+            "funding_source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funding_source_pathways_pathway_id_pathways_id_fk": {
+          "name": "funding_source_pathways_pathway_id_pathways_id_fk",
+          "tableFrom": "funding_source_pathways",
+          "tableTo": "pathways",
+          "columnsFrom": [
+            "pathway_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.funding_source_programs": {
+      "name": "funding_source_programs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "funding_source_id": {
+          "name": "funding_source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program_id": {
+          "name": "program_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "funding_source_programs_funding_source_id_funding_sources_id_fk": {
+          "name": "funding_source_programs_funding_source_id_funding_sources_id_fk",
+          "tableFrom": "funding_source_programs",
+          "tableTo": "funding_sources",
+          "columnsFrom": [
+            "funding_source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "funding_source_programs_program_id_programs_id_fk": {
+          "name": "funding_source_programs_program_id_programs_id_fk",
+          "tableFrom": "funding_source_programs",
+          "tableTo": "programs",
+          "columnsFrom": [
+            "program_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.funding_sources": {
+      "name": "funding_sources",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "objectives": {
+          "name": "objectives",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "learner_count": {
+          "name": "learner_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_activities": {
+      "name": "learner_activities",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event": {
+          "name": "event",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_activities_learnerId_learners_id_fk": {
+          "name": "learner_activities_learnerId_learners_id_fk",
+          "tableFrom": "learner_activities",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_events": {
+      "name": "learner_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_events_learnerId_learners_id_fk": {
+          "name": "learner_events_learnerId_learners_id_fk",
+          "tableFrom": "learner_events",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_notes": {
+      "name": "learner_notes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "author": {
+          "name": "author",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_notes_learnerId_learners_id_fk": {
+          "name": "learner_notes_learnerId_learners_id_fk",
+          "tableFrom": "learner_notes",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_projects": {
+      "name": "learner_projects",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completion": {
+          "name": "completion",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_projects_learnerId_learners_id_fk": {
+          "name": "learner_projects_learnerId_learners_id_fk",
+          "tableFrom": "learner_projects",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_readiness_scores": {
+      "name": "learner_readiness_scores",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dimension": {
+          "name": "dimension",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_readiness_scores_learnerId_learners_id_fk": {
+          "name": "learner_readiness_scores_learnerId_learners_id_fk",
+          "tableFrom": "learner_readiness_scores",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learner_roadmaps": {
+      "name": "learner_roadmaps",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "learnerId": {
+          "name": "learnerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dueDate": {
+          "name": "dueDate",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learner_roadmaps_learnerId_learners_id_fk": {
+          "name": "learner_roadmaps_learnerId_learners_id_fk",
+          "tableFrom": "learner_roadmaps",
+          "tableTo": "learners",
+          "columnsFrom": [
+            "learnerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.learners": {
+      "name": "learners",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pathway": {
+          "name": "pathway",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "program": {
+          "name": "program",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "coach": {
+          "name": "coach",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "progress": {
+          "name": "progress",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "readiness": {
+          "name": "readiness",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lastActive": {
+          "name": "lastActive",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nextAction": {
+          "name": "nextAction",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joinDate": {
+          "name": "joinDate",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photo": {
+          "name": "photo",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "background": {
+          "name": "background",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "strengths": {
+          "name": "strengths",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "risks": {
+          "name": "risks",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "profileStrength": {
+          "name": "profileStrength",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "learners_email_unique": {
+          "name": "learners_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.pathways": {
+      "name": "pathways",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "targetProfile": {
+          "name": "targetProfile",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estimatedWeeks": {
+          "name": "estimatedWeeks",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activeLearners": {
+          "name": "activeLearners",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skills": {
+          "name": "skills",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "milestones": {
+          "name": "milestones",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "projects": {
+          "name": "projects",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "readinessCriteria": {
+          "name": "readinessCriteria",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    },
+    "public.programs": {
+      "name": "programs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pathwayCategory": {
+          "name": "pathwayCategory",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activeLearners": {
+          "name": "activeLearners",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completionRate": {
+          "name": "completionRate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "readinessScore": {
+          "name": "readinessScore",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "eventParticipation": {
+          "name": "eventParticipation",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "placementReady": {
+          "name": "placementReady",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "funderTag": {
+          "name": "funderTag",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cohort": {
+          "name": "cohort",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "startDate": {
+          "name": "startDate",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "endDate": {
+          "name": "endDate",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pathways": {
+          "name": "pathways",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {}
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
