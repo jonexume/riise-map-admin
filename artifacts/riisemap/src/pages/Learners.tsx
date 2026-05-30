@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface InviteForm {
   firstName: string;
@@ -52,6 +53,7 @@ const PROGRAM_LABELS: Record<string, string> = {
 };
 
 export default function Learners() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: allLearners = [], isLoading } = useGetLearners();
   const createLearnerMutation = useCreateLearner({
@@ -103,14 +105,6 @@ export default function Learners() {
     setInviteErrors(e);
     return Object.keys(e).length === 0;
   };
-
-import { useToast } from "@/hooks/use-toast";
-
-// ... inside the component
-
-  const { toast } = useToast();
-
-// ... in the component
 
   const handleSendInvite = async () => {
     if (!validateInvite()) return;
