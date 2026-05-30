@@ -5,39 +5,23 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 
+// This is the definitive path to the .env file for the api-server.
+// By setting this explicitly, we avoid searching multiple locations and prevent errors.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const envPath = join(__dirname, "..", "..", "artifacts", "api-server", ".env");
 
-// Try loading .env files with explicit paths
-console.log("Attempting to load .env files...");
-console.log("__dirname:", __dirname);
+// Load the environment variables from the specific path.
+config({ path: envPath });
 
-const pathsToTry = [
-  join(__dirname, "..", "..", ".env"), // Project root
-  join(__dirname, "..", ".env"),        // lib/db directory
-];
-
-for (const envPath of pathsToTry) {
-  console.log("Trying path:", envPath);
-  const result = config({ path: envPath });
-  if (!result.error) {
-    console.log("Loaded .env from:", envPath);
-    break;
-  } else {
-    console.log("Failed to load from:", envPath, result.error);
-  }
-}
-
-console.log("DATABASE_URL from process.env:", process.env.DATABASE_URL ? "Set (length: " + process.env.DATABASE_URL.length + ")" : "Not set");
-
-const { Pool } = pg;
-
+// Now, we can safely check for the DATABASE_URL.
 if (!process.env.DATABASE_URL) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    `DATABASE_URL must be set. Check your .env file at: ${envPath}`
   );
 }
 
+const { Pool } = pg;
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 export const db = drizzle(pool, { schema });
 

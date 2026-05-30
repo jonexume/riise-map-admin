@@ -67,6 +67,17 @@ export default function Learners() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['/api/learners'] });
+        toast({
+          title: "Success!",
+          description: "New learner has been invited.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request. Please try again.",
+        });
       }
     }
   });

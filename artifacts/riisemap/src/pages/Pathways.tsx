@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetPathways, type Pathway } from "@workspace/api-client-react";
+import { useGetPathways, useCreatePathway, type Pathway } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 type View = "list" | "detail" | "add";
 
@@ -104,7 +105,15 @@ function TagInput({
 }
 
 export default function Pathways() {
+  const queryClient = useQueryClient();
   const { data: pathwayData, isLoading: pathwaysLoading } = useGetPathways();
+  const createPathwayMutation = useCreatePathway({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/pathways'] });
+      },
+    },
+  });
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
@@ -158,21 +167,23 @@ export default function Pathways() {
     if (validateStep()) setStep(s => s + 1);
   };
 
-  const handleSubmit = () => {
-    const newP: PathwayData = {
-      id: String(Date.now()),
-      name: form.name,
-      description: form.description,
-      targetProfile: form.targetProfile || "Career changers and motivated learners",
-      estimatedWeeks: parseInt(form.estimatedWeeks) || 16,
-      activeLearners: 0,
-      skills: form.skills,
-      milestones: form.milestones,
-      projects: form.projects,
-      readinessCriteria: form.readinessCriteria,
-    };
-    // TODO: Implement create pathway mutation
-    // setPathways(prev => [...prev, newP]);
+  const handleSubmit = async () => {
+    if (!validateStep()) return;
+
+    await createPathwayMutation.mutateAsync({
+      data: {
+        name: form.name,
+        description: form.description,
+        targetProfile: form.targetProfile || "Career changers and motivated learners",
+        estimatedWeeks: parseInt(form.estimatedWeeks) || 16,
+        activeLearners: 0,
+        skills: form.skills,
+        milestones: form.milestones,
+        projects: form.projects,
+        readinessCriteria: form.readinessCriteria,
+      },
+    });
+
     setSubmitted(true);
   };
 
