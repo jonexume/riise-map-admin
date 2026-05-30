@@ -12,7 +12,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
+import { useGetLearners, useCreateLearner, getLearners } from "@workspace/api-client-react";
+
+type Learner = NonNullable<Awaited<ReturnType<typeof getLearners>>["data"]>[number];
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -55,7 +57,8 @@ const PROGRAM_LABELS: Record<string, string> = {
 export default function Learners() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: allLearners = [], isLoading } = useGetLearners();
+  const { data, isLoading } = useGetLearners();
+  const allLearners = data?.data || [];
   const createLearnerMutation = useCreateLearner({
     mutation: {
       onSuccess: () => {

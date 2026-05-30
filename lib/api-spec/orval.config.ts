@@ -1,6 +1,7 @@
-import { defineConfig } from "orval";
-
-export default defineConfig({
+/**
+ * @type {import('orval').Options}
+ */
+module.exports = {
   "api-client-react": {
     input: "./openapi.yaml",
     output: {
@@ -27,4 +28,4 @@ export default defineConfig({
       clean: true,
     },
   },
-});
+};

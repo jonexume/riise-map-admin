@@ -27,7 +27,8 @@ const BLANK: AddForm = {
 
 export default function Coaches() {
   const queryClient = useQueryClient();
-  const { data: coaches = [], isLoading } = useGetCoaches();
+  const { data, isLoading } = useGetCoaches();
+  const coaches = data?.data || [];
   const createCoachMutation = useCreateCoach({
     mutation: {
       onSuccess: () => {
