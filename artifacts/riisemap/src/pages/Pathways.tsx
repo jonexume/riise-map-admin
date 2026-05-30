@@ -104,7 +104,7 @@ function TagInput({
 }
 
 export default function Pathways() {
-  const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
+  const { data: pathwayData, isLoading: pathwaysLoading } = useGetPathways();
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
@@ -116,6 +116,8 @@ export default function Pathways() {
   const [milestoneInput, setMilestoneInput] = useState("");
   const [projectInput, setProjectInput] = useState("");
   const [criteriaInput, setCriteriaInput] = useState("");
+
+  const pathways = Array.isArray(pathwayData) ? pathwayData : [];
 
   if (pathwaysLoading) {
     return (
@@ -169,7 +171,8 @@ export default function Pathways() {
       projects: form.projects,
       readinessCriteria: form.readinessCriteria,
     };
-    setPathways(prev => [...prev, newP]);
+    // TODO: Implement create pathway mutation
+    // setPathways(prev => [...prev, newP]);
     setSubmitted(true);
   };
 

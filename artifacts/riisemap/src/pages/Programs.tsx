@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { useGetPrograms, useGetLearners, type Program, type Learner } from "@workspace/api-client-react";
+import { useGetPrograms, useGetLearners, useCreateProgram, type Program, type Learner } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
@@ -22,13 +23,22 @@ const emptyForm = {
 };
 
 export default function Programs() {
-  const { data: programList = [], isLoading: programsLoading } = useGetPrograms();
+  const queryClient = useQueryClient();
+  const { data: programData, isLoading: programsLoading } = useGetPrograms();
   const { data: learners = [] } = useGetLearners();
+  const createProgramMutation = useCreateProgram({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      },
+    },
+  });
   const [selected, setSelected] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
+  const programList = Array.isArray(programData) ? programData : [];
   const program = programList.find(p => p.id === selected);
 
   const validateForm = () => {
@@ -43,9 +53,24 @@ export default function Programs() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleCreate = () => {
-    // TODO: Implement createProgram mutation
+  const handleCreate = async () => {
+    if (!validateForm()) return;
+
+    await createProgramMutation.mutateAsync({
+      data: {
+        ...form,
+        // These are placeholders and should be calculated or fetched
+        activeLearners: 0,
+        completionRate: 0,
+        readinessScore: 0,
+        eventParticipation: 0,
+        placementReady: 0,
+        pathways: form.pathways.split(",").map(p => p.trim()).filter(p => p),
+      },
+    });
+
     setShowCreate(false);
+    setForm(emptyForm);
   };
 
   if (programsLoading) {
