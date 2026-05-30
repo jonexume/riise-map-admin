@@ -1,352 +1,3 @@
-openapi: 3.1.0
-info:
-  # Do not change the title, if the title changes, the import paths will be broken
-  title: Api
-  version: 0.1.0
-  description: API specification
-servers:
-  - url: /api
-    description: Base API path
-tags:
-  - name: health
-    description: Health operations
-  - name: learners
-    description: Learner operations
-  - name: programs
-    description: Program operations
-  - name: pathways
-    description: Pathway operations
-  - name: funding-sources
-    description: Funding Source operations
-paths:
-  /healthz:
-    get:
-      operationId: healthCheck
-      tags: [health]
-      summary: Health check
-      description: Returns server health status
-      responses:
-        "200":
-          description: Healthy
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
-
-  /learners:
-    get:
-      operationId: getLearners
-      tags: [learners]
-      summary: List all learners
-      responses:
-        "200":
-          description: A list of learners
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Learner"
-    post:
-      operationId: createLearner
-      tags: [learners]
-      summary: Create a new learner
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateLearner"
-      responses:
-        "201":
-          description: Learner created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Learner"
-
-  /learners/{id}:
-    get:
-      operationId: getLearner
-      tags: [learners]
-      summary: Get a single learner
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: A single learner
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Learner"
-        "404":
-          description: Learner not found
-    put:
-      operationId: updateLearner
-      tags: [learners]
-      summary: Update a learner
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateLearner"
-      responses:
-        "200":
-          description: Learner updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Learner"
-        "404":
-          description: Learner not found
-
-  /programs:
-    get:
-      operationId: getPrograms
-      tags: [programs]
-      summary: List all programs
-      responses:
-        "200":
-          description: A list of programs
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Program"
-    post:
-      operationId: createProgram
-      tags: [programs]
-      summary: Create a new program
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateProgram"
-      responses:
-        "201":
-          description: Program created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Program"
-
-  /programs/{id}:
-    get:
-      operationId: getProgram
-      tags: [programs]
-      summary: Get a single program
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: A single program
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Program"
-        "404":
-          description: Program not found
-    put:
-      operationId: updateProgram
-      tags: [programs]
-      summary: Update a program
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateProgram"
-      responses:
-        "200":
-          description: Program updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Program"
-        "404":
-          description: Program not found
-
-  /pathways:
-    get:
-      operationId: getPathways
-      tags: [pathways]
-      summary: List all pathways
-      responses:
-        "200":
-          description: A list of pathways
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Pathway"
-    post:
-      operationId: createPathway
-      tags: [pathways]
-      summary: Create a new pathway
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePathway"
-      responses:
-        "201":
-          description: Pathway created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pathway"
-
-  /pathways/{id}:
-    get:
-      operationId: getPathway
-      tags: [pathways]
-      summary: Get a single pathway
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: A single pathway
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pathway"
-        "404":
-          description: Pathway not found
-    put:
-      operationId: updatePathway
-      tags: [pathways]
-      summary: Update a pathway
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdatePathway"
-      responses:
-        "200":
-          description: Pathway updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pathway"
-        "404":
-          description: Pathway not found
-
-  /funding-sources:
-    get:
-      operationId: getFundingSources
-      tags: [funding-sources]
-      summary: List all funding sources
-      responses:
-        "200":
-          description: A list of funding sources
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FundingSource"
-    post:
-      operationId: createFundingSource
-      tags: [funding-sources]
-      summary: Create a new funding source
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateFundingSource"
-      responses:
-        "201":
-          description: Funding source created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FundingSource"
-
-  /funding-sources/{id}:
-    get:
-      operationId: getFundingSource
-      tags: [funding-sources]
-      summary: Get a single funding source
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        "200":
-          description: A single funding source
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FundingSource"
-        "404":
-          description: Funding source not found
-    put:
-      operationId: updateFundingSource
-      tags: [funding-sources]
-      summary: Update a funding source
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateFundingSource"
-      responses:
-        "200":
-          description: Funding source updated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FundingSource"
-        "404":
-          description: Funding source not found
-
 components:
   schemas:
     HealthStatus:
@@ -887,4 +538,74 @@ components:
           type: array
           items:
             type: integer
+            
+    Coach:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+        learnersCount:
+          type: integer
+        atRisk:
+          type: integer
+        workload:
+          type: string
+        upcomingCheckIns:
+          type: integer
+        overdueCheckIns:
+          type: integer
+        assignedLearners:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - role
+        - email
+        - learnersCount
+        - atRisk
+        - workload
+        - upcomingCheckIns
+        - overdueCheckIns
 
+    CreateCoach:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+        learnersCount:
+          type: integer
+        atRisk:
+          type: integer
+        workload:
+          type: string
+        upcomingCheckIns:
+          type: integer
+        overdueCheckIns:
+          type: integer
+        assignedLearners:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - name
+        - role
+        - email
+        - learnersCount
+        - atRisk
+        - workload
+        - upcomingCheckIns
+        - overdueCheckIns

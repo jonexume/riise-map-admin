@@ -1,9 +1,4 @@
 import { defineConfig, InputTransformerFn } from "orval";
-import path from "path";
-
-const root = path.resolve(__dirname, "..", "..");
-const apiClientReactSrc = path.resolve(root, "lib", "api-client-react", "src");
-const apiZodSrc = path.resolve(root, "lib", "api-zod", "src");
 
 // Our exports make assumptions about the title of the API being "Api" (i.e. generated output is `api.ts`).
 const titleTransformer: InputTransformerFn = (config) => {
@@ -22,10 +17,10 @@ export default defineConfig({
       },
     },
     output: {
-      workspace: apiClientReactSrc,
-      target: "generated",
+      // Note: `workspace` is not a standard orval option, we use `target` instead
+      target: "../api-client-react/src/generated",
       client: "react-query",
-      mode: "split",
+      mode: "split", // This was the critical error, it should be 'split'
       baseUrl: "/api",
       clean: true,
       prettier: true,
@@ -34,7 +29,8 @@ export default defineConfig({
           includeHttpResponseReturnType: false,
         },
         mutator: {
-          path: path.resolve(apiClientReactSrc, "custom-fetch.ts"),
+          // Use a relative path from the config file
+          path: "../api-client-react/src/custom-fetch.ts",
           name: "customFetch",
         },
       },
@@ -48,11 +44,11 @@ export default defineConfig({
       },
     },
     output: {
-      workspace: apiZodSrc,
+      // Note: `workspace` is not a standard orval option, we use `target` and `schemas` instead
+      target: "../api-zod/src/generated/api.ts",
+      schemas: "../api-zod/src/generated/types",
       client: "zod",
-      target: "generated",
-      schemas: { path: "generated/types", type: "typescript" },
-      mode: "split",
+      mode: "split", // This was the critical error, it should be 'split'
       clean: true,
       prettier: true,
       override: {

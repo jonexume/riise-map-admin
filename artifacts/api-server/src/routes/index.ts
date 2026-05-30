@@ -4,6 +4,7 @@ import learnersRouter from "./learner";
 import programsRouter from "./program";
 import pathwaysRouter from "./pathway";
 import fundingSourcesRouter from "./funding-sources";
+import { coachRouter } from "./coach";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(learnersRouter);
 router.use(programsRouter);
 router.use(pathwaysRouter);
 router.use(fundingSourcesRouter);
+router.use(coachRouter);
 
 export default router;

@@ -10,18 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
-import { coaches as seedCoaches, learners } from "@/data/mockData";
+import { useGetCoaches, useCreateCoach } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 
-type Coach = typeof seedCoaches[number];
+import { learners } from "@/data/mockData";
 
-interface AddForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: string;
-  specialization: string;
-}
 
 const BLANK: AddForm = {
   firstName: "",
@@ -33,12 +26,21 @@ const BLANK: AddForm = {
 };
 
 export default function Coaches() {
-  const [coaches, setCoaches] = useState<Coach[]>(seedCoaches);
+  const queryClient = useQueryClient();
+  const { data: coaches = [], isLoading } = useGetCoaches();
+  const createCoachMutation = useCreateCoach({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/coaches'] });
+      }
+    }
+  });
+
   const [showAdd, setShowAdd]     = useState(false);
   const [addStep, setAddStep]     = useState<"form" | "confirm">("form");
   const [form, setForm]           = useState<AddForm>(BLANK);
   const [errors, setErrors]       = useState<Partial<Record<keyof AddForm, string>>>({});
-  const [newCoachId, setNewCoachId] = useState("");
+  const [newCoachId, setNewCoachId] = useState(0);
 
   const setField = (k: keyof AddForm, v: string) => {
     setForm(f => ({ ...f, [k]: v }));
@@ -56,24 +58,29 @@ export default function Coaches() {
     return Object.keys(e).length === 0;
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!validate()) return;
-    const id = String(Date.now());
-    const newCoach: Coach = {
-      id,
-      name: `${form.firstName.trim()} ${form.lastName.trim()}`,
-      role: form.role,
-      email: form.email.trim(),
-      learnersCount: 0,
-      atRisk: 0,
-      workload: "Healthy" as "Healthy" | "Near Capacity" | "At Capacity",
-      upcomingCheckIns: 0,
-      overdueCheckIns: 0,
-      assignedLearners: [],
-    };
-    setCoaches(prev => [...prev, newCoach]);
-    setNewCoachId(id);
-    setAddStep("confirm");
+
+    try {
+      const newCoach = await createCoachMutation.mutateAsync({
+        data: {
+          name: `${form.firstName.trim()} ${form.lastName.trim()}`,
+          role: form.role,
+          email: form.email.trim(),
+          learnersCount: 0,
+          atRisk: 0,
+          workload: "Healthy",
+          upcomingCheckIns: 0,
+          overdueCheckIns: 0,
+          assignedLearners: [],
+        }
+      });
+      setNewCoachId(newCoach.id);
+      setAddStep("confirm");
+    } catch (error) {
+      console.error("Failed to create coach:", error);
+      // You might want to show a toast notification here
+    }
   };
 
   const closeAdd = () => {
@@ -82,11 +89,11 @@ export default function Coaches() {
       setForm(BLANK);
       setErrors({});
       setAddStep("form");
-      setNewCoachId("");
+      setNewCoachId(0);
     }, 300);
   };
 
-  const totalAtRisk = coaches.reduce((sum, c) => sum + c.atRisk, 0);
+  const totalAtRisk = coaches.reduce((sum, c) => sum + (c.atRisk ?? 0), 0);
 
   return (
     <div className="px-6 py-8 max-w-6xl mx-auto">
@@ -94,7 +101,7 @@ export default function Coaches() {
         <div>
           <h1 className="text-2xl font-semibold text-foreground">Coaches</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {coaches.length} coaches supporting {learners.length} learners
+            {isLoading ? 'Loading...' : `${coaches.length} coaches supporting ${learners.length} learners`}
           </p>
         </div>
         <Button size="sm" data-testid="add-coach-btn" onClick={() => { setAddStep("form"); setShowAdd(true); }}>
@@ -169,7 +176,7 @@ export default function Coaches() {
                     <p className="text-xs text-muted-foreground italic px-2">No learners assigned yet</p>
                   ) : (
                     <div className="space-y-1">
-                      {coach.assignedLearners.map(name => {
+                      {coach.assignedLearners?.map(name => {
                         const learner = learners.find(l => l.name === name);
                         return (
                           <Link key={name} href={learner ? `/learners/${learner.id}` : "#"}>
@@ -305,7 +312,7 @@ export default function Coaches() {
 
                 <div className="flex gap-3 w-full">
                   <Button variant="outline" className="flex-1" onClick={closeAdd}>Back to Coaches</Button>
-                  <Button className="flex-1" onClick={() => { setForm(BLANK); setErrors({}); setAddStep("form"); setNewCoachId(""); }}>
+                  <Button className="flex-1" onClick={() => { setForm(BLANK); setErrors({}); setAddStep("form"); setNewCoachId(0); }}>
                     Add Another
                   </Button>
                 </div>
