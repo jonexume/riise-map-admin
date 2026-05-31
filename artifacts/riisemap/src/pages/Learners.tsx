@@ -94,13 +94,52 @@ export default function Learners() {
     if (field === "program") setInviteForm((f) => ({ ...f, program: value, pathway: "" }));
   };
 
+  const validateField = (field: keyof InviteForm) => {
+    const value = inviteForm[field];
+    let error = "";
+    switch (field) {
+      case "firstName":
+        if (!value.trim()) error = "First name is required";
+        else if (value.trim().length > 127) error = "First name must be 127 characters or less";
+        break;
+      case "lastName":
+        if (!value.trim()) error = "Last name is required";
+        else if (value.trim().length > 127) error = "Last name must be 127 characters or less";
+        break;
+      case "email":
+        if (!value.trim()) error = "Email address is required";
+        else if (value.trim().length > 255) error = "Email must be 255 characters or less";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) error = "Please enter a valid email address";
+        break;
+      case "phone":
+        if (value.trim()) {
+          const digits = value.replace(/\D/g, "");
+          if (digits.length !== 10 && digits.length !== 11) error = "Enter a valid phone number, e.g. (404) 555-0100";
+        }
+        break;
+      case "message":
+        if (value.length > 1000) error = "Message must be 1000 characters or less";
+        break;
+    }
+    setInviteErrors((e) => ({ ...e, [field]: error }));
+  };
+
   const validateInvite = () => {
     const e: typeof inviteErrors = {};
     if (!inviteForm.firstName.trim()) e.firstName = "First name is required";
+    else if (inviteForm.firstName.trim().length > 127) e.firstName = "First name must be 127 characters or less";
     if (!inviteForm.lastName.trim()) e.lastName = "Last name is required";
+    else if (inviteForm.lastName.trim().length > 127) e.lastName = "Last name must be 127 characters or less";
     if (!inviteForm.email.trim()) e.email = "Email address is required";
+    else if (inviteForm.email.trim().length > 255) e.email = "Email must be 255 characters or less";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteForm.email.trim()))
       e.email = "Please enter a valid email address";
+    if (inviteForm.phone.trim()) {
+      const digits = inviteForm.phone.replace(/\D/g, "");
+      if (digits.length !== 10 && digits.length !== 11)
+        e.phone = "Enter a valid phone number, e.g. (404) 555-0100";
+    }
+    if (inviteForm.message.length > 1000) e.message = "Message must be 1000 characters or less";
     setInviteErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -394,7 +433,7 @@ export default function Learners() {
 
       {/* ── Invite Learner Modal ─────────────────────────────── */}
       {showInvite && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4" onClick={closeInvite}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div
             className="bg-background rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
@@ -491,8 +530,10 @@ export default function Learners() {
                       <Input
                         className={`mt-1.5 h-10 text-sm ${inviteErrors.firstName ? "border-destructive" : ""}`}
                         placeholder="First name"
+                        maxLength={127}
                         value={inviteForm.firstName}
                         onChange={(e) => setField("firstName", e.target.value)}
+                        onBlur={() => validateField("firstName")}
                         data-testid="invite-first-name"
                       />
                       {inviteErrors.firstName && <p className="text-xs text-destructive mt-1">{inviteErrors.firstName}</p>}
@@ -504,8 +545,10 @@ export default function Learners() {
                       <Input
                         className={`mt-1.5 h-10 text-sm ${inviteErrors.lastName ? "border-destructive" : ""}`}
                         placeholder="Last name"
+                        maxLength={127}
                         value={inviteForm.lastName}
                         onChange={(e) => setField("lastName", e.target.value)}
+                        onBlur={() => validateField("lastName")}
                         data-testid="invite-last-name"
                       />
                       {inviteErrors.lastName && <p className="text-xs text-destructive mt-1">{inviteErrors.lastName}</p>}
@@ -522,8 +565,10 @@ export default function Learners() {
                         type="email"
                         className={`mt-1.5 h-10 text-sm ${inviteErrors.email ? "border-destructive" : ""}`}
                         placeholder="learner@email.com"
+                        maxLength={255}
                         value={inviteForm.email}
                         onChange={(e) => setField("email", e.target.value)}
+                        onBlur={() => validateField("email")}
                         data-testid="invite-email"
                       />
                       {inviteErrors.email && <p className="text-xs text-destructive mt-1">{inviteErrors.email}</p>}
@@ -534,11 +579,14 @@ export default function Learners() {
                       </Label>
                       <Input
                         type="tel"
-                        className="mt-1.5 h-10 text-sm"
+                        className={`mt-1.5 h-10 text-sm ${inviteErrors.phone ? "border-destructive" : ""}`}
                         placeholder="(404) 555-0100"
+                        maxLength={20}
                         value={inviteForm.phone}
                         onChange={(e) => setField("phone", e.target.value)}
+                        onBlur={() => validateField("phone")}
                       />
+                      {inviteErrors.phone && <p className="text-xs text-destructive mt-1">{inviteErrors.phone}</p>}
                     </div>
                   </div>
 
@@ -603,12 +651,18 @@ export default function Learners() {
                   <div>
                     <Label className="text-sm font-medium text-foreground">Personal Message</Label>
                     <Textarea
-                      className="mt-1.5 text-sm resize-none"
+                      className={`mt-1.5 text-sm resize-none ${inviteErrors.message ? "border-destructive" : ""}`}
                       rows={6}
+                      maxLength={1000}
                       value={inviteForm.message}
                       onChange={(e) => setField("message", e.target.value)}
+                      onBlur={() => validateField("message")}
                       data-testid="invite-message"
                     />
+                    <div className="flex justify-between mt-1">
+                      {inviteErrors.message ? <p className="text-xs text-destructive">{inviteErrors.message}</p> : <span />}
+                      <span className="text-xs text-muted-foreground">{inviteForm.message.length}/1000</span>
+                    </div>
                   </div>
                 </div>
 
