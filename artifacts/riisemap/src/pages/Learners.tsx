@@ -94,6 +94,18 @@ export default function Learners() {
     if (field === "program") setInviteForm((f) => ({ ...f, program: value, pathway: "" }));
   };
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+    if (digits.length <= 3) return digits.length ? `(${digits}` : "";
+    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const setPhoneField = (value: string) => {
+    setInviteForm((f) => ({ ...f, phone: formatPhone(value) }));
+    setInviteErrors((e) => ({ ...e, phone: "" }));
+  };
+
   const validateField = (field: keyof InviteForm) => {
     const value = inviteForm[field];
     let error = "";
@@ -114,7 +126,7 @@ export default function Learners() {
       case "phone":
         if (value.trim()) {
           const digits = value.replace(/\D/g, "");
-          if (digits.length !== 10 && digits.length !== 11) error = "Enter a valid phone number, e.g. (404) 555-0100";
+          if (digits.length !== 10) error = "Enter a valid 10-digit phone number";
         }
         break;
       case "message":
@@ -581,9 +593,9 @@ export default function Learners() {
                         type="tel"
                         className={`mt-1.5 h-10 text-sm ${inviteErrors.phone ? "border-destructive" : ""}`}
                         placeholder="(404) 555-0100"
-                        maxLength={20}
+                        maxLength={14}
                         value={inviteForm.phone}
-                        onChange={(e) => setField("phone", e.target.value)}
+                        onChange={(e) => setPhoneField(e.target.value)}
                         onBlur={() => validateField("phone")}
                       />
                       {inviteErrors.phone && <p className="text-xs text-destructive mt-1">{inviteErrors.phone}</p>}
