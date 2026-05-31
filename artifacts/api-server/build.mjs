@@ -106,16 +106,17 @@ async function buildAll() {
     entryPoints: [entryPoint],
     platform: "node",
     bundle: true,
-    format: "esm",
+    format: isLambda ? "cjs" : "esm",
     outdir: distDir,
     logLevel: "info",
     external: isLambda ? [...external, "@aws-sdk/*", "@azure/*"] : external,
     sourcemap: isLambda ? false : "linked",
     minify: isLambda,
+    outExtension: isLambda ? {} : {},
     plugins: [
       esbuildPluginPino({ transports: ["pino-pretty"] }),
     ],
-    banner,
+    banner: isLambda ? {} : banner,
   });
 }
 
