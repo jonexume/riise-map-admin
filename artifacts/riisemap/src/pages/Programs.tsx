@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { useGetPrograms, useGetLearners, type Program, type Learner } from "@workspace/api-client-react";
+import { useGetPrograms, useGetLearners, useCreateProgram, type Program, type Learner } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
@@ -22,8 +23,16 @@ const emptyForm = {
 };
 
 export default function Programs() {
+  const queryClient = useQueryClient();
   const { data: programList = [], isLoading: programsLoading } = useGetPrograms();
   const { data: learners = [] } = useGetLearners();
+  const createProgramMutation = useCreateProgram({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      }
+    }
+  });
   const [selected, setSelected] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -43,9 +52,32 @@ export default function Programs() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleCreate = () => {
-    // TODO: Implement createProgram mutation
-    setShowCreate(false);
+  const handleCreate = async () => {
+    if (!validateForm()) return;
+    try {
+      await createProgramMutation.mutateAsync({
+        data: {
+          name: form.name.trim(),
+          description: form.description.trim(),
+          pathwayCategory: form.pathways.trim() || "General",
+          activeLearners: 0,
+          completionRate: 0,
+          readinessScore: 0,
+          eventParticipation: 0,
+          placementReady: 0,
+          funderTag: form.funderTag.trim(),
+          cohort: form.cohort.trim(),
+          startDate: form.startDate,
+          endDate: form.endDate,
+          pathways: form.pathways ? form.pathways.split(",").map(p => p.trim()).filter(Boolean) : [],
+        }
+      });
+      setShowCreate(false);
+      setForm(emptyForm);
+      setFormErrors({});
+    } catch (error) {
+      console.error("Failed to create program:", error);
+    }
   };
 
   if (programsLoading) {
