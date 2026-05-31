@@ -1,34 +1,19 @@
-import { config } from "dotenv";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Try loading .env files with explicit paths
-console.log("Attempting to load .env files...");
-console.log("__dirname:", __dirname);
-
-const pathsToTry = [
-  join(__dirname, "..", "..", ".env"), // Project root
-  join(__dirname, "..", ".env"),        // lib/db directory
-];
-
-for (const envPath of pathsToTry) {
-  console.log("Trying path:", envPath);
-  const result = config({ path: envPath });
-  if (!result.error) {
-    console.log("Loaded .env from:", envPath);
-    break;
-  } else {
-    console.log("Failed to load from:", envPath, result.error);
+// In Lambda, DATABASE_URL is set via environment variables.
+// Locally, try to load from .env files.
+if (!process.env.DATABASE_URL) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const dotenv = require("dotenv");
+    const path = require("path");
+    dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+  } catch {
+    // dotenv not available or failed — that's fine if DATABASE_URL is already set
   }
 }
-
-console.log("DATABASE_URL from process.env:", process.env.DATABASE_URL ? "Set (length: " + process.env.DATABASE_URL.length + ")" : "Not set");
 
 const { Pool } = pg;
 
