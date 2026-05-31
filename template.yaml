@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Riise-Map API — Express on Lambda behind HTTP API Gateway
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    Description: Supabase PostgreSQL connection string (use pooled connection on port 6543)
+    NoEcho: true
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, staging, prod]
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: lambda.handler
+      CodeUri: artifacts/api-server/dist-lambda/
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          NODE_ENV: production
+      Events:
+        RootProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /{proxy+}
+            Method: ANY
+        Root:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /
+            Method: ANY
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}'

@@ -15,6 +15,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface InviteForm {
   firstName: string;
@@ -104,13 +105,7 @@ export default function Learners() {
     return Object.keys(e).length === 0;
   };
 
-import { useToast } from "@/hooks/use-toast";
-
-// ... inside the component
-
   const { toast } = useToast();
-
-// ... in the component
 
   const handleSendInvite = async () => {
     if (!validateInvite()) return;
