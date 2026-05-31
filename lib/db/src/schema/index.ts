@@ -49,6 +49,7 @@ export type Coach = typeof coachesTable.$inferSelect;
 export const programsTable = pgTable("programs", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  programTag: varchar("programTag", { length: 100 }).notNull().unique(),
   description: text("description").notNull(),
   pathwayCategory: varchar("pathwayCategory", { length: 255 }).notNull(),
   activeLearners: integer("activeLearners").notNull(),

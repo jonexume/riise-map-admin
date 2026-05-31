@@ -6,13 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { useGetPrograms, useGetLearners, useCreateProgram, type Program, type Learner } from "@workspace/api-client-react";
+import { useGetPrograms, useGetLearners, useCreateProgram, useUpdateProgram, type Program, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
 
 const emptyForm = {
   name: "",
+  programTag: "",
   description: "",
   pathwayCategory: "",
   cohort: "",
@@ -33,8 +34,16 @@ export default function Programs() {
       }
     }
   });
+  const updateProgramMutation = useUpdateProgram({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      }
+    }
+  });
   const [selected, setSelected] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -43,13 +52,55 @@ export default function Programs() {
   const validateForm = () => {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Program name is required";
+    else if (form.name.trim().length > 100) errs.name = "Program name must be 100 characters or less";
+    if (!form.programTag.trim()) errs.programTag = "Program tag is required";
+    else if (form.programTag.trim().length > 50) errs.programTag = "Program tag must be 50 characters or less";
+    else if (!/^[a-z0-9-]+$/.test(form.programTag.trim())) errs.programTag = "Only lowercase letters, numbers, and hyphens";
     if (!form.description.trim()) errs.description = "Description is required";
+    else if (form.description.trim().length > 500) errs.description = "Description must be 500 characters or less";
     if (!form.cohort.trim()) errs.cohort = "Cohort name is required";
+    else if (form.cohort.trim().length > 50) errs.cohort = "Cohort must be 50 characters or less";
     if (!form.startDate.trim()) errs.startDate = "Start date is required";
     if (!form.endDate.trim()) errs.endDate = "End date is required";
     if (!form.funderTag.trim()) errs.funderTag = "Funder is required";
+    else if (form.funderTag.trim().length > 100) errs.funderTag = "Funder must be 100 characters or less";
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const validateField = (field: keyof typeof form) => {
+    let error = "";
+    const value = form[field];
+    switch (field) {
+      case "name":
+        if (!value.trim()) error = "Program name is required";
+        else if (value.trim().length > 100) error = "Program name must be 100 characters or less";
+        break;
+      case "programTag":
+        if (!value.trim()) error = "Program tag is required";
+        else if (value.trim().length > 50) error = "Program tag must be 50 characters or less";
+        else if (!/^[a-z0-9-]+$/.test(value.trim())) error = "Only lowercase letters, numbers, and hyphens";
+        break;
+      case "description":
+        if (!value.trim()) error = "Description is required";
+        else if (value.trim().length > 500) error = "Description must be 500 characters or less";
+        break;
+      case "cohort":
+        if (!value.trim()) error = "Cohort name is required";
+        else if (value.trim().length > 50) error = "Cohort must be 50 characters or less";
+        break;
+      case "startDate":
+        if (!value.trim()) error = "Start date is required";
+        break;
+      case "endDate":
+        if (!value.trim()) error = "End date is required";
+        break;
+      case "funderTag":
+        if (!value.trim()) error = "Funder is required";
+        else if (value.trim().length > 100) error = "Funder must be 100 characters or less";
+        break;
+    }
+    setFormErrors(e => ({ ...e, [field]: error }));
   };
 
   const handleCreate = async () => {
@@ -58,6 +109,7 @@ export default function Programs() {
       await createProgramMutation.mutateAsync({
         data: {
           name: form.name.trim(),
+          programTag: form.programTag.trim(),
           description: form.description.trim(),
           pathwayCategory: form.pathways.trim() || "General",
           activeLearners: 0,
@@ -75,8 +127,62 @@ export default function Programs() {
       setShowCreate(false);
       setForm(emptyForm);
       setFormErrors({});
-    } catch (error) {
-      console.error("Failed to create program:", error);
+    } catch (error: any) {
+      if (error?.status === 409) {
+        setFormErrors(e => ({ ...e, programTag: "This program tag is already in use" }));
+      } else {
+        console.error("Failed to create program:", error);
+      }
+    }
+  };
+
+  const openEdit = (p: Program) => {
+    setEditingProgram(p);
+    setForm({
+      name: p.name,
+      programTag: (p as any).programTag || "",
+      description: p.description,
+      pathwayCategory: p.pathwayCategory,
+      cohort: p.cohort,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      funderTag: p.funderTag,
+      pathways: Array.isArray(p.pathways) ? p.pathways.join(", ") : "",
+    });
+    setFormErrors({});
+  };
+
+  const handleEdit = async () => {
+    if (!validateForm() || !editingProgram) return;
+    try {
+      await updateProgramMutation.mutateAsync({
+        id: editingProgram.id,
+        data: {
+          name: form.name.trim(),
+          programTag: form.programTag.trim(),
+          description: form.description.trim(),
+          pathwayCategory: form.pathways.trim() || "General",
+          activeLearners: editingProgram.activeLearners,
+          completionRate: editingProgram.completionRate,
+          readinessScore: editingProgram.readinessScore,
+          eventParticipation: editingProgram.eventParticipation,
+          placementReady: editingProgram.placementReady,
+          funderTag: form.funderTag.trim(),
+          cohort: form.cohort.trim(),
+          startDate: form.startDate,
+          endDate: form.endDate,
+          pathways: form.pathways ? form.pathways.split(",").map(p => p.trim()).filter(Boolean) : [],
+        }
+      });
+      setEditingProgram(null);
+      setForm(emptyForm);
+      setFormErrors({});
+    } catch (error: any) {
+      if (error?.status === 409) {
+        setFormErrors(e => ({ ...e, programTag: "This program tag is already in use" }));
+      } else {
+        console.error("Failed to update program:", error);
+      }
     }
   };
 
@@ -107,7 +213,7 @@ export default function Programs() {
             <p className="text-sm text-muted-foreground mt-1">{program.description}</p>
           </div>
           <div className="flex gap-2 flex-shrink-0 ml-4">
-            <Button variant="outline" size="sm" className="text-xs h-8">Edit Program</Button>
+            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { openEdit(program); setSelected(null); }}>Edit Program</Button>
             <Button size="sm" className="text-xs h-8">Create Report</Button>
           </div>
         </div>
@@ -246,7 +352,7 @@ export default function Programs() {
                   >
                     View Program <ChevronRight size={12} className="ml-1" />
                   </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8">Edit</Button>
+                  <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => openEdit(p)}>Edit</Button>
                 </div>
               </div>
             </CardContent>
@@ -256,7 +362,7 @@ export default function Programs() {
 
       {/* Create Program Modal */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4" onClick={() => setShowCreate(false)}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div
             className="bg-background rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
@@ -273,46 +379,71 @@ export default function Programs() {
 
             <div className="px-6 py-5 space-y-4">
               <div>
-                <Label className="text-sm font-medium">Program name</Label>
+                <Label className="text-sm font-medium">Program name <span className="text-destructive">*</span></Label>
                 <Input
                   className={cn("mt-1.5 h-10 text-sm", formErrors.name && "border-destructive")}
                   placeholder="e.g. Cloud Operations Starter"
+                  maxLength={100}
                   value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                  onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setFormErrors(er => ({ ...er, name: "" })); }}
+                  onBlur={() => validateField("name")}
                 />
                 {formErrors.name && <p className="text-xs text-destructive mt-1">{formErrors.name}</p>}
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Description</Label>
+                <Label className="text-sm font-medium">Program tag <span className="text-destructive">*</span></Label>
+                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Unique identifier. Lowercase letters, numbers, and hyphens only.</p>
+                <Input
+                  className={cn("mt-1.5 h-10 text-sm", formErrors.programTag && "border-destructive")}
+                  placeholder="e.g. cloud-ops-starter"
+                  maxLength={50}
+                  value={form.programTag}
+                  onChange={e => { setForm(f => ({ ...f, programTag: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })); setFormErrors(er => ({ ...er, programTag: "" })); }}
+                  onBlur={() => validateField("programTag")}
+                />
+                {formErrors.programTag && <p className="text-xs text-destructive mt-1">{formErrors.programTag}</p>}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Description <span className="text-destructive">*</span></Label>
                 <Textarea
                   className={cn("mt-1.5 text-sm resize-none", formErrors.description && "border-destructive")}
                   rows={3}
+                  maxLength={500}
                   placeholder="Describe the program's goals, structure, and target learner..."
                   value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  onChange={e => { setForm(f => ({ ...f, description: e.target.value })); setFormErrors(er => ({ ...er, description: "" })); }}
+                  onBlur={() => validateField("description")}
                 />
-                {formErrors.description && <p className="text-xs text-destructive mt-1">{formErrors.description}</p>}
+                <div className="flex justify-between mt-1">
+                  {formErrors.description ? <p className="text-xs text-destructive">{formErrors.description}</p> : <span />}
+                  <span className="text-xs text-muted-foreground">{form.description.length}/500</span>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Cohort name</Label>
+                  <Label className="text-sm font-medium">Cohort name <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.cohort && "border-destructive")}
                     placeholder="e.g. Summer 2025"
+                    maxLength={50}
                     value={form.cohort}
-                    onChange={e => setForm(f => ({ ...f, cohort: e.target.value }))}
+                    onChange={e => { setForm(f => ({ ...f, cohort: e.target.value })); setFormErrors(er => ({ ...er, cohort: "" })); }}
+                    onBlur={() => validateField("cohort")}
                   />
                   {formErrors.cohort && <p className="text-xs text-destructive mt-1">{formErrors.cohort}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Funder / sponsor</Label>
+                  <Label className="text-sm font-medium">Funder / sponsor <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.funderTag && "border-destructive")}
                     placeholder="e.g. City Workforce Grant"
+                    maxLength={100}
                     value={form.funderTag}
-                    onChange={e => setForm(f => ({ ...f, funderTag: e.target.value }))}
+                    onChange={e => { setForm(f => ({ ...f, funderTag: e.target.value })); setFormErrors(er => ({ ...er, funderTag: "" })); }}
+                    onBlur={() => validateField("funderTag")}
                   />
                   {formErrors.funderTag && <p className="text-xs text-destructive mt-1">{formErrors.funderTag}</p>}
                 </div>
@@ -320,22 +451,24 @@ export default function Programs() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Start date</Label>
+                  <Label className="text-sm font-medium">Start date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.startDate && "border-destructive")}
                     value={form.startDate}
-                    onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                    onChange={e => { setForm(f => ({ ...f, startDate: e.target.value })); setFormErrors(er => ({ ...er, startDate: "" })); }}
+                    onBlur={() => validateField("startDate")}
                   />
                   {formErrors.startDate && <p className="text-xs text-destructive mt-1">{formErrors.startDate}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">End date</Label>
+                  <Label className="text-sm font-medium">End date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.endDate && "border-destructive")}
                     value={form.endDate}
-                    onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                    onChange={e => { setForm(f => ({ ...f, endDate: e.target.value })); setFormErrors(er => ({ ...er, endDate: "" })); }}
+                    onBlur={() => validateField("endDate")}
                   />
                   {formErrors.endDate && <p className="text-xs text-destructive mt-1">{formErrors.endDate}</p>}
                 </div>
@@ -359,6 +492,135 @@ export default function Programs() {
               </Button>
               <Button className="flex-1" onClick={handleCreate} data-testid="submit-program-btn">
                 Create Program
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Program Modal */}
+      {editingProgram && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border sticky top-0 bg-background z-10">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Edit Program</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Update program details.</p>
+              </div>
+              <button onClick={() => { setEditingProgram(null); setForm(emptyForm); setFormErrors({}); }} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <Label className="text-sm font-medium">Program name <span className="text-destructive">*</span></Label>
+                <Input
+                  className={cn("mt-1.5 h-10 text-sm", formErrors.name && "border-destructive")}
+                  maxLength={100}
+                  value={form.name}
+                  onChange={e => { setForm(f => ({ ...f, name: e.target.value })); setFormErrors(er => ({ ...er, name: "" })); }}
+                  onBlur={() => validateField("name")}
+                />
+                {formErrors.name && <p className="text-xs text-destructive mt-1">{formErrors.name}</p>}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Program tag <span className="text-destructive">*</span></Label>
+                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Unique identifier. Lowercase letters, numbers, and hyphens only.</p>
+                <Input
+                  className={cn("mt-1.5 h-10 text-sm", formErrors.programTag && "border-destructive")}
+                  maxLength={50}
+                  value={form.programTag}
+                  onChange={e => { setForm(f => ({ ...f, programTag: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })); setFormErrors(er => ({ ...er, programTag: "" })); }}
+                  onBlur={() => validateField("programTag")}
+                />
+                {formErrors.programTag && <p className="text-xs text-destructive mt-1">{formErrors.programTag}</p>}
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Description <span className="text-destructive">*</span></Label>
+                <Textarea
+                  className={cn("mt-1.5 text-sm resize-none", formErrors.description && "border-destructive")}
+                  rows={3}
+                  maxLength={500}
+                  value={form.description}
+                  onChange={e => { setForm(f => ({ ...f, description: e.target.value })); setFormErrors(er => ({ ...er, description: "" })); }}
+                  onBlur={() => validateField("description")}
+                />
+                <div className="flex justify-between mt-1">
+                  {formErrors.description ? <p className="text-xs text-destructive">{formErrors.description}</p> : <span />}
+                  <span className="text-xs text-muted-foreground">{form.description.length}/500</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Cohort name <span className="text-destructive">*</span></Label>
+                  <Input
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.cohort && "border-destructive")}
+                    maxLength={50}
+                    value={form.cohort}
+                    onChange={e => { setForm(f => ({ ...f, cohort: e.target.value })); setFormErrors(er => ({ ...er, cohort: "" })); }}
+                    onBlur={() => validateField("cohort")}
+                  />
+                  {formErrors.cohort && <p className="text-xs text-destructive mt-1">{formErrors.cohort}</p>}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">Funder / sponsor <span className="text-destructive">*</span></Label>
+                  <Input
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.funderTag && "border-destructive")}
+                    maxLength={100}
+                    value={form.funderTag}
+                    onChange={e => { setForm(f => ({ ...f, funderTag: e.target.value })); setFormErrors(er => ({ ...er, funderTag: "" })); }}
+                    onBlur={() => validateField("funderTag")}
+                  />
+                  {formErrors.funderTag && <p className="text-xs text-destructive mt-1">{formErrors.funderTag}</p>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Start date <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="date"
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.startDate && "border-destructive")}
+                    value={form.startDate}
+                    onChange={e => { setForm(f => ({ ...f, startDate: e.target.value })); setFormErrors(er => ({ ...er, startDate: "" })); }}
+                    onBlur={() => validateField("startDate")}
+                  />
+                  {formErrors.startDate && <p className="text-xs text-destructive mt-1">{formErrors.startDate}</p>}
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">End date <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="date"
+                    className={cn("mt-1.5 h-10 text-sm", formErrors.endDate && "border-destructive")}
+                    value={form.endDate}
+                    onChange={e => { setForm(f => ({ ...f, endDate: e.target.value })); setFormErrors(er => ({ ...er, endDate: "" })); }}
+                    onBlur={() => validateField("endDate")}
+                  />
+                  {formErrors.endDate && <p className="text-xs text-destructive mt-1">{formErrors.endDate}</p>}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium">Linked pathways</Label>
+                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
+                <Input
+                  className="h-10 text-sm"
+                  value={form.pathways}
+                  onChange={e => setForm(f => ({ ...f, pathways: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 px-6 pb-6">
+              <Button variant="outline" className="flex-1" onClick={() => { setEditingProgram(null); setForm(emptyForm); setFormErrors({}); }}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleEdit}>
+                Save Changes
               </Button>
             </div>
           </div>

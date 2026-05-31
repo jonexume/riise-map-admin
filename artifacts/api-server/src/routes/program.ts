@@ -35,6 +35,13 @@ router.get("/programs/:id", async (req, res) => {
 router.post("/programs", async (req, res) => {
   try {
     const data = insertProgramSchema.parse(req.body);
+
+    // Check for unique programTag
+    const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+    if (existing.length > 0) {
+      return res.status(409).json({ error: "A program with this tag already exists." });
+    }
+
     const [newProgram] = await db.insert(programsTable).values(data).returning();
     res.status(201).json(newProgram);
   } catch (error) {
@@ -48,6 +55,13 @@ router.put("/programs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const data = insertProgramSchema.parse(req.body);
+
+    // Check for unique programTag (exclude current program)
+    const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+    if (existing.length > 0 && existing[0].id !== id) {
+      return res.status(409).json({ error: "A program with this tag already exists." });
+    }
+
     const [updatedProgram] = await db.update(programsTable).set(data).where(eq(programsTable.id, id)).returning();
     if (!updatedProgram) {
       res.status(404).json({ error: "Program not found" });
