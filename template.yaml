@@ -28,6 +28,7 @@ Resources:
         Variables:
           DATABASE_URL: !Ref DatabaseUrl
           NODE_ENV: production
+          STAGE: !Ref Stage
       Events:
         RootProxy:
           Type: HttpApi
