@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Users, TrendingUp, Calendar, Star, ChevronRight, Plus, X } from "lucide-react";
+import { ArrowLeft, Users, TrendingUp, Star, ChevronRight, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -46,6 +46,8 @@ export default function Programs() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const program = programList.find(p => p.id === selected);
 
@@ -186,6 +188,27 @@ export default function Programs() {
     }
   };
 
+  const handleDeleteProgram = async () => {
+    if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${baseUrl}/api/programs/${deleteTarget.id}`, { method: "DELETE" });
+      if (res.status === 409) {
+        const data = await res.json();
+        setDeleteTarget(null);
+        setDeleteConfirmText("");
+        alert(data.error || "Cannot delete a program that is assigned to a pathway.");
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
+      setSelected(null);
+    } catch {
+      alert("Failed to delete program.");
+    }
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+  };
+
   if (programsLoading) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
@@ -214,6 +237,7 @@ export default function Programs() {
           </div>
           <div className="flex gap-2 flex-shrink-0 ml-4">
             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { openEdit(program); setSelected(null); }}>Edit Program</Button>
+            <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: program.id, name: program.name })}>Delete</Button>
             <Button size="sm" className="text-xs h-8">Create Report</Button>
           </div>
         </div>
@@ -240,7 +264,6 @@ export default function Programs() {
               <div className="flex justify-between"><span className="text-muted-foreground">Start Date</span><span className="font-medium">{program.startDate}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">End Date</span><span className="font-medium">{program.endDate}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Funder</span><span className="font-medium">{program.funderTag}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Event Participation</span><span className="font-medium">{program.eventParticipation}%</span></div>
             </CardContent>
           </Card>
           <Card className="border-card-border">
@@ -289,6 +312,41 @@ export default function Programs() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Modal */}
+        {deleteTarget && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+            <div className="bg-background rounded-2xl shadow-xl w-full max-w-md p-6">
+              <h2 className="text-lg font-semibold text-foreground mb-2">Delete Program</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                This will permanently delete <span className="font-medium text-foreground">{deleteTarget.name}</span> and cannot be undone.
+              </p>
+              <p className="text-sm text-muted-foreground mb-2">
+                Type <span className="font-mono font-medium text-foreground">{deleteTarget.name}</span> to confirm:
+              </p>
+              <Input
+                className="h-10 text-sm mb-4"
+                placeholder="Type program name to confirm..."
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(""); }}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={deleteConfirmText !== deleteTarget.name}
+                  onClick={handleDeleteProgram}
+                >
+                  Delete Program
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -333,7 +391,7 @@ export default function Programs() {
                   </div>
                   <p className="text-sm text-muted-foreground mb-4">{p.description}</p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <p className="text-xs text-muted-foreground">Active Learners</p>
                       <p className="text-lg font-semibold text-foreground flex items-center gap-1"><Users size={14} className="text-primary" />{p.activeLearners}</p>
@@ -348,10 +406,6 @@ export default function Programs() {
                     <div>
                       <p className="text-xs text-muted-foreground">Readiness Score</p>
                       <p className="text-lg font-semibold text-foreground flex items-center gap-1"><Star size={14} className="text-amber-500" />{p.readinessScore}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Event Participation</p>
-                      <p className="text-lg font-semibold text-foreground flex items-center gap-1"><Calendar size={14} className="text-purple-500" />{p.eventParticipation}%</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Placement-Ready</p>
@@ -638,6 +692,40 @@ export default function Programs() {
               </Button>
               <Button className="flex-1" onClick={handleEdit}>
                 Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-2">Delete Program</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will permanently delete <span className="font-medium text-foreground">{deleteTarget.name}</span> and cannot be undone.
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Type <span className="font-mono font-medium text-foreground">{deleteTarget.name}</span> to confirm:
+            </p>
+            <Input
+              className="h-10 text-sm mb-4"
+              placeholder="Type program name to confirm..."
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(""); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteConfirmText !== deleteTarget.name}
+                onClick={handleDeleteProgram}
+              >
+                Delete Program
               </Button>
             </div>
           </div>
