@@ -379,7 +379,7 @@ export default function Programs() {
 
             <div className="px-6 py-5 space-y-4">
               <div>
-                <Label className="text-sm font-medium">Program name <span className="text-destructive">*</span></Label>
+                <Label className="text-sm font-medium">Program Name <span className="text-destructive">*</span></Label>
                 <Input
                   className={cn("mt-1.5 h-10 text-sm", formErrors.name && "border-destructive")}
                   placeholder="e.g. Cloud Operations Starter"
@@ -392,7 +392,7 @@ export default function Programs() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Program tag <span className="text-destructive">*</span></Label>
+                <Label className="text-sm font-medium">Program Tag <span className="text-destructive">*</span></Label>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Unique identifier. Lowercase letters, numbers, and hyphens only.</p>
                 <Input
                   className={cn("mt-1.5 h-10 text-sm", formErrors.programTag && "border-destructive")}
@@ -424,7 +424,7 @@ export default function Programs() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Cohort name <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Cohort Name <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.cohort && "border-destructive")}
                     placeholder="e.g. Summer 2025"
@@ -436,7 +436,7 @@ export default function Programs() {
                   {formErrors.cohort && <p className="text-xs text-destructive mt-1">{formErrors.cohort}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Funder / sponsor <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Funder / Sponsor <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.funderTag && "border-destructive")}
                     placeholder="e.g. City Workforce Grant"
@@ -451,7 +451,7 @@ export default function Programs() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Start date <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Start Date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.startDate && "border-destructive")}
@@ -462,7 +462,7 @@ export default function Programs() {
                   {formErrors.startDate && <p className="text-xs text-destructive mt-1">{formErrors.startDate}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">End date <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">End Date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.endDate && "border-destructive")}
@@ -475,7 +475,7 @@ export default function Programs() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Linked pathways</Label>
+                <Label className="text-sm font-medium">Linked Pathways</Label>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
                 <Input
                   className="h-10 text-sm"
@@ -514,7 +514,7 @@ export default function Programs() {
 
             <div className="px-6 py-5 space-y-4">
               <div>
-                <Label className="text-sm font-medium">Program name <span className="text-destructive">*</span></Label>
+                <Label className="text-sm font-medium">Program Name <span className="text-destructive">*</span></Label>
                 <Input
                   className={cn("mt-1.5 h-10 text-sm", formErrors.name && "border-destructive")}
                   maxLength={100}
@@ -526,7 +526,7 @@ export default function Programs() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Program tag <span className="text-destructive">*</span></Label>
+                <Label className="text-sm font-medium">Program Tag <span className="text-destructive">*</span></Label>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Unique identifier. Lowercase letters, numbers, and hyphens only.</p>
                 <Input
                   className={cn("mt-1.5 h-10 text-sm", formErrors.programTag && "border-destructive")}
@@ -556,7 +556,7 @@ export default function Programs() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Cohort name <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Cohort Name <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.cohort && "border-destructive")}
                     maxLength={50}
@@ -567,7 +567,7 @@ export default function Programs() {
                   {formErrors.cohort && <p className="text-xs text-destructive mt-1">{formErrors.cohort}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">Funder / sponsor <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Funder / Sponsor <span className="text-destructive">*</span></Label>
                   <Input
                     className={cn("mt-1.5 h-10 text-sm", formErrors.funderTag && "border-destructive")}
                     maxLength={100}
@@ -581,7 +581,7 @@ export default function Programs() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Start date <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">Start Date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.startDate && "border-destructive")}
@@ -592,7 +592,7 @@ export default function Programs() {
                   {formErrors.startDate && <p className="text-xs text-destructive mt-1">{formErrors.startDate}</p>}
                 </div>
                 <div>
-                  <Label className="text-sm font-medium">End date <span className="text-destructive">*</span></Label>
+                  <Label className="text-sm font-medium">End Date <span className="text-destructive">*</span></Label>
                   <Input
                     type="date"
                     className={cn("mt-1.5 h-10 text-sm", formErrors.endDate && "border-destructive")}
@@ -605,7 +605,7 @@ export default function Programs() {
               </div>
 
               <div>
-                <Label className="text-sm font-medium">Linked pathways</Label>
+                <Label className="text-sm font-medium">Linked Pathways</Label>
                 <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
                 <Input
                   className="h-10 text-sm"
