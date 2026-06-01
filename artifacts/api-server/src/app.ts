@@ -30,9 +30,6 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Handle preflight OPTIONS requests immediately
-app.options("*", cors({ origin: true }));
-
 app.get("/", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
