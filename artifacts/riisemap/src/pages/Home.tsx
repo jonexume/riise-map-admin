@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import {
   Users, AlertTriangle, TrendingUp, CheckSquare, Calendar, Star,
-  ArrowRight, UserPlus, Plus, Flag, FileText, Sparkles,
+  ArrowRight, UserPlus, Flag, FileText, Sparkles,
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,17 +14,15 @@ import { recentMomentum, impactMetrics } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
 const priorities = [
-  { id: 1, text: "3 learners may need support this week", action: "Review learners", href: "/alerts", urgency: "high" },
-  { id: 2, text: "2 milestones are overdue", action: "View milestones", href: "/learners", urgency: "medium" },
+  { id: 1, text: "3 learners may need support this week", action: "Review learners", href: "/learners", urgency: "high" },
+  { id: 2, text: "2 milestones are overdue", action: "View milestones", href: "/learners?status=Stalled,Needs Support", urgency: "medium" },
   { id: 3, text: "Customer Success cohort engagement is down 8%", action: "Open cohort", href: "/programs", urgency: "medium" },
-  { id: 4, text: "Mock Interview Night starts tomorrow", action: "View event", href: "/events", urgency: "low" },
   { id: 5, text: "Quarterly funder report is due in 12 days", action: "Start report", href: "/impact", urgency: "low" },
 ];
 
 const quickActions = [
   { label: "Invite Learners", icon: UserPlus, href: "/learners", color: "text-primary" },
-  { label: "Add Event", icon: Plus, href: "/events", color: "text-emerald-600" },
-  { label: "Review At-Risk Learners", icon: Flag, href: "/alerts", color: "text-amber-600" },
+  { label: "Review At-Risk Learners", icon: Flag, href: "/learners?status=Stalled,Needs Support", color: "text-amber-600" },
   { label: "Export Report", icon: FileText, href: "/impact", color: "text-indigo-600" },
   { label: "Create Impact Story", icon: Sparkles, href: "/impact", color: "text-purple-600" },
 ];

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   Search, LayoutGrid, List, ChevronRight, X,
   Check, Mail, UserPlus
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -66,7 +68,11 @@ export default function Learners() {
 
   const [view, setView] = useState<"grid" | "list">("list");
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const searchString = useSearch();
+  const statusParam = new URLSearchParams(searchString).get("status");
+  const [filterStatus, setFilterStatus] = useState<string[]>(
+    statusParam ? statusParam.split(",") : []
+  );
   const [filterCoach, setFilterCoach] = useState("all");
   const [filterPathway, setFilterPathway] = useState("all");
 
@@ -79,7 +85,7 @@ export default function Learners() {
     const matchSearch =
       l.name.toLowerCase().includes(search.toLowerCase()) ||
       l.pathway.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || l.status === filterStatus;
+    const matchStatus = filterStatus.length === 0 || filterStatus.includes(l.status);
     const matchCoach = filterCoach === "all" || l.coach === filterCoach;
     const matchPathway = filterPathway === "all" || l.pathway === filterPathway;
     return matchSearch && matchStatus && matchCoach && matchPathway;
@@ -243,19 +249,34 @@ export default function Learners() {
             data-testid="search-learners"
           />
         </div>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-36 h-9 text-sm" data-testid="filter-status">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="On Track">On Track</SelectItem>
-            <SelectItem value="Needs Support">Needs Support</SelectItem>
-            <SelectItem value="Stalled">Stalled</SelectItem>
-            <SelectItem value="Placement Ready">Placement Ready</SelectItem>
-            <SelectItem value="New Learner">New Learner</SelectItem>
-          </SelectContent>
-        </Select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-44 h-9 text-sm justify-between" data-testid="filter-status">
+              {filterStatus.length === 0 ? "All Statuses" : `${filterStatus.length} selected`}
+              <ChevronRight size={12} className="rotate-90 ml-1 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-52 p-2" align="start">
+            {["On Track", "Needs Support", "Stalled", "Placement Ready", "New Learner"].map((status) => (
+              <label key={status} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+                <Checkbox
+                  checked={filterStatus.includes(status)}
+                  onCheckedChange={(checked) => {
+                    setFilterStatus(prev =>
+                      checked ? [...prev, status] : prev.filter(s => s !== status)
+                    );
+                  }}
+                />
+                {status}
+              </label>
+            ))}
+            {filterStatus.length > 0 && (
+              <Button variant="ghost" size="sm" className="w-full mt-1 text-xs h-7" onClick={() => setFilterStatus([])}>
+                Clear all
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
         <Select value={filterCoach} onValueChange={setFilterCoach}>
           <SelectTrigger className="w-40 h-9 text-sm" data-testid="filter-coach">
             <SelectValue placeholder="Coach" />
