@@ -20,7 +20,10 @@ import Alerts from "@/pages/Alerts";
 import Impact from "@/pages/Impact";
 import SettingsPage from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
-import { setBaseUrl } from "@workspace/api-client-react";
+import Login from "@/pages/Login";
+import { supabase } from "@/lib/supabase";
+import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import type { Session } from "@supabase/supabase-js";
 
 const queryClient = new QueryClient();
 
@@ -48,24 +51,47 @@ function Router() {
 }
 
 function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
   const [onboarded, setOnboarded] = useState<boolean>(
     () => !!localStorage.getItem("riisemap_onboarding")
   );
 
   useEffect(() => {
-    // Set API base URL - in production, this should be your deployed API URL
     const baseUrl = import.meta.env.VITE_API_URL || "";
-    console.log(`Using API base URL: ${baseUrl}`); // Added for debugging
     setBaseUrl(baseUrl);
+    setAuthTokenGetter(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token ?? null;
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleOnboardingComplete = () => setOnboarded(true);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {!onboarded ? (
-          <Onboarding onComplete={handleOnboardingComplete} />
+        {!session ? (
+          <Login onLogin={() => {}} />
+        ) : !onboarded ? (
+          <Onboarding onComplete={() => setOnboarded(true)} />
         ) : (
           <AlertProvider>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

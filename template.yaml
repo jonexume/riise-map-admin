@@ -13,6 +13,13 @@ Parameters:
     Type: String
     Description: Supabase PostgreSQL connection string (use pooled connection on port 6543)
     NoEcho: true
+  SupabaseUrl:
+    Type: String
+    Description: Supabase project URL (e.g. https://xxx.supabase.co)
+  SupabaseServiceRoleKey:
+    Type: String
+    Description: Supabase service role key (for server-side auth verification)
+    NoEcho: true
   Stage:
     Type: String
     Default: prod
@@ -29,6 +36,8 @@ Resources:
           DATABASE_URL: !Ref DatabaseUrl
           NODE_ENV: production
           STAGE: !Ref Stage
+          SUPABASE_URL: !Ref SupabaseUrl
+          SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
       Events:
         RootProxy:
           Type: HttpApi

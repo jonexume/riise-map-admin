@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { requireAuth } from "./middlewares/auth";
 
 const app: Express = express();
 
@@ -33,6 +34,6 @@ app.get("/", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use("/api", router);
+app.use("/api", requireAuth, router);
 
 export default app;
