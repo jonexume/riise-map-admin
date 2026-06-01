@@ -305,6 +305,22 @@ export default function Programs() {
         </Button>
       </div>
 
+      {programList.length === 0 ? (
+        <Card className="border-card-border shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Plus size={24} className="text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No Programs Yet</h3>
+            <p className="text-sm text-muted-foreground mb-5 max-w-sm">
+              Create your first program to organize learners into cohorts with shared timelines and funding sources.
+            </p>
+            <Button size="sm" onClick={() => setShowCreate(true)}>
+              <Plus size={13} className="mr-1.5" /> Create Your First Program
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
       <div className="space-y-4">
         {programList.map(p => (
           <Card key={p.id} data-testid={`program-card-${p.id}`} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
@@ -359,6 +375,7 @@ export default function Programs() {
           </Card>
         ))}
       </div>
+      )}
 
       {/* Create Program Modal */}
       {showCreate && (

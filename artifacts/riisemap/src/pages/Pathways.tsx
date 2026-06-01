@@ -226,6 +226,25 @@ export default function Pathways() {
     setView("edit");
   };
 
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  const handleDelete = async () => {
+    if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      await fetch(`${baseUrl}/api/pathways/${deleteTarget.id}`, { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: ['/api/pathways'] });
+      toast({ title: "Pathway Deleted", description: `${deleteTarget.name} has been removed.` });
+      setView("list");
+      setSelectedId(null);
+    } catch {
+      toast({ title: "Error", description: "Failed to delete pathway.", variant: "destructive" });
+    }
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+  };
+
   const resetForm = () => {
     setForm(BLANK);
     setStep(0);
@@ -249,6 +268,9 @@ export default function Pathways() {
           </div>
           <div className="flex gap-2 ml-4">
             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { openEdit(pathway); }}><Edit size={11} className="mr-1.5" />Edit Pathway</Button>
+            <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: pathway.id, name: pathway.name })}>
+              <X size={11} className="mr-1.5" />Delete
+            </Button>
           </div>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
@@ -471,6 +493,22 @@ export default function Pathways() {
           <Plus size={13} className="mr-1.5" /> Add Pathway
         </Button>
       </div>
+      {pathways.length === 0 ? (
+        <Card className="border-card-border shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Plus size={24} className="text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No Pathways Yet</h3>
+            <p className="text-sm text-muted-foreground mb-5 max-w-sm">
+              Create your first career pathway to define the skills, milestones, and projects learners need to become job-ready.
+            </p>
+            <Button size="sm" onClick={() => { resetForm(); setView("add"); }}>
+              <Plus size={13} className="mr-1.5" /> Create Your First Pathway
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {pathways.map(p => (
           <Card key={p.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
@@ -501,6 +539,42 @@ export default function Pathways() {
           </Card>
         ))}
       </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-2">Delete Pathway</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will permanently delete <span className="font-medium text-foreground">{deleteTarget.name}</span> and cannot be undone.
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Type <span className="font-mono font-medium text-foreground">{deleteTarget.name}</span> to confirm:
+            </p>
+            <Input
+              className="h-10 text-sm mb-4"
+              placeholder="Type pathway name to confirm..."
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setDeleteTarget(null); setDeleteConfirmText(""); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteConfirmText !== deleteTarget.name}
+                onClick={handleDelete}
+              >
+                Delete Pathway
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

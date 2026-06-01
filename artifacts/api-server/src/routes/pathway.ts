@@ -60,4 +60,20 @@ router.put("/pathways/:id", async (req, res) => {
   }
 });
 
+// Delete pathway
+router.delete("/pathways/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [deleted] = await db.delete(pathwaysTable).where(eq(pathwaysTable.id, id)).returning();
+    if (!deleted) {
+      res.status(404).json({ error: "Pathway not found" });
+      return;
+    }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error deleting pathway:", error);
+    res.status(500).json({ error: "Failed to delete pathway" });
+  }
+});
+
 export default router;

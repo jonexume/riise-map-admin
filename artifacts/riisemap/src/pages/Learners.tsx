@@ -321,7 +321,22 @@ export default function Learners() {
         Showing {filtered.length} of {allLearners.length} learners
       </p>
 
-      {view === "list" ? (
+      {allLearners.length === 0 ? (
+        <Card className="border-card-border shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <UserPlus size={24} className="text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No Learners Yet</h3>
+            <p className="text-sm text-muted-foreground mb-5 max-w-sm">
+              Invite your first learner to get started. They'll receive an email with instructions to join your program.
+            </p>
+            <Button size="sm" onClick={() => { setInviteStep(0); setShowInvite(true); }}>
+              <UserPlus size={13} className="mr-1.5" /> Invite Your First Learner
+            </Button>
+          </CardContent>
+        </Card>
+      ) : view === "list" ? (
         <Card className="border-card-border shadow-sm">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
