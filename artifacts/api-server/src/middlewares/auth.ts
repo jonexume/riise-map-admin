@@ -14,7 +14,11 @@ const supabase = supabaseUrl && supabaseServiceKey
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!supabase) {
-    // Auth not configured — allow through (local dev)
+    return next();
+  }
+
+  // Skip auth for preflight CORS requests
+  if (req.method === "OPTIONS") {
     return next();
   }
 
