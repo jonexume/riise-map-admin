@@ -232,8 +232,15 @@ export default function Pathways() {
     if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "";
-      await fetch(`${baseUrl}/api/pathways/${deleteTarget.id}`, { method: "DELETE" });
-      queryClient.invalidateQueries({ queryKey: ['/api/pathways'] });
+      const res = await fetch(`${baseUrl}/api/pathways/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        toast({ title: "Error", description: data?.error || "Failed to delete pathway.", variant: "destructive" });
+        setDeleteTarget(null);
+        setDeleteConfirmText("");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ['/api/pathways'] });
       toast({ title: "Pathway Deleted", description: `${deleteTarget.name} has been removed.` });
       setView("list");
       setSelectedId(null);
