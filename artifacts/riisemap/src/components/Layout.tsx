@@ -4,22 +4,14 @@ import {
   Users,
   BookOpen,
   GitBranch,
-  DollarSign,
-  FolderKanban,
-  Calendar,
-  UserCheck,
-  Bell,
   BarChart3,
   Settings,
   ChevronRight,
   Menu,
   X,
-  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useAlertCount } from "@/contexts/AlertContext";
-import { Badge } from "@/components/ui/badge";
 
 const DEFAULT_PHOTO = "/denise.jpg";
 const DEFAULT_ORG_LOGO = "/blueworkforce-logo.png";
@@ -29,12 +21,6 @@ const navItems = [
   { label: "Learners", href: "/learners", icon: Users },
   { label: "Programs", href: "/programs", icon: BookOpen },
   { label: "Pathways", href: "/pathways", icon: GitBranch },
-  { label: "Funding Sources", href: "/funding-sources", icon: DollarSign },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
-  { label: "Events", href: "/events", icon: Calendar },
-  { label: "Jobs", href: "/jobs", icon: Briefcase },
-  { label: "Coaches", href: "/coaches", icon: UserCheck },
-  { label: "Alerts", href: "/alerts", icon: Bell, badge: 4 },
   { label: "Impact & Reporting", href: "/impact", icon: BarChart3 },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
@@ -78,7 +64,6 @@ export function Layout({ children }: LayoutProps) {
   const orgLogo = getOrgLogo();
   const orgName = getOrgName();
   const { profileName, title, role } = getOrgData();
-  const { unresolvedCount } = useAlertCount();
 
   const isActive = (href: string) => {
     if (href === "/") return location === "/";
@@ -146,11 +131,6 @@ export function Layout({ children }: LayoutProps) {
                   >
                     <Icon size={16} className="flex-shrink-0" />
                     <span className="flex-1">{item.label}</span>
-                    {item.href === "/alerts" && unresolvedCount > 0 && (
-                      <Badge className="bg-destructive/80 text-destructive-foreground text-[10px] px-1.5 py-0 h-4 min-w-[16px] flex items-center justify-center">
-                        {unresolvedCount}
-                      </Badge>
-                    )}
                     {active && <ChevronRight size={12} className="text-sidebar-primary" />}
                   </div>
                 </Link>

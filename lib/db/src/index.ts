@@ -1,18 +1,20 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
+import { config } from "dotenv";
+import { resolve } from "path";
 
-// In Lambda, DATABASE_URL is set via environment variables.
-// Locally, try to load from .env files.
-if (!process.env.DATABASE_URL) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const dotenv = require("dotenv");
-    const path = require("path");
-    dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-  } catch {
-    // dotenv not available or failed — that's fine if DATABASE_URL is already set
-  }
+// Load .env files from common locations
+const paths = [
+  resolve(process.cwd(), ".env"),
+  resolve(process.cwd(), "../../.env"),
+  resolve(process.cwd(), "../.env"),
+  resolve(process.cwd(), "../../lib/db/.env"),
+];
+
+for (const p of paths) {
+  const result = config({ path: p });
+  if (!result.error) break;
 }
 
 const { Pool } = pg;
