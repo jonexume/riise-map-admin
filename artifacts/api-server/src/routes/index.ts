@@ -5,6 +5,7 @@ import programsRouter from "./program";
 import pathwaysRouter from "./pathway";
 import fundingSourcesRouter from "./funding-source";
 import fundingSourceGoalsRouter from "./funding-source-goals";
+import successStoriesRouter from "./success-story";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(programsRouter);
 router.use(pathwaysRouter);
 router.use(fundingSourcesRouter);
 router.use(fundingSourceGoalsRouter);
+router.use(successStoriesRouter);
 
 export default router;

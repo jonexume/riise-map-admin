@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -18,9 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/MetricCard";
+import { useGetLearners } from "@workspace/api-client-react";
 import {
   impactMetrics, engagementTrend, readinessTrend,
-  cohortCompletion, placementReadyTrend, successStories
+  cohortCompletion, placementReadyTrend
 } from "@/data/mockData";
 import { Users, TrendingUp, Star, Calendar, BookOpen, Briefcase } from "lucide-react";
 
@@ -192,9 +193,10 @@ export default function Impact() {
   const [copied, setCopied] = useState(false);
   const [grantCopied, setGrantCopied] = useState(false);
 
-  const [storyList, setStoryList] = useState(successStories);
+  const [storyList, setStoryList] = useState<any[]>([]);
   const [showCreateStory, setShowCreateStory] = useState(false);
   const [storyLearner, setStoryLearner] = useState("");
+  const [storyLearnerId, setStoryLearnerId] = useState("");
   const [storyHeadline, setStoryHeadline] = useState("");
   const [storyPathway, setStoryPathway] = useState("");
   const [storyNarrative, setStoryNarrative] = useState("");
@@ -202,24 +204,59 @@ export default function Impact() {
   const [storyTags, setStoryTags] = useState<string[]>([""]);
   const [storySaved, setStorySaved] = useState(false);
 
-  function handleSaveStory() {
+  const { data: learners = [] } = useGetLearners();
+  const baseUrl = import.meta.env.VITE_API_URL || "";
+
+  const fetchStories = useCallback(async () => {
+    try {
+      const res = await fetch(`${baseUrl}/api/success-stories`);
+      if (res.ok) setStoryList(await res.json());
+    } catch { /* ignore */ }
+  }, [baseUrl]);
+
+  useEffect(() => { fetchStories(); }, [fetchStories]);
+
+  async function handleSaveStory() {
     if (!storyLearner.trim() || !storyNarrative.trim()) return;
-    const newStory = {
-      id: String(Date.now()),
-      learnerId: "",
-      learner: storyLearner.trim(),
-      headline: storyHeadline.trim() || storyPathway.trim() || "Success Story",
-      pathway: storyPathway.trim() || "General",
-      dataPoints: storyDataPoints.filter(d => d.trim()),
-      story: storyNarrative.trim(),
-      tags: storyTags.filter(t => t.trim()),
-    };
-    setStoryList(prev => [newStory, ...prev]);
-    setShowCreateStory(false);
-    setStoryLearner(""); setStoryHeadline(""); setStoryPathway("");
-    setStoryNarrative(""); setStoryDataPoints([""]); setStoryTags([""]);
-    setStorySaved(true);
-    setTimeout(() => setStorySaved(false), 3000);
+    try {
+      await fetch(`${baseUrl}/api/success-stories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          learnerId: storyLearnerId ? Number(storyLearnerId) : null,
+          learnerName: storyLearner.trim(),
+          headline: storyHeadline.trim() || "Success Story",
+          story: storyNarrative.trim(),
+          dataPoints: storyDataPoints.filter(d => d.trim()),
+          tags: storyTags.filter(t => t.trim()),
+        }),
+      });
+      fetchStories();
+      setShowCreateStory(false);
+      setStoryLearner(""); setStoryLearnerId(""); setStoryHeadline(""); setStoryPathway("");
+      setStoryNarrative(""); setStoryDataPoints([""]); setStoryTags([""]);
+      setStorySaved(true);
+      setTimeout(() => setStorySaved(false), 3000);
+    } catch { /* ignore */ }
+  }
+
+  async function handleDeleteStory(id: number) {
+    await fetch(`${baseUrl}/api/success-stories/${id}`, { method: "DELETE" });
+    fetchStories();
+  }
+
+  async function handleSelectLearner(learnerId: string) {
+    setStoryLearnerId(learnerId);
+    if (!learnerId) return;
+    try {
+      const res = await fetch(`${baseUrl}/api/learners/${learnerId}/summary`);
+      if (res.ok) {
+        const summary = await res.json();
+        setStoryLearner(summary.learnerName);
+        setStoryPathway(summary.pathway);
+        setStoryDataPoints(summary.dataPoints);
+      }
+    } catch { /* ignore */ }
   }
 
   function closeCreateStory() {
@@ -309,9 +346,7 @@ export default function Impact() {
         <TabsList className="mb-6 bg-muted/50">
           <TabsTrigger value="dashboard" className="text-xs">Impact Dashboard</TabsTrigger>
           <TabsTrigger value="grant" className="text-xs">Grant Report Builder</TabsTrigger>
-          <TabsTrigger value="metrics" className="text-xs">Outcome Metrics</TabsTrigger>
           <TabsTrigger value="stories" className="text-xs">Success Stories</TabsTrigger>
-          <TabsTrigger value="exports" className="text-xs">Exports</TabsTrigger>
         </TabsList>
 
         {/* Impact Dashboard */}
@@ -580,63 +615,6 @@ export default function Impact() {
           </div>
         </TabsContent>
 
-        {/* Outcome Metrics */}
-        <TabsContent value="metrics">
-          <div className="flex gap-3 mb-5 flex-wrap">
-            {["Program", "Pathway", "Date Range", "Coach"].map(f => (
-              <Select key={f} defaultValue="all">
-                <SelectTrigger className="w-36 h-9 text-sm">
-                  <SelectValue placeholder={f} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All {f}s</SelectItem>
-                </SelectContent>
-              </Select>
-            ))}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {[
-              { group: "Engagement", metrics: [{ name: "Active Learners", value: 45, max: 50 }, { name: "Login Consistency", value: 74, max: 100 }, { name: "Event Participation", value: 74, max: 100 }, { name: "Coach Check-ins", value: 82, max: 100 }] },
-              { group: "Progress", metrics: [{ name: "Roadmap Completion", value: 63, max: 100 }, { name: "Milestone Completion", value: 71, max: 100 }, { name: "Project Completion", value: 68, max: 100 }, { name: "Profile Completion", value: 76, max: 100 }] },
-              { group: "Readiness", metrics: [{ name: "Resume Readiness", value: 72, max: 100 }, { name: "Interview Readiness", value: 65, max: 100 }, { name: "Portfolio Readiness", value: 70, max: 100 }, { name: "Technical Confidence", value: 68, max: 100 }, { name: "Communication Readiness", value: 74, max: 100 }] },
-              { group: "Workforce Outcomes", metrics: [{ name: "Applications Submitted", value: 18, max: 45 }, { name: "Interviews Completed", value: 14, max: 18 }, { name: "Offers Received", value: 5, max: 14 }, { name: "Placements Achieved", value: 4, max: 5 }, { name: "Avg Weeks to Placement", value: 6, max: 20 }] },
-            ].map(group => (
-              <Card key={group.group} className="border-card-border">
-                <CardHeader className="pb-3"><CardTitle className="text-sm">{group.group}</CardTitle></CardHeader>
-                <CardContent className="pt-0 space-y-4">
-                  {group.metrics.map(m => (
-                    <div key={m.name}>
-                      <div className="flex justify-between text-sm mb-1.5">
-                        <span className="text-muted-foreground text-xs">{m.name}</span>
-                        <span className="font-semibold text-foreground text-xs">{m.value}</span>
-                      </div>
-                      <Progress value={(m.value / m.max) * 100} className="h-1.5" />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ))}
-            <Card className="border-card-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Funding Efficiency</CardTitle></CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {[
-                  { label: "Cost per Active Learner", value: "$1,240" },
-                  { label: "Cost per Placement-Ready Learner", value: "$8,750" },
-                  { label: "Cost per Placement", value: "$13,200" },
-                  { label: "Program Retention Rate", value: "87%" },
-                  { label: "Completion Rate (CS Pathway)", value: "58%" },
-                  { label: "Completion Rate (Data Pathway)", value: "74%" },
-                ].map(m => (
-                  <div key={m.label} className="flex justify-between items-center py-1 border-b border-border last:border-0">
-                    <span className="text-xs text-muted-foreground">{m.label}</span>
-                    <span className="text-sm font-semibold text-foreground">{m.value}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         {/* Success Stories */}
         <TabsContent value="stories">
           <div className="flex items-center justify-between mb-5">
@@ -662,24 +640,25 @@ export default function Impact() {
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-primary">{story.learner.split(" ").map(n => n[0]).join("")}</span>
+                        <span className="text-sm font-bold text-primary">{(story.learnerName || story.learner || "").split(" ").map((n: string) => n[0]).join("")}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{story.learner}</p>
+                        <p className="text-sm font-semibold text-foreground">{story.learnerName || story.learner}</p>
                         <p className="text-xs text-muted-foreground">{story.headline}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
-                      <Button variant="outline" size="sm" className="text-xs h-7 px-2.5">Edit</Button>
                       <Button variant="outline" size="sm" className="text-xs h-7 px-2.5"><Copy size={11} /></Button>
-                      <Button size="sm" className="text-xs h-7 px-2.5">Add to Report</Button>
+                      <Button variant="outline" size="sm" className="text-xs h-7 px-2.5 text-destructive hover:text-destructive" onClick={() => handleDeleteStory(story.id)}>
+                        <Trash2 size={11} />
+                      </Button>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Data Points</p>
                       <div className="space-y-1.5">
-                        {story.dataPoints.map(d => (
+                        {story.dataPoints.map((d: string) => (
                           <div key={d} className="flex items-center gap-2 text-xs">
                             <CheckCircle2 size={12} className="text-emerald-500 flex-shrink-0" />
                             <span className="text-foreground">{d}</span>
@@ -687,7 +666,7 @@ export default function Impact() {
                         ))}
                       </div>
                       <div className="flex flex-wrap gap-1.5 mt-3">
-                        {story.tags.map(t => (
+                        {story.tags.map((t: string) => (
                           <span key={t} className="text-[11px] bg-primary/8 text-primary border border-primary/15 px-2 py-0.5 rounded-full">{t}</span>
                         ))}
                       </div>
@@ -703,52 +682,6 @@ export default function Impact() {
           </div>
         </TabsContent>
 
-        {/* Exports */}
-        <TabsContent value="exports">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Export Reports</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Download formatted reports or send them by email</p>
-            </div>
-            <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { setShowEmailModal(true); setEmailSent(false); }}>
-              <Mail size={12} className="mr-1.5" /> Email Report
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {exportReports.map(report => (
-              <Card key={report.type} data-testid={`export-card-${report.type.toLowerCase().replace(/\s+/g, "-")}`} className="border-card-border shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{report.type}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Last generated: {report.lastGenerated}</p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0 ml-3">
-                      <Button
-                        variant="outline" size="sm" className="text-xs h-8"
-                        onClick={() => { setEmailSubject(`${report.type} — Atlanta Workforce Tech Alliance`); setShowEmailModal(true); setEmailSent(false); }}
-                      >
-                        <Mail size={11} className="mr-1" />
-                      </Button>
-                      <Button
-                        size="sm" className="text-xs h-8"
-                        onClick={() => handleExportReport(report.type)}
-                        data-testid={`export-${report.type.toLowerCase().replace(/\s+/g, "-")}`}
-                      >
-                        <Download size={12} className="mr-1.5" /> Export
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.metrics.map(m => (
-                      <span key={m} className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{m}</span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* Create Story Modal */}
@@ -770,27 +703,15 @@ export default function Impact() {
             <div className="px-6 py-5 space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Learner Name <span className="text-destructive">*</span></label>
-                  <Input
-                    placeholder="e.g. Jordan Lee"
-                    value={storyLearner}
-                    onChange={e => setStoryLearner(e.target.value)}
-                    className="text-sm h-9"
-                    data-testid="story-learner-input"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Pathway</label>
-                  <Select value={storyPathway} onValueChange={setStoryPathway}>
-                    <SelectTrigger className="h-9 text-sm">
-                      <SelectValue placeholder="Select pathway..." />
+                  <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Select Learner <span className="text-destructive">*</span></label>
+                  <Select value={storyLearnerId} onValueChange={handleSelectLearner}>
+                    <SelectTrigger className="h-9 text-sm" data-testid="story-learner-input">
+                      <SelectValue placeholder="Choose a learner..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Customer Success Pathway">Customer Success</SelectItem>
-                      <SelectItem value="Data Operations Pathway">Data Operations</SelectItem>
-                      <SelectItem value="Tech Support Pathway">Tech Support</SelectItem>
-                      <SelectItem value="IT Foundations Pathway">IT Foundations</SelectItem>
-                      <SelectItem value="Project Coordination Pathway">Project Coordination</SelectItem>
+                      {learners.map((l: any) => (
+                        <SelectItem key={l.id} value={String(l.id)}>{l.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, learnersTable, insertLearnerSchema } from "@workspace/db";
+import { db, learnersTable, insertLearnerSchema, learnerProjectsTable, learnerEventsTable, learnerReadinessScoresTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -68,6 +68,37 @@ router.put("/learners/:id", async (req, res) => {
   } catch (error) {
     console.error("Error updating learner:", error);
     res.status(400).json({ error: "Invalid data" });
+  }
+});
+
+// Get learner summary (for success story data points)
+router.get("/learners/:id/summary", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [learner] = await db.select().from(learnersTable).where(eq(learnersTable.id, id));
+    if (!learner) { res.status(404).json({ error: "Learner not found" }); return; }
+
+    const projects = await db.select().from(learnerProjectsTable).where(eq(learnerProjectsTable.learnerId, id));
+    const events = await db.select().from(learnerEventsTable).where(eq(learnerEventsTable.learnerId, id));
+    const readiness = await db.select().from(learnerReadinessScoresTable).where(eq(learnerReadinessScoresTable.learnerId, id));
+
+    const completedProjects = projects.filter((p: any) => p.status === "Complete" || p.completion >= 100).length;
+    const attendedEvents = events.length;
+    const avgReadiness = readiness.length > 0 ? Math.round(readiness.reduce((s: number, r: any) => s + r.score, 0) / readiness.length) : 0;
+
+    const dataPoints: string[] = [
+      `${learner.progress}% roadmap completion`,
+      `${completedProjects} project${completedProjects !== 1 ? "s" : ""} completed`,
+      `${attendedEvents} event${attendedEvents !== 1 ? "s" : ""} attended`,
+      `Readiness score: ${avgReadiness}`,
+      `Status: ${learner.status}`,
+      `Pathway: ${learner.pathway}`,
+    ];
+
+    res.json({ learnerName: learner.name, pathway: learner.pathway, dataPoints });
+  } catch (error) {
+    console.error("Error fetching learner summary:", error);
+    res.status(500).json({ error: "Failed to fetch summary" });
   }
 });
 
