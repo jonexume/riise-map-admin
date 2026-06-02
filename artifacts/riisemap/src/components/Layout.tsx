@@ -4,6 +4,7 @@ import {
   Users,
   BookOpen,
   GitBranch,
+  DollarSign,
   BarChart3,
   Settings,
   ChevronRight,
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Learners", href: "/learners", icon: Users },
   { label: "Programs", href: "/programs", icon: BookOpen },
   { label: "Pathways", href: "/pathways", icon: GitBranch },
+  { label: "Funding Sources", href: "/funding-sources", icon: DollarSign },
   { label: "Impact & Reporting", href: "/impact", icon: BarChart3 },
   { label: "Settings", href: "/settings", icon: Settings },
 ];

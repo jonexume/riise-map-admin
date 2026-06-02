@@ -1,6 +1,12 @@
-import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() { return "bytea"; },
+  toDriver(value: Buffer) { return value; },
+  fromDriver(value: Buffer) { return value; },
+});
 
 // Learners Table
 export const learnersTable = pgTable("learners", {
@@ -168,6 +174,9 @@ export const fundingSourcesTable = pgTable("funding_sources", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   objectives: text("objectives"),
+  narrative: text("narrative"),
+  narrativeFile: bytea("narrative_file"),
+  narrativeFileName: varchar("narrative_file_name", { length: 255 }),
   startDate: date("start_date"),
   endDate: date("end_date"),
   amount: numeric("amount", { precision: 12, scale: 2 }),
@@ -176,7 +185,7 @@ export const fundingSourcesTable = pgTable("funding_sources", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const insertFundingSourceSchema = createInsertSchema(fundingSourcesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertFundingSourceSchema = createInsertSchema(fundingSourcesTable).omit({ id: true, createdAt: true, updatedAt: true, narrativeFile: true, narrativeFileName: true });
 export type InsertFundingSource = z.infer<typeof insertFundingSourceSchema>;
 export type FundingSource = typeof fundingSourcesTable.$inferSelect;
 
@@ -215,3 +224,20 @@ export const fundingSourcePathwaysTable = pgTable("funding_source_pathways", {
 export const insertFundingSourcePathwaySchema = createInsertSchema(fundingSourcePathwaysTable).omit({ id: true, createdAt: true });
 export type InsertFundingSourcePathway = z.infer<typeof insertFundingSourcePathwaySchema>;
 export type FundingSourcePathway = typeof fundingSourcePathwaysTable.$inferSelect;
+
+// Funding Source Goals Table
+export const fundingSourceGoalsTable = pgTable("funding_source_goals", {
+  id: serial("id").primaryKey(),
+  fundingSourceId: integer("funding_source_id").notNull().references(() => fundingSourcesTable.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  note: text("note"),
+  status: varchar("status", { length: 50 }).notNull().default("not_started"),
+  documentFile: bytea("document_file"),
+  documentFileName: varchar("document_file_name", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertFundingSourceGoalSchema = createInsertSchema(fundingSourceGoalsTable).omit({ id: true, createdAt: true, updatedAt: true, documentFile: true, documentFileName: true });
+export type InsertFundingSourceGoal = z.infer<typeof insertFundingSourceGoalSchema>;
+export type FundingSourceGoal = typeof fundingSourceGoalsTable.$inferSelect;

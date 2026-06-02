@@ -11,6 +11,7 @@ import LearnerDetail from "@/pages/LearnerDetail";
 import Programs from "@/pages/Programs";
 import Pathways from "@/pages/Pathways";
 import Impact from "@/pages/Impact";
+import FundingSources from "@/pages/FundingSources";
 import SettingsPage from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
 import Login from "@/pages/Login";
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/learners" component={Learners} />
         <Route path="/programs" component={Programs} />
         <Route path="/pathways" component={Pathways} />
+        <Route path="/funding-sources" component={FundingSources} />
         <Route path="/impact" component={Impact} />
         <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
