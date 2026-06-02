@@ -241,3 +241,19 @@ export const fundingSourceGoalsTable = pgTable("funding_source_goals", {
 export const insertFundingSourceGoalSchema = createInsertSchema(fundingSourceGoalsTable).omit({ id: true, createdAt: true, updatedAt: true, documentFile: true, documentFileName: true });
 export type InsertFundingSourceGoal = z.infer<typeof insertFundingSourceGoalSchema>;
 export type FundingSourceGoal = typeof fundingSourceGoalsTable.$inferSelect;
+
+// Success Stories Table
+export const successStoriesTable = pgTable("success_stories", {
+  id: serial("id").primaryKey(),
+  learnerId: integer("learner_id").references(() => learnersTable.id, { onDelete: "set null" }),
+  learnerName: varchar("learner_name", { length: 255 }).notNull(),
+  headline: varchar("headline", { length: 255 }).notNull(),
+  story: text("story").notNull(),
+  dataPoints: jsonb("data_points"),
+  tags: jsonb("tags"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const insertSuccessStorySchema = createInsertSchema(successStoriesTable).omit({ id: true, createdAt: true });
+export type InsertSuccessStory = z.infer<typeof insertSuccessStorySchema>;
+export type SuccessStory = typeof successStoriesTable.$inferSelect;
