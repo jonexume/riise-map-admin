@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Users, Clock, ChevronRight, ArrowLeft, CheckCircle2,
-  Edit, Plus, X, Check, Trash2, Loader2
+  Edit, Plus, X, Check, Trash2, Loader2, Upload, Download, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, typ
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import Papa from "papaparse";
 
 type View = "list" | "detail" | "add" | "edit";
 
@@ -128,6 +129,10 @@ export default function Pathways() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const baseUrl = import.meta.env.VITE_API_URL || "";
 
   if (pathwaysLoading) {
@@ -539,9 +544,14 @@ export default function Pathways() {
           </p>
           {pathways.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
-        <Button size="sm" onClick={() => { resetForm(); setView("add"); }}>
-          <Plus size={13} className="mr-1.5" /> Add Pathway
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
+            <Upload size={14} className="mr-1.5" /> Import CSV
+          </Button>
+          <Button size="sm" onClick={() => { resetForm(); setView("add"); }}>
+            <Plus size={13} className="mr-1.5" /> Add Pathway
+          </Button>
+        </div>
       </div>
       {selectedIds.size > 0 && (
         <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
@@ -651,6 +661,116 @@ export default function Pathways() {
           </div>
         </div>
       )}
+
+      {/* Import CSV Dialog */}
+      <Dialog open={showImport} onOpenChange={(open) => { if (!open) { setShowImport(false); setImportRows([]); } }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Pathways from CSV</DialogTitle>
+          </DialogHeader>
+
+          {importRows.length === 0 ? (
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">Upload a CSV file to bulk-import pathways. The program column should match the name of an existing program.</p>
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" onClick={() => {
+                  const csv = [
+                    "name,description,targetProfile,estimatedWeeks,programCategory,skills,milestones,projects,readinessCriteria",
+                    "# REQUIRED (max 255),REQUIRED description,REQUIRED target learner profile,REQUIRED number of weeks,Optional (must match existing program name),Optional (separate with |),Optional (separate with |),Optional (separate with |),Optional (separate with |)",
+                    "IT Support Specialist,\"Prepare learners for entry-level IT support and help desk roles\",Career changers with customer service experience,16,Cloud Operations Bootcamp,Networking|Troubleshooting|Customer Service|Active Directory,CompTIA A+ Study|Help Desk Simulation|Resume Review,Ticket System Project|Network Lab,Interview ready|Portfolio complete|Cert exam passed",
+                    "",
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "pathways_template.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}>
+                  <Download size={14} className="mr-1.5" /> Download Template
+                </Button>
+                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={14} className="mr-1.5" /> Choose File
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  Papa.parse(file, { header: true, skipEmptyLines: true, comments: "#", complete: (result) => setImportRows(result.data as Record<string, string>[]) });
+                  e.target.value = "";
+                }} />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">{importRows.length} row{importRows.length !== 1 ? "s" : ""} found. Review before importing:</p>
+              <div className="border rounded-lg overflow-x-auto max-h-64 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">#</th>
+                      <th className="px-3 py-2 text-left font-medium">Name</th>
+                      <th className="px-3 py-2 text-left font-medium">Weeks</th>
+                      <th className="px-3 py-2 text-left font-medium">Program</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importRows.map((row, i) => {
+                      const isMissing = !row.name?.trim() || !row.description?.trim();
+                      const programMatch = !row.programCategory?.trim() || programs.some(p => p.name.toLowerCase().trim() === row.programCategory.toLowerCase().trim());
+                      return (
+                        <tr key={i} className={cn("border-t", isMissing && "bg-red-50", !programMatch && !isMissing && "bg-amber-50")}>
+                          <td className="px-3 py-1.5">{i + 1}</td>
+                          <td className="px-3 py-1.5 font-medium">{row.name || <span className="text-red-500 italic">Missing</span>}</td>
+                          <td className="px-3 py-1.5">{row.estimatedWeeks || "16"}</td>
+                          <td className="px-3 py-1.5">{row.programCategory || "—"}{row.programCategory && !programMatch && <AlertTriangle size={10} className="inline ml-1 text-amber-500" />}</td>
+                          <td className="px-3 py-1.5">
+                            {isMissing && <span className="text-red-600 flex items-center gap-1"><X size={10} /> Invalid</span>}
+                            {!isMissing && !programMatch && <span className="text-amber-600 flex items-center gap-1"><AlertTriangle size={10} /> Unknown program</span>}
+                            {!isMissing && programMatch && <span className="text-emerald-600 flex items-center gap-1"><Check size={10} /> Ready</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {importRows.some(r => r.programCategory?.trim() && !programs.some(p => p.name.toLowerCase().trim() === r.programCategory.toLowerCase().trim())) && (
+                <p className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle size={12} /> Some program names don't match existing programs. They will be imported as-is.</p>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setImportRows([])}>Back</Button>
+                <Button disabled={importing || importRows.every(r => !r.name?.trim())} onClick={async () => {
+                  setImporting(true);
+                  try {
+                    const validRows = importRows.filter(r => r.name?.trim() && r.description?.trim()).map(r => ({
+                      name: r.name.trim(),
+                      description: r.description.trim(),
+                      targetProfile: r.targetProfile?.trim() || "Career changers and motivated learners",
+                      estimatedWeeks: parseInt(r.estimatedWeeks) || 16,
+                      programCategory: r.programCategory?.trim() || null,
+                      skills: r.skills?.trim() || null,
+                      milestones: r.milestones?.trim() || null,
+                      projects: r.projects?.trim() || null,
+                      readinessCriteria: r.readinessCriteria?.trim() || null,
+                    }));
+                    const res = await fetch(`${baseUrl}/api/pathways/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const result = await res.json();
+                    queryClient.invalidateQueries({ queryKey: ["/api/pathways"] });
+                    toast({ title: "Import Complete", description: `${result.imported} pathway${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
+                    setShowImport(false);
+                    setImportRows([]);
+                  } catch {
+                    toast({ title: "Import Failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+                  } finally {
+                    setImporting(false);
+                  }
+                }}>
+                  {importing ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Importing...</> : <><Upload size={14} className="mr-1.5" /> Import {importRows.filter(r => r.name?.trim() && r.description?.trim()).length} Rows</>}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Delete Confirmation */}
       <Dialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>

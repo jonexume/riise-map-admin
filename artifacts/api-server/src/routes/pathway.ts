@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, pathwaysTable, insertPathwaySchema, learnersTable } from "@workspace/db";
+import { db, pathwaysTable, insertPathwaySchema, learnersTable, programsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -73,6 +73,40 @@ router.delete("/pathways/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting pathway:", error);
     res.status(500).json({ error: "Failed to delete pathway" });
+  }
+});
+
+// Bulk import pathways
+router.post("/pathways/import", async (req, res) => {
+  try {
+    const rows: unknown[] = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
+    const existingPrograms = await db.select().from(programsTable);
+    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
+    for (let i = 0; i < rows.length; i++) {
+      try {
+        const row: any = rows[i];
+        if (row.programCategory) {
+          const match = existingPrograms.find(p => p.name.toLowerCase().trim() === row.programCategory.toLowerCase().trim());
+          if (match) row.programCategory = match.name;
+        } else { row.programCategory = null; }
+        row.activeLearners = parseInt(row.activeLearners) || 0;
+        row.estimatedWeeks = parseInt(row.estimatedWeeks) || 16;
+        row.skills = row.skills ? row.skills.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        row.milestones = row.milestones ? row.milestones.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        row.projects = row.projects ? row.projects.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        row.readinessCriteria = row.readinessCriteria ? row.readinessCriteria.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        const data = insertPathwaySchema.parse(row);
+        await db.insert(pathwaysTable).values(data);
+        results.imported++;
+      } catch (e: any) {
+        results.errors.push({ row: i + 1, message: e.message || "Invalid data" });
+      }
+    }
+    res.json(results);
+  } catch (error) {
+    console.error("Error importing pathways:", error);
+    res.status(500).json({ error: "Import failed" });
   }
 });
 
