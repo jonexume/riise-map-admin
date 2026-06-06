@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import {
   Search, LayoutGrid, List, ChevronRight, X,
-  Check, Mail, UserPlus
+  Check, Mail, UserPlus, Trash2, Loader2, Upload, Download, AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import Papa from "papaparse";
 
 interface InviteForm {
   firstName: string;
@@ -77,6 +79,13 @@ export default function Learners() {
   const [filterPathway, setFilterPathway] = useState("all");
 
   const [showInvite, setShowInvite] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [inviteStep, setInviteStep] = useState<0 | 1>(0);
   const [inviteForm, setInviteForm] = useState<InviteForm>(BLANK_INVITE);
   const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
@@ -227,15 +236,33 @@ export default function Learners() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {isLoading ? "Loading..." : `${allLearners.length} learners enrolled across 3 programs`}
           </p>
+          {allLearners.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
-        <Button
-          size="sm"
-          data-testid="invite-learners-btn"
-          onClick={() => { setInviteStep(0); setShowInvite(true); }}
-        >
-          <UserPlus size={13} className="mr-1.5" /> Invite Learners
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
+            <Upload size={13} className="mr-1.5" /> Import CSV
+          </Button>
+          <Button
+            size="sm"
+            data-testid="invite-learners-btn"
+            onClick={() => { setInviteStep(0); setShowInvite(true); }}
+          >
+            <UserPlus size={13} className="mr-1.5" /> Invite Learners
+          </Button>
+        </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+          <span className="text-sm text-amber-800 font-medium">{selectedIds.size} learner{selectedIds.size > 1 ? "s" : ""} selected</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+            <Button variant="destructive" size="sm" className="text-xs h-7" onClick={() => setShowBulkDelete(true)}>
+              <Trash2 size={12} className="mr-1" /> Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-5">
@@ -343,6 +370,7 @@ export default function Learners() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
+                    <th className="px-4 py-3 w-8" />
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Learner</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pathway</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Coach</th>
@@ -366,6 +394,18 @@ export default function Learners() {
                           isNew && "bg-primary/5 ring-inset ring-1 ring-primary/20"
                         )}
                       >
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={selectedIds.has(learner.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedIds(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(learner.id); else next.delete(learner.id);
+                                return next;
+                              });
+                            }}
+                          />
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -725,6 +765,152 @@ export default function Learners() {
           </div>
         </div>
       )}
+
+      {/* Import CSV Dialog */}
+      <Dialog open={showImport} onOpenChange={(open) => { if (!open) { setShowImport(false); setImportRows([]); } }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Learners from CSV</DialogTitle>
+          </DialogHeader>
+
+          {importRows.length === 0 ? (
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">Upload a CSV file to bulk-import learners. Program and pathway values should match existing records.</p>
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" onClick={() => {
+                  const csv = [
+                    "name,email,program,pathway,coach,status,strengths,risks",
+                    "# REQUIRED (max 255),REQUIRED (unique),REQUIRED (match existing program),REQUIRED (match existing pathway),REQUIRED coach name,Optional (defaults to New Learner),Optional (separate with |),Optional (separate with |)",
+                    "Jane Smith,jane.smith@example.com,Cloud Operations Bootcamp,AWS Cloud Practitioner,Raymond Brooks,New Learner,Problem solving|Communication,Needs time management support",
+                    "",
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "learners_template.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}>
+                  <Download size={14} className="mr-1.5" /> Download Template
+                </Button>
+                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={14} className="mr-1.5" /> Choose File
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  Papa.parse(file, { header: true, skipEmptyLines: true, comments: "#", complete: (result) => setImportRows(result.data as Record<string, string>[]) });
+                  e.target.value = "";
+                }} />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">{importRows.length} row{importRows.length !== 1 ? "s" : ""} found. Review before importing:</p>
+              <div className="border rounded-lg overflow-x-auto max-h-64 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">#</th>
+                      <th className="px-3 py-2 text-left font-medium">Name</th>
+                      <th className="px-3 py-2 text-left font-medium">Email</th>
+                      <th className="px-3 py-2 text-left font-medium">Program</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importRows.map((row, i) => {
+                      const isMissing = !row.name?.trim() || !row.email?.trim() || !row.program?.trim() || !row.pathway?.trim() || !row.coach?.trim();
+                      const isDuplicate = allLearners.some(l => l.email.toLowerCase() === (row.email || "").toLowerCase().trim());
+                      return (
+                        <tr key={i} className={cn("border-t", isMissing && "bg-red-50", isDuplicate && !isMissing && "bg-amber-50")}>
+                          <td className="px-3 py-1.5">{i + 1}</td>
+                          <td className="px-3 py-1.5 font-medium">{row.name || <span className="text-red-500 italic">Missing</span>}</td>
+                          <td className="px-3 py-1.5">{row.email || "—"}</td>
+                          <td className="px-3 py-1.5">{row.program || "—"}</td>
+                          <td className="px-3 py-1.5">
+                            {isMissing && <span className="text-red-600 flex items-center gap-1"><X size={10} /> Invalid</span>}
+                            {isDuplicate && !isMissing && <span className="text-amber-600 flex items-center gap-1"><AlertTriangle size={10} /> Duplicate email</span>}
+                            {!isMissing && !isDuplicate && <span className="text-emerald-600 flex items-center gap-1"><Check size={10} /> Ready</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setImportRows([])}>Back</Button>
+                <Button disabled={importing || importRows.every(r => !r.name?.trim())} onClick={async () => {
+                  setImporting(true);
+                  try {
+                    const baseUrl = import.meta.env.VITE_API_URL || "";
+                    const validRows = importRows.filter(r => r.name?.trim() && r.email?.trim() && r.program?.trim() && r.pathway?.trim() && r.coach?.trim()).map(r => ({
+                      name: r.name.trim(),
+                      email: r.email.trim(),
+                      program: r.program.trim(),
+                      pathway: r.pathway.trim(),
+                      coach: r.coach.trim(),
+                      status: r.status?.trim() || "New Learner",
+                      strengths: r.strengths?.trim() || null,
+                      risks: r.risks?.trim() || null,
+                    }));
+                    const res = await fetch(`${baseUrl}/api/learners/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const result = await res.json();
+                    queryClient.invalidateQueries({ queryKey: ["/api/learners"] });
+                    toast({ title: "Import Complete", description: `${result.imported} learner${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
+                    setShowImport(false);
+                    setImportRows([]);
+                  } catch {
+                    toast({ title: "Import Failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+                  } finally {
+                    setImporting(false);
+                  }
+                }}>
+                  {importing ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Importing...</> : <><Upload size={14} className="mr-1.5" /> Import {importRows.filter(r => r.name?.trim() && r.email?.trim() && r.program?.trim() && r.pathway?.trim() && r.coach?.trim()).length} Rows</>}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {selectedIds.size} Learner{selectedIds.size > 1 ? "s" : ""}?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-sm text-muted-foreground">This will permanently delete the selected learners and all their associated data (roadmaps, projects, events, notes, etc.).</p>
+            <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
+              {[...selectedIds].map(id => {
+                const l = allLearners.find(x => x.id === id);
+                return l ? <li key={id} className="flex items-center gap-2"><Trash2 size={12} className="text-muted-foreground" />{l.name}</li> : null;
+              })}
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowBulkDelete(false)}>Cancel</Button>
+            <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
+              setBulkDeleting(true);
+              try {
+                const baseUrl = import.meta.env.VITE_API_URL || "";
+                const res = await fetch(`${baseUrl}/api/learners/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
+                const result = await res.json();
+                queryClient.invalidateQueries({ queryKey: ["/api/learners"] });
+                setSelectedIds(new Set());
+                setShowBulkDelete(false);
+                toast({ title: "Deleted", description: `${result.deleted} learner${result.deleted !== 1 ? "s" : ""} deleted.` });
+              } catch {
+                toast({ title: "Error", description: "Failed to delete. Please try again.", variant: "destructive" });
+              } finally {
+                setBulkDeleting(false);
+              }
+            }}>
+              {bulkDeleting ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Deleting...</> : "Confirm Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -107,6 +107,60 @@ router.get("/learners/:id/summary", async (req, res) => {
   }
 });
 
+// Bulk import learners
+router.post("/learners/import", async (req, res) => {
+  try {
+    const rows: unknown[] = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
+    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
+    for (let i = 0; i < rows.length; i++) {
+      try {
+        const row: any = rows[i];
+        row.progress = parseInt(row.progress) || 0;
+        row.readiness = parseInt(row.readiness) || 0;
+        row.profileStrength = parseInt(row.profileStrength) || 0;
+        if (!row.status) row.status = "New Learner";
+        if (!row.lastActive) row.lastActive = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        if (!row.nextAction) row.nextAction = "Complete onboarding";
+        if (!row.joinDate) row.joinDate = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        if (!row.photo) row.photo = null;
+        if (!row.background) row.background = null;
+        row.strengths = row.strengths ? row.strengths.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        row.risks = row.risks ? row.risks.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
+        // Check for duplicate email
+        const existing = await db.select().from(learnersTable).where(eq(learnersTable.email, row.email));
+        if (existing.length > 0) { results.errors.push({ row: i + 1, message: `Email "${row.email}" already exists` }); continue; }
+        const data = insertLearnerSchema.parse(row);
+        await db.insert(learnersTable).values(data);
+        results.imported++;
+      } catch (e: any) {
+        results.errors.push({ row: i + 1, message: e.message || "Invalid data" });
+      }
+    }
+    res.json(results);
+  } catch (error) {
+    console.error("Error importing learners:", error);
+    res.status(500).json({ error: "Import failed" });
+  }
+});
+
+// Bulk delete learners
+router.post("/learners/bulk-delete", async (req, res) => {
+  try {
+    const ids: number[] = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids array is required" }); return; }
+    let deleted = 0;
+    for (const id of ids) {
+      const result = await db.delete(learnersTable).where(eq(learnersTable.id, id)).returning();
+      if (result.length > 0) deleted++;
+    }
+    res.json({ deleted });
+  } catch (error) {
+    console.error("Error bulk deleting learners:", error);
+    res.status(500).json({ error: "Bulk delete failed" });
+  }
+});
+
 // --- Learner sub-resources ---
 
 router.get("/learners/:id/roadmaps", async (req, res) => {

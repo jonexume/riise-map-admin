@@ -189,11 +189,6 @@ export default function LearnerDetail() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-5 bg-muted/50">
           <TabsTrigger value="overview" className="text-xs"><User size={12} className="mr-1" />Overview</TabsTrigger>
-          <TabsTrigger value="roadmap" className="text-xs"><BookOpen size={12} className="mr-1" />Roadmap</TabsTrigger>
-          <TabsTrigger value="projects" className="text-xs"><FolderKanban size={12} className="mr-1" />Projects</TabsTrigger>
-          <TabsTrigger value="events" className="text-xs"><Calendar size={12} className="mr-1" />Events</TabsTrigger>
-          <TabsTrigger value="readiness" className="text-xs"><BarChart3 size={12} className="mr-1" />Readiness</TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs"><Activity size={12} className="mr-1" />Activity</TabsTrigger>
           <TabsTrigger value="notes" className="text-xs"><FileText size={12} className="mr-1" />Notes</TabsTrigger>
         </TabsList>
 

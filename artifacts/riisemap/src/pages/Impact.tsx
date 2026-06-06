@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/MetricCard";
-import { useGetLearners } from "@workspace/api-client-react";
+import { useGetLearners, useGetFundingSources, useGetPrograms, useGetPathways } from "@workspace/api-client-react";
 import {
   impactMetrics, engagementTrend, readinessTrend,
   cohortCompletion, placementReadyTrend
 } from "@/data/mockData";
-import { Users, TrendingUp, Star, Calendar, BookOpen, Briefcase } from "lucide-react";
+import { Users, TrendingUp, Star, Calendar, BookOpen, Briefcase, Printer } from "lucide-react";
 
 const exportReports = [
   { type: "Quarterly Impact Report", lastGenerated: "Apr 30, 2026", metrics: ["Active learners", "Readiness scores", "Event participation", "Placements"] },
@@ -205,6 +205,9 @@ export default function Impact() {
   const [storySaved, setStorySaved] = useState(false);
 
   const { data: learners = [] } = useGetLearners();
+  const { data: fundingSources = [] } = useGetFundingSources();
+  const { data: programs = [] } = useGetPrograms();
+  const { data: pathways = [] } = useGetPathways();
   const baseUrl = import.meta.env.VITE_API_URL || "";
 
   const fetchStories = useCallback(async () => {
@@ -342,11 +345,9 @@ export default function Impact() {
         <p className="text-sm text-muted-foreground mt-0.5">Evidence-based outcomes for funders, leadership, and community partners</p>
       </div>
 
-      <Tabs defaultValue="dashboard">
+      <Tabs defaultValue="funding-report">
         <TabsList className="mb-6 bg-muted/50">
-          <TabsTrigger value="dashboard" className="text-xs">Impact Dashboard</TabsTrigger>
-          <TabsTrigger value="grant" className="text-xs">Grant Report Builder</TabsTrigger>
-          <TabsTrigger value="stories" className="text-xs">Success Stories</TabsTrigger>
+          <TabsTrigger value="funding-report" className="text-xs">Funding Report</TabsTrigger>
         </TabsList>
 
         {/* Impact Dashboard */}
@@ -477,6 +478,92 @@ export default function Impact() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* Funding Report */}
+        <TabsContent value="funding-report">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">Funding Source Report</h2>
+                <p className="text-sm text-muted-foreground">Funding Sources → Programs → Pathways → Learners</p>
+              </div>
+              <Button size="sm" onClick={() => window.print()}>
+                <Printer size={14} className="mr-1.5" /> Print Report
+              </Button>
+            </div>
+
+            <div id="funding-report-content" className="space-y-6 print:space-y-4">
+              {fundingSources.map((fs: any) => {
+                const relatedPrograms = programs.filter((p: any) => p.funderTag === fs.name);
+                return (
+                  <Card key={fs.id} className="border-card-border shadow-sm print:shadow-none print:border">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Briefcase size={16} className="text-primary" />
+                        {fs.name}
+                      </CardTitle>
+                      <div className="flex gap-4 text-xs text-muted-foreground mt-1">
+                        {fs.amount && <span>Amount: ${Number(fs.amount).toLocaleString()}</span>}
+                        {fs.startDate && <span>Start: {fs.startDate}</span>}
+                        {fs.endDate && <span>End: {fs.endDate}</span>}
+                        {fs.learnerCount && <span>Target: {fs.learnerCount} learners</span>}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      {relatedPrograms.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">No programs linked to this funding source.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {relatedPrograms.map((prog: any) => {
+                            const relatedPathways = pathways.filter((pw: any) => pw.programCategory === prog.name);
+                            const relatedLearners = learners.filter((l: any) => l.program === prog.name);
+                            return (
+                              <div key={prog.id} className="ml-4 border-l-2 border-primary/20 pl-4">
+                                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                  <BookOpen size={14} className="text-blue-600" />
+                                  {prog.name}
+                                </h4>
+                                <p className="text-xs text-muted-foreground mb-2">{prog.description}</p>
+
+                                {relatedPathways.length > 0 && (
+                                  <div className="ml-4 mb-2">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Pathways</p>
+                                    <div className="space-y-1">
+                                      {relatedPathways.map((pw: any) => (
+                                        <div key={pw.id} className="text-xs text-foreground flex items-center gap-1.5">
+                                          <TrendingUp size={10} className="text-emerald-500" />
+                                          {pw.name} <span className="text-muted-foreground">({pw.estimatedWeeks} weeks)</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {relatedLearners.length > 0 && (
+                                  <div className="ml-4">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Learners ({relatedLearners.length})</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+                                      {relatedLearners.map((l: any) => (
+                                        <div key={l.id} className="text-xs text-foreground flex items-center gap-1.5">
+                                          <Users size={10} className="text-primary" />
+                                          {l.name} <span className="text-muted-foreground">— {l.pathway}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </TabsContent>
 
