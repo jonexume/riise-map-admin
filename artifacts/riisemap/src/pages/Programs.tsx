@@ -238,7 +238,6 @@ export default function Programs() {
           <div className="flex gap-2 flex-shrink-0 ml-4">
             <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => { openEdit(program); setSelected(null); }}>Edit Program</Button>
             <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: program.id, name: program.name })}>Delete</Button>
-            <Button size="sm" className="text-xs h-8">Create Report</Button>
           </div>
         </div>
 

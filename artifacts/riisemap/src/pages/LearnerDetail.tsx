@@ -3,72 +3,23 @@ import { useParams, Link } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
   FileText, BarChart3, Activity, Plus, Flag, CheckSquare,
-  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check,
-  Upload
+  Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check,
+  Upload, Edit, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearner, useUpdateLearner, type Learner } from "@workspace/api-client-react";
+import {
+  useGetLearner, useUpdateLearner, type Learner,
+  useGetLearnerRoadmaps, useGetLearnerProjects, useGetLearnerEvents,
+  useGetLearnerNotes, useCreateLearnerNote, useUpdateLearnerNote, useDeleteLearnerNote,
+  useGetLearnerReadiness, useGetLearnerActivities
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-
-// Mock details structure (will be replaced with real API data later)
-interface MockLearnerDetails {
-  profileStrength: number;
-  background: string | null;
-  strengths: string[];
-  risks: string[];
-  roadmap: Array<{ id: string; title: string; dueDate: string; state: "completed" | "in-progress" | "overdue" | "upcoming" }>;
-  projects: Array<{ id: string; title: string; completion: number; status: "completed" | "in-progress" | "upcoming" }>;
-  events: Array<{ id: string; title: string; date: string; status: "attended" | "upcoming" | "missed" }>;
-  notes: Array<{ id: string; author: string; date: string; content: string }>;
-  readiness: Array<{ dimension: string; score: number }>;
-  activity: Array<{ id: string; type: string; event: string; date: string }>;
-}
-
-function getMockDetails(learner: Learner): MockLearnerDetails {
-  // Parse JSON fields if they exist
-  const strengths = typeof learner.strengths === 'string' ? JSON.parse(learner.strengths) : learner.strengths || [];
-  const risks = typeof learner.risks === 'string' ? JSON.parse(learner.risks) : learner.risks || [];
-
-  return {
-    profileStrength: learner.profileStrength || 0,
-    background: learner.background || "Background information not yet added.",
-    strengths,
-    risks,
-    roadmap: [
-      { id: "1", title: "Career Assessment", dueDate: "2 weeks ago", state: "completed" },
-      { id: "2", title: "Resume Review", dueDate: "1 week ago", state: "in-progress" },
-      { id: "3", title: "LinkedIn Optimization", dueDate: "Tomorrow", state: "upcoming" },
-    ],
-    projects: [
-      { id: "1", title: "Customer Onboarding Simulation", completion: 75, status: "in-progress" },
-      { id: "2", title: "Help Ticket System Walkthrough", completion: 100, status: "completed" },
-    ],
-    events: [
-      { id: "1", title: "Career Readiness Workshop", date: "Last week", status: "attended" },
-      { id: "2", title: "Mock Interview Session", date: "Next Tuesday", status: "upcoming" },
-    ],
-    notes: [
-      { id: "1", author: "Denise Carter", date: "May 20, 2025", content: "Great progress on the career assessment! Very thoughtful responses to the situational questions." },
-    ],
-    readiness: [
-      { dimension: "Technical Skills", score: 65 },
-      { dimension: "Communication", score: 85 },
-      { dimension: "Professionalism", score: 80 },
-      { dimension: "Interview Readiness", score: 55 },
-    ],
-    activity: [
-      { id: "1", type: "login", event: "Logged into RiiseMap", date: "2 hours ago" },
-      { id: "2", type: "milestone", event: "Completed Career Assessment", date: "2 days ago" },
-    ],
-  };
-}
 
 export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
@@ -76,11 +27,20 @@ export default function LearnerDetail() {
   const queryClient = useQueryClient();
   const { data: learner, isLoading } = useGetLearner(learnerId);
   const updateLearnerMutation = useUpdateLearner({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/learners/${learnerId}`] }) } });
+  const { data: roadmap = [] } = useGetLearnerRoadmaps(learnerId);
+  const { data: projects = [] } = useGetLearnerProjects(learnerId);
+  const { data: events = [] } = useGetLearnerEvents(learnerId);
+  const { data: notes = [] } = useGetLearnerNotes(learnerId);
+  const { data: readiness = [] } = useGetLearnerReadiness(learnerId);
+  const { data: activity = [] } = useGetLearnerActivities(learnerId);
+  const createNoteMutation = useCreateLearnerNote(learnerId);
+  const updateNoteMutation = useUpdateLearnerNote(learnerId);
+  const deleteNoteMutation = useDeleteLearnerNote(learnerId);
   const [newNote, setNewNote] = useState("");
-  const [notes, setNotes] = useState<MockLearnerDetails["notes"]>([]);
   const [noteSaved, setNoteSaved] = useState(false);
-  const [flagged, setFlagged] = useState(false);
-  const [showSuccessStory, setShowSuccessStory] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,26 +80,20 @@ export default function LearnerDetail() {
     );
   }
 
-  const details = getMockDetails(learner);
+  const strengths: string[] = typeof learner.strengths === 'string' ? JSON.parse(learner.strengths) : learner.strengths || [];
+  const risks: string[] = typeof learner.risks === 'string' ? JSON.parse(learner.risks) : learner.risks || [];
 
   function handleFlag() {
-    setFlagged(true);
-    setTimeout(() => setFlagged(false), 3000);
+    updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, flaggedForSupport: !learner!.flaggedForSupport } });
   }
 
   function handleSaveNote() {
     const trimmed = newNote.trim();
     if (!trimmed) return;
-    const saved = {
-      id: String(Date.now()),
-      author: "Denise Carter",
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      content: trimmed,
-    };
-    setNotes(prev => [saved, ...prev]);
-    setNewNote("");
-    setNoteSaved(true);
-    setTimeout(() => setNoteSaved(false), 2000);
+    createNoteMutation.mutate(
+      { author: "Denise Carter", date: new Date().toISOString().split("T")[0], content: trimmed },
+      { onSuccess: () => { setNewNote(""); setNoteSaved(true); setTimeout(() => setNoteSaved(false), 2000); } }
+    );
   }
 
   const milestoneIcon = (state: string) => {
@@ -187,32 +141,23 @@ export default function LearnerDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => document.querySelector('[data-testid="add-note-input"]')?.scrollIntoView({ behavior: 'smooth' })}>
+          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => setActiveTab("notes")}>
             <Plus size={12} className="mr-1.5" /> Add Note
           </Button>
           <div className="relative">
             <Button
               variant="outline"
               size="sm"
-              className="text-xs h-8"
+              className={cn("text-xs h-8", learner.flaggedForSupport && "border-amber-300 bg-amber-50")}
               onClick={handleFlag}
               data-testid="btn-flag"
             >
-              {flagged
-                ? <><Check size={12} className="mr-1.5 text-emerald-600" /><span className="text-emerald-600">Support notified</span></>
+              {learner.flaggedForSupport
+                ? <><Flag size={12} className="mr-1.5 text-amber-600" /><span className="text-amber-700">Flagged for Support</span></>
                 : <><Flag size={12} className="mr-1.5" /> Flag for Support</>
               }
             </Button>
-            {flagged && (
-              <div className="absolute top-full left-0 mt-2 z-50 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 shadow-md whitespace-nowrap">
-                <p className="text-xs font-semibold text-emerald-800">Support team notified</p>
-                <p className="text-[11px] text-emerald-700 mt-0.5">{learner.name}'s coach has been alerted.</p>
-              </div>
-            )}
           </div>
-          <Button size="sm" className="text-xs h-8" data-testid="btn-success-story" onClick={() => setShowSuccessStory(true)}>
-            <Sparkles size={12} className="mr-1.5" /> Create Success Story
-          </Button>
         </div>
       </div>
 
@@ -230,8 +175,8 @@ export default function LearnerDetail() {
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Profile Strength</p>
-          <p className="text-2xl font-semibold text-foreground mt-0.5">{details.profileStrength}%</p>
-          <Progress value={details.profileStrength} className="h-1 mt-1.5" />
+          <p className="text-2xl font-semibold text-foreground mt-0.5">{learner.profileStrength || 0}%</p>
+          <Progress value={learner.profileStrength || 0} className="h-1 mt-1.5" />
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Last Active</p>
@@ -241,15 +186,15 @@ export default function LearnerDetail() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-5 bg-muted/50">
           <TabsTrigger value="overview" className="text-xs"><User size={12} className="mr-1" />Overview</TabsTrigger>
           <TabsTrigger value="roadmap" className="text-xs"><BookOpen size={12} className="mr-1" />Roadmap</TabsTrigger>
           <TabsTrigger value="projects" className="text-xs"><FolderKanban size={12} className="mr-1" />Projects</TabsTrigger>
           <TabsTrigger value="events" className="text-xs"><Calendar size={12} className="mr-1" />Events</TabsTrigger>
-          <TabsTrigger value="notes" className="text-xs"><FileText size={12} className="mr-1" />Notes</TabsTrigger>
           <TabsTrigger value="readiness" className="text-xs"><BarChart3 size={12} className="mr-1" />Readiness</TabsTrigger>
           <TabsTrigger value="activity" className="text-xs"><Activity size={12} className="mr-1" />Activity</TabsTrigger>
+          <TabsTrigger value="notes" className="text-xs"><FileText size={12} className="mr-1" />Notes</TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -258,12 +203,12 @@ export default function LearnerDetail() {
             <Card className="border-card-border">
               <CardHeader className="pb-3"><CardTitle className="text-sm">About</CardTitle></CardHeader>
               <CardContent className="pt-0">
-                <p className="text-sm text-muted-foreground">{details.background || "Background information not yet added."}</p>
-                {details.strengths.length > 0 && (
+                <p className="text-sm text-muted-foreground">{learner.background || "Background information not yet added."}</p>
+                {strengths.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs font-semibold text-foreground mb-2">Strengths</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {details.strengths.map(s => (
+                      {strengths.map(s => (
                         <span key={s} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full">{s}</span>
                       ))}
                     </div>
@@ -277,11 +222,11 @@ export default function LearnerDetail() {
                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
                   <p className="text-sm text-blue-800">{learner.nextAction}</p>
                 </div>
-                {details.risks.length > 0 && (
+                {risks.length > 0 && (
                   <div className="mt-4">
                     <p className="text-xs font-semibold text-foreground mb-2">Attention Areas</p>
                     <div className="space-y-1.5">
-                      {details.risks.map(r => (
+                      {risks.map(r => (
                         <div key={r} className="flex items-center gap-2 text-xs text-amber-700">
                           <AlertCircle size={12} className="text-amber-500 flex-shrink-0" />
                           {r}
@@ -299,12 +244,12 @@ export default function LearnerDetail() {
         <TabsContent value="roadmap">
           <Card className="border-card-border">
             <CardContent className="pt-5">
-              {details.roadmap.length === 0 ? (
+              {roadmap.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">Roadmap milestones not yet configured.</p>
               ) : (
                 <div className="space-y-2">
                   {(["completed", "in-progress", "overdue", "upcoming"] as const).map(state => {
-                    const items = details.roadmap.filter(m => m.state === state);
+                    const items = roadmap.filter(m => m.state === state);
                     if (items.length === 0) return null;
                     const labels = { completed: "Completed", "in-progress": "In Progress", overdue: "Overdue", upcoming: "Upcoming" };
                     return (
@@ -344,9 +289,9 @@ export default function LearnerDetail() {
         {/* Projects */}
         <TabsContent value="projects">
           <div className="space-y-3">
-            {details.projects.length === 0 ? (
+            {projects.length === 0 ? (
               <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">No projects assigned yet.</CardContent></Card>
-            ) : details.projects.map(p => (
+            ) : projects.map(p => (
               <Card key={p.id} className="border-card-border">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -369,9 +314,9 @@ export default function LearnerDetail() {
         {/* Events */}
         <TabsContent value="events">
           <div className="space-y-2">
-            {details.events.length === 0 ? (
+            {events.length === 0 ? (
               <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">No events recorded yet.</CardContent></Card>
-            ) : details.events.map(e => (
+            ) : events.map(e => (
               <div key={e.id} className={cn(
                 "flex items-center gap-3 p-3.5 rounded-lg border",
                 e.status === "attended" ? "bg-emerald-50/40 border-emerald-100" :
@@ -397,6 +342,64 @@ export default function LearnerDetail() {
               </div>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Readiness */}
+        <TabsContent value="readiness">
+          <Card className="border-card-border">
+            <CardHeader className="pb-3"><CardTitle className="text-sm">Readiness Dimensions</CardTitle></CardHeader>
+            <CardContent className="pt-0 space-y-4">
+              {readiness.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Readiness data not yet available.</p>
+              ) : readiness.map(r => (
+                <div key={r.dimension}>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-foreground font-medium">{r.dimension}</span>
+                    <span className={cn(
+                      "font-semibold",
+                      r.score >= 80 ? "text-emerald-600" : r.score >= 60 ? "text-blue-600" : "text-amber-600"
+                    )}>{r.score}</span>
+                  </div>
+                  <Progress value={r.score} className="h-2" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Activity */}
+        <TabsContent value="activity">
+          <Card className="border-card-border">
+            <CardContent className="pt-5">
+              {activity.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>
+              ) : (
+                <div className="space-y-0">
+                  {activity.map((a, i) => {
+                    const icons: Record<string, typeof Activity> = {
+                      milestone: CheckSquare, event: Calendar,
+                      note: FileText, login: User, project: FolderKanban,
+                    };
+                    const Icon = icons[a.type] ?? Activity;
+                    return (
+                      <div key={a.id} className="flex gap-4 pb-4">
+                        <div className="flex flex-col items-center">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Icon size={12} className="text-primary" />
+                          </div>
+                          {i < activity.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
+                        </div>
+                        <div className="flex-1 pb-1 pt-1">
+                          <p className="text-sm text-foreground">{a.event}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{a.date}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Notes */}
@@ -434,90 +437,34 @@ export default function LearnerDetail() {
                       </div>
                       <span className="text-xs font-semibold text-foreground">{n.author}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{n.date}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{n.date}</span>
+                      {editingNoteId !== n.id && (
+                        <>
+                          <button onClick={() => { setEditingNoteId(n.id); setEditingContent(n.content); }} className="text-muted-foreground hover:text-foreground"><Edit size={12} /></button>
+                          <button onClick={() => deleteNoteMutation.mutate(n.id)} className="text-muted-foreground hover:text-red-600"><Trash2 size={12} /></button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{n.content}</p>
+                  {editingNoteId === n.id ? (
+                    <div>
+                      <Textarea value={editingContent} onChange={(e) => setEditingContent(e.target.value)} className="text-sm min-h-16 resize-none" />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setEditingNoteId(null)}><X size={12} className="mr-1" />Cancel</Button>
+                        <Button size="sm" className="text-xs h-7" onClick={() => updateNoteMutation.mutate({ noteId: n.id, content: editingContent }, { onSuccess: () => setEditingNoteId(null) })}>Save</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{n.content}</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
-
-        {/* Readiness */}
-        <TabsContent value="readiness">
-          <Card className="border-card-border">
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Readiness Dimensions</CardTitle></CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              {details.readiness.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Readiness data not yet available.</p>
-              ) : details.readiness.map(r => (
-                <div key={r.dimension}>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-foreground font-medium">{r.dimension}</span>
-                    <span className={cn(
-                      "font-semibold",
-                      r.score >= 80 ? "text-emerald-600" : r.score >= 60 ? "text-blue-600" : "text-amber-600"
-                    )}>{r.score}</span>
-                  </div>
-                  <Progress value={r.score} className="h-2" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Activity */}
-        <TabsContent value="activity">
-          <Card className="border-card-border">
-            <CardContent className="pt-5">
-              {details.activity.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>
-              ) : (
-                <div className="space-y-0">
-                  {details.activity.map((a, i) => {
-                    const icons = {
-                      milestone: CheckSquare, event: Calendar,
-                      note: FileText, login: User, project: FolderKanban,
-                    };
-                    const Icon = icons[a.type] ?? Activity;
-                    return (
-                      <div key={a.id} className="flex gap-4 pb-4">
-                        <div className="flex flex-col items-center">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Icon size={12} className="text-primary" />
-                          </div>
-                          {i < details.activity.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
-                        </div>
-                        <div className="flex-1 pb-1 pt-1">
-                          <p className="text-sm text-foreground">{a.event}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{a.date}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
-      {/* Success Story Dialog */}
-      <Dialog open={showSuccessStory} onOpenChange={setShowSuccessStory}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Success Story</DialogTitle>
-            <DialogDescription>Create a success story to celebrate {learner.name}'s achievements!</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">Success story functionality coming soon!</p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowSuccessStory(false)}>Cancel</Button>
-            <Button onClick={() => setShowSuccessStory(false)}>Create</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

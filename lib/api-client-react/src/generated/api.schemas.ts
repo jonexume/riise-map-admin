@@ -27,6 +27,7 @@ export interface Learner {
   strengths?: string[] | null;
   risks?: string[] | null;
   profileStrength?: number | null;
+  flaggedForSupport?: boolean;
 }
 
 export interface CreateLearner {
@@ -65,6 +66,7 @@ export interface UpdateLearner {
   strengths?: string[] | null;
   risks?: string[] | null;
   profileStrength?: number | null;
+  flaggedForSupport?: boolean;
 }
 
 export interface Program {
@@ -123,6 +125,7 @@ export interface Pathway {
   targetProfile: string;
   estimatedWeeks: number;
   activeLearners: number;
+  programCategory?: string | null;
   skills?: string[] | null;
   milestones?: string[] | null;
   projects?: string[] | null;

@@ -1,6 +1,11 @@
 import { Router, type IRouter } from "express";
-import { db, learnersTable, insertLearnerSchema, learnerProjectsTable, learnerEventsTable, learnerReadinessScoresTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  db, learnersTable, insertLearnerSchema,
+  learnerRoadmapsTable, learnerProjectsTable, learnerEventsTable,
+  learnerNotesTable, learnerReadinessScoresTable, learnerActivitiesTable,
+  insertLearnerNoteSchema
+} from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -99,6 +104,110 @@ router.get("/learners/:id/summary", async (req, res) => {
   } catch (error) {
     console.error("Error fetching learner summary:", error);
     res.status(500).json({ error: "Failed to fetch summary" });
+  }
+});
+
+// --- Learner sub-resources ---
+
+router.get("/learners/:id/roadmaps", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerRoadmapsTable).where(eq(learnerRoadmapsTable.learnerId, id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner roadmaps:", error);
+    res.status(500).json({ error: "Failed to fetch roadmaps" });
+  }
+});
+
+router.get("/learners/:id/projects", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerProjectsTable).where(eq(learnerProjectsTable.learnerId, id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner projects:", error);
+    res.status(500).json({ error: "Failed to fetch projects" });
+  }
+});
+
+router.get("/learners/:id/events", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerEventsTable).where(eq(learnerEventsTable.learnerId, id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner events:", error);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+router.get("/learners/:id/notes", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerNotesTable).where(eq(learnerNotesTable.learnerId, id)).orderBy(desc(learnerNotesTable.id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner notes:", error);
+    res.status(500).json({ error: "Failed to fetch notes" });
+  }
+});
+
+router.post("/learners/:id/notes", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const data = insertLearnerNoteSchema.parse({ ...req.body, learnerId: id });
+    const [note] = await db.insert(learnerNotesTable).values(data).returning();
+    res.status(201).json(note);
+  } catch (error) {
+    console.error("Error creating learner note:", error);
+    res.status(400).json({ error: "Invalid data" });
+  }
+});
+
+router.put("/learners/:id/notes/:noteId", async (req, res) => {
+  try {
+    const noteId = parseInt(req.params.noteId);
+    const [updated] = await db.update(learnerNotesTable).set({ content: req.body.content }).where(eq(learnerNotesTable.id, noteId)).returning();
+    if (!updated) { res.status(404).json({ error: "Note not found" }); return; }
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating note:", error);
+    res.status(400).json({ error: "Failed to update note" });
+  }
+});
+
+router.delete("/learners/:id/notes/:noteId", async (req, res) => {
+  try {
+    const noteId = parseInt(req.params.noteId);
+    const [deleted] = await db.delete(learnerNotesTable).where(eq(learnerNotesTable.id, noteId)).returning();
+    if (!deleted) { res.status(404).json({ error: "Note not found" }); return; }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting note:", error);
+    res.status(500).json({ error: "Failed to delete note" });
+  }
+});
+
+router.get("/learners/:id/readiness", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerReadinessScoresTable).where(eq(learnerReadinessScoresTable.learnerId, id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner readiness:", error);
+    res.status(500).json({ error: "Failed to fetch readiness" });
+  }
+});
+
+router.get("/learners/:id/activities", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(learnerActivitiesTable).where(eq(learnerActivitiesTable.learnerId, id));
+    res.json(rows);
+  } catch (error) {
+    console.error("Error fetching learner activities:", error);
+    res.status(500).json({ error: "Failed to fetch activities" });
   }
 });
 

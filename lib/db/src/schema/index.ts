@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, varchar, date, jsonb, numeric, timestamp, boolean, customType } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -27,6 +27,7 @@ export const learnersTable = pgTable("learners", {
   strengths: jsonb("strengths"),
   risks: jsonb("risks"),
   profileStrength: integer("profileStrength"),
+  flaggedForSupport: boolean("flaggedForSupport").notNull().default(false),
 });
 
 export const insertLearnerSchema = createInsertSchema(learnersTable).omit({ id: true });
@@ -82,6 +83,7 @@ export const pathwaysTable = pgTable("pathways", {
   targetProfile: text("targetProfile").notNull(),
   estimatedWeeks: integer("estimatedWeeks").notNull(),
   activeLearners: integer("activeLearners").notNull(),
+  programCategory: varchar("programCategory", { length: 100 }),
   skills: jsonb("skills"),
   milestones: jsonb("milestones"),
   projects: jsonb("projects"),

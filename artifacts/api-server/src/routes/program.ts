@@ -68,7 +68,7 @@ router.post("/programs", async (req, res) => {
 router.put("/programs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const data = insertProgramSchema.parse(req.body);
+    const data = insertProgramSchema.partial().parse(req.body);
 
     // Check for unique programTag (exclude current program)
     const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));

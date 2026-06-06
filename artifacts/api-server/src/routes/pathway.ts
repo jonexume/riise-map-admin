@@ -47,7 +47,7 @@ router.post("/pathways", async (req, res) => {
 router.put("/pathways/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const data = insertPathwaySchema.parse(req.body);
+    const data = insertPathwaySchema.partial().parse(req.body);
     const [updatedPathway] = await db.update(pathwaysTable).set(data).where(eq(pathwaysTable.id, id)).returning();
     if (!updatedPathway) {
       res.status(404).json({ error: "Pathway not found" });

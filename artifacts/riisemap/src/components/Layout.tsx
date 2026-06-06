@@ -19,12 +19,11 @@ const DEFAULT_ORG_LOGO = "/blueworkforce-logo.png";
 
 const navItems = [
   { label: "Home", href: "/", icon: Home },
-  { label: "Learners", href: "/learners", icon: Users },
+  { label: "Funding Sources", href: "/funding-sources", icon: DollarSign },
   { label: "Programs", href: "/programs", icon: BookOpen },
   { label: "Pathways", href: "/pathways", icon: GitBranch },
-  { label: "Funding Sources", href: "/funding-sources", icon: DollarSign },
+  { label: "Learners", href: "/learners", icon: Users },
   { label: "Impact & Reporting", href: "/impact", icon: BarChart3 },
-  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 function getProfilePhoto(): string {
