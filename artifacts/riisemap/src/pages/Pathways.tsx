@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Users, Clock, ChevronRight, ArrowLeft, CheckCircle2,
-  Edit, Plus, X, Check
+  Edit, Plus, X, Check, Trash2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,9 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGetPathways, useCreatePathway, useUpdatePathway, type Pathway } from "@workspace/api-client-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, type Pathway } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type View = "list" | "detail" | "add" | "edit";
 
@@ -104,6 +107,7 @@ export default function Pathways() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
+  const { data: programs = [] } = useGetPrograms();
   const createMutation = useCreatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
   const updateMutation = useUpdatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
 
@@ -121,6 +125,10 @@ export default function Pathways() {
   const [criteriaInput, setCriteriaInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: number; name: string } | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const baseUrl = import.meta.env.VITE_API_URL || "";
 
   if (pathwaysLoading) {
     return (
@@ -475,10 +483,9 @@ export default function Pathways() {
                     <Select value={form.programCategory} onValueChange={v => set("programCategory", v)}>
                       <SelectTrigger className="mt-1.5 h-10 text-sm"><SelectValue placeholder="Select program..." /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="tech">Tech Career Launch</SelectItem>
-                        <SelectItem value="cs">Customer Success Accelerator</SelectItem>
-                        <SelectItem value="data">Data Operations Starter</SelectItem>
-                        <SelectItem value="standalone">Standalone Pathway</SelectItem>
+                        {programs.map(p => (
+                          <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -530,11 +537,23 @@ export default function Pathways() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {pathways.length} pathways guiding {pathways.reduce((a, p) => a + p.activeLearners, 0)} learners toward tech careers
           </p>
+          {pathways.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
         <Button size="sm" onClick={() => { resetForm(); setView("add"); }}>
           <Plus size={13} className="mr-1.5" /> Add Pathway
         </Button>
       </div>
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+          <span className="text-sm text-amber-800 font-medium">{selectedIds.size} pathway{selectedIds.size > 1 ? "s" : ""} selected</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+            <Button variant="destructive" size="sm" className="text-xs h-7" onClick={() => setShowBulkDelete(true)}>
+              <Trash2 size={12} className="mr-1" /> Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
       {pathways.length === 0 ? (
         <Card className="border-card-border shadow-sm">
           <CardContent className="flex flex-col items-center justify-center py-16 px-6 text-center">
@@ -555,6 +574,19 @@ export default function Pathways() {
         {pathways.map(p => (
           <Card key={p.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  checked={selectedIds.has(p.id)}
+                  onCheckedChange={(checked) => {
+                    setSelectedIds(prev => {
+                      const next = new Set(prev);
+                      if (checked) next.add(p.id); else next.delete(p.id);
+                      return next;
+                    });
+                  }}
+                  className="mt-1"
+                />
+                <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
                 <h2 className="text-base font-semibold text-foreground">{p.name}</h2>
                 {p.activeLearners === 0 && <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full ml-2 flex-shrink-0">New</span>}
@@ -576,6 +608,8 @@ export default function Pathways() {
                   View Details <ChevronRight size={11} className="ml-1" />
                 </Button>
                 <Button variant="ghost" size="sm" className="text-xs h-7 px-3" onClick={() => openEdit(p)}>Edit</Button>
+              </div>
+              </div>
               </div>
             </CardContent>
           </Card>
@@ -617,6 +651,48 @@ export default function Pathways() {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {selectedIds.size} Pathway{selectedIds.size > 1 ? "s" : ""}?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-sm text-muted-foreground">Pathways with assigned learners cannot be deleted and will be skipped.</p>
+            <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
+              {[...selectedIds].map(id => {
+                const p = pathways.find(x => x.id === id);
+                return p ? <li key={id} className="flex items-center gap-2"><Trash2 size={12} className="text-muted-foreground" />{p.name}</li> : null;
+              })}
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowBulkDelete(false)}>Cancel</Button>
+            <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
+              setBulkDeleting(true);
+              try {
+                const res = await fetch(`${baseUrl}/api/pathways/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
+                const result = await res.json();
+                queryClient.invalidateQueries({ queryKey: ["/api/pathways"] });
+                setSelectedIds(new Set());
+                setShowBulkDelete(false);
+                if (result.blocked?.length > 0) {
+                  toast({ title: "Partially Deleted", description: `${result.deleted} deleted. ${result.blocked.length} skipped (learners assigned).` });
+                } else {
+                  toast({ title: "Deleted", description: `${result.deleted} pathway${result.deleted !== 1 ? "s" : ""} deleted.` });
+                }
+              } catch {
+                toast({ title: "Error", description: "Failed to delete. Please try again.", variant: "destructive" });
+              } finally {
+                setBulkDeleting(false);
+              }
+            }}>
+              {bulkDeleting ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Deleting...</> : "Confirm Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

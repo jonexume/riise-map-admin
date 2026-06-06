@@ -1,15 +1,18 @@
-import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, DollarSign, Calendar, Users, ChevronRight, Plus, X, Check, Circle, Loader2, Trash2, Edit, Paperclip, FileText } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ArrowLeft, DollarSign, Calendar, Users, ChevronRight, Plus, X, Check, Circle, Loader2, Trash2, Edit, Paperclip, FileText, Upload, Download, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useGetFundingSources, useCreateFundingSource, useUpdateFundingSource, type FundingSource } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import Papa from "papaparse";
 
 interface Goal {
   id: number;
@@ -62,6 +65,17 @@ export default function FundingSources() {
   const [narrativeText, setNarrativeText] = useState("");
   const [narrativeDirty, setNarrativeDirty] = useState(false);
   const [narrativeFileName, setNarrativeFileName] = useState<string | null>(null);
+
+  // Import state
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Multi-select delete state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const baseUrl = import.meta.env.VITE_API_URL || "";
 
@@ -552,11 +566,29 @@ export default function FundingSources() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {sources.length} funding source{sources.length !== 1 ? "s" : ""} tracking ${sources.reduce((a: number, s: FundingSource) => a + (Number(s.amount) || 0), 0).toLocaleString()} in total funding
           </p>
+          {sources.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
-        <Button size="sm" onClick={() => setShowCreate(true)}>
-          <Plus size={14} className="mr-1.5" /> Add Funding Source
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
+            <Upload size={14} className="mr-1.5" /> Import CSV
+          </Button>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus size={14} className="mr-1.5" /> Add Funding Source
+          </Button>
+        </div>
       </div>
+
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+          <span className="text-sm text-amber-800 font-medium">{selectedIds.size} funding source{selectedIds.size > 1 ? "s" : ""} selected</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setSelectedIds(new Set())}>Clear</Button>
+            <Button variant="destructive" size="sm" className="text-xs h-7" onClick={() => setShowBulkDelete(true)}>
+              <Trash2 size={12} className="mr-1" /> Delete Selected
+            </Button>
+          </div>
+        </div>
+      )}
 
       {sources.length === 0 ? (
         <Card className="border-card-border shadow-sm">
@@ -579,7 +611,19 @@ export default function FundingSources() {
             <Card key={s.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
-                  <div className="flex-1 min-w-0">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <Checkbox
+                      checked={selectedIds.has(s.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedIds(prev => {
+                          const next = new Set(prev);
+                          if (checked) next.add(s.id); else next.delete(s.id);
+                          return next;
+                        });
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
                     <h2 className="text-base font-semibold text-foreground mb-1">{s.name}</h2>
                     {s.objectives && <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{s.objectives}</p>}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -612,6 +656,7 @@ export default function FundingSources() {
                         </p>
                       </div>
                     </div>
+                  </div>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setSelected(s.id)}>
@@ -647,6 +692,169 @@ export default function FundingSources() {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={showBulkDelete} onOpenChange={setShowBulkDelete}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {selectedIds.size} Funding Source{selectedIds.size > 1 ? "s" : ""}?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <p className="text-sm text-muted-foreground">The following funding sources will be deleted. Sources attached to learners or pathways cannot be deleted and will be skipped.</p>
+            <ul className="text-sm space-y-1 max-h-40 overflow-y-auto">
+              {[...selectedIds].map(id => {
+                const s = sources.find((x: FundingSource) => x.id === id);
+                return s ? <li key={id} className="flex items-center gap-2"><Trash2 size={12} className="text-muted-foreground" />{s.name}</li> : null;
+              })}
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowBulkDelete(false)}>Cancel</Button>
+            <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
+              setBulkDeleting(true);
+              try {
+                const res = await fetch(`${baseUrl}/api/funding-sources/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds].map(Number) }) });
+                const result = await res.json();
+                queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
+                setSelectedIds(new Set());
+                setShowBulkDelete(false);
+                if (result.blocked?.length > 0) {
+                  toast({ title: "Partially Deleted", description: `${result.deleted} deleted. ${result.blocked.length} skipped (attached to learners or pathways).` });
+                } else {
+                  toast({ title: "Deleted", description: `${result.deleted} funding source${result.deleted !== 1 ? "s" : ""} deleted.` });
+                }
+              } catch {
+                toast({ title: "Error", description: "Failed to delete. Please try again.", variant: "destructive" });
+              } finally {
+                setBulkDeleting(false);
+              }
+            }}>
+              {bulkDeleting ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Deleting...</> : "Confirm Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import CSV Dialog */}
+      <Dialog open={showImport} onOpenChange={(open) => { if (!open) { setShowImport(false); setImportRows([]); } }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Import Funding Sources from CSV</DialogTitle>
+          </DialogHeader>
+
+          {importRows.length === 0 ? (
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">Upload a CSV file to bulk-import funding sources. Download the template to ensure your file has the correct columns.</p>
+              <div className="flex gap-3">
+                <Button variant="outline" size="sm" onClick={() => {
+                  const csv = [
+                    "name,objectives,narrative,startDate,endDate,amount,learnerCount,goal1,goal2,goal3,goal4,goal5",
+                    "# REQUIRED text (max 255),Optional text (max 1000),Optional text (no limit),Optional date (YYYY-MM-DD),Optional date (YYYY-MM-DD),Optional number (e.g. 50000),Optional whole number,Optional goal title,Optional goal title,Optional goal title,Optional goal title,Optional goal title",
+                    "Example Grant,\"Fund workforce training and coaching\",\"This grant supports a 12-month workforce development initiative focused on placing underserved residents into technology careers through structured coaching, skills training, and employer partnerships.\",2026-01-01,2026-12-31,50000,25,Place 15 learners in jobs,Achieve 80% completion rate,Host 4 employer events,,",
+                    "",
+                  ].join("\n");
+                  const blob = new Blob([csv], { type: "text/csv" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a"); a.href = url; a.download = "funding_sources_template.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}>
+                  <Download size={14} className="mr-1.5" /> Download Template
+                </Button>
+                <Button size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={14} className="mr-1.5" /> Choose File
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    comments: "#",
+                    complete: (result) => {
+                      setImportRows(result.data as Record<string, string>[]);
+                    },
+                  });
+                  e.target.value = "";
+                }} />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">{importRows.length} row{importRows.length !== 1 ? "s" : ""} found. Review before importing:</p>
+              <div className="border rounded-lg overflow-x-auto max-h-64 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">#</th>
+                      <th className="px-3 py-2 text-left font-medium">Name</th>
+                      <th className="px-3 py-2 text-left font-medium">Amount</th>
+                      <th className="px-3 py-2 text-left font-medium">Start</th>
+                      <th className="px-3 py-2 text-left font-medium">End</th>
+                      <th className="px-3 py-2 text-left font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importRows.map((row, i) => {
+                      const isDuplicate = sources.some((s: FundingSource) => s.name.toLowerCase().trim() === (row.name || "").toLowerCase().trim());
+                      const isMissing = !row.name?.trim();
+                      return (
+                        <tr key={i} className={cn("border-t", isMissing && "bg-red-50", isDuplicate && !isMissing && "bg-amber-50")}>
+                          <td className="px-3 py-1.5">{i + 1}</td>
+                          <td className="px-3 py-1.5 font-medium">{row.name || <span className="text-red-500 italic">Missing</span>}</td>
+                          <td className="px-3 py-1.5">{row.amount ? `$${Number(row.amount).toLocaleString()}` : "—"}</td>
+                          <td className="px-3 py-1.5">{row.startDate || "—"}</td>
+                          <td className="px-3 py-1.5">{row.endDate || "—"}</td>
+                          <td className="px-3 py-1.5">
+                            {isMissing && <span className="text-red-600 flex items-center gap-1"><X size={10} /> Invalid</span>}
+                            {isDuplicate && !isMissing && <span className="text-amber-600 flex items-center gap-1"><AlertTriangle size={10} /> Duplicate</span>}
+                            {!isMissing && !isDuplicate && <span className="text-emerald-600 flex items-center gap-1"><Check size={10} /> Ready</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {importRows.some(r => !r.name?.trim()) && (
+                <p className="text-xs text-red-600">Rows without a name will be skipped.</p>
+              )}
+              {importRows.some(r => r.name?.trim() && sources.some((s: FundingSource) => s.name.toLowerCase().trim() === r.name.toLowerCase().trim())) && (
+                <p className="text-xs text-amber-600 flex items-center gap-1"><AlertTriangle size={12} /> Some rows match existing funding sources. They will still be imported.</p>
+              )}
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setImportRows([])}>Back</Button>
+                <Button disabled={importing || importRows.every(r => !r.name?.trim())} onClick={async () => {
+                  setImporting(true);
+                  try {
+                    const validRows = importRows.filter(r => r.name?.trim()).map(r => ({
+                      name: r.name.trim(),
+                      objectives: r.objectives?.trim() || null,
+                      narrative: r.narrative?.trim() || null,
+                      startDate: r.startDate?.trim() || null,
+                      endDate: r.endDate?.trim() || null,
+                      amount: r.amount?.trim() || null,
+                      learnerCount: r.learnerCount?.trim() || null,
+                      goals: [r.goal1, r.goal2, r.goal3, r.goal4, r.goal5].filter(g => g?.trim()).map(g => g!.trim()),
+                    }));
+                    const res = await fetch(`${baseUrl}/api/funding-sources/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const result = await res.json();
+                    queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
+                    toast({ title: "Import Complete", description: `${result.imported} funding source${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
+                    setShowImport(false);
+                    setImportRows([]);
+                  } catch {
+                    toast({ title: "Import Failed", description: "Something went wrong. Please try again.", variant: "destructive" });
+                  } finally {
+                    setImporting(false);
+                  }
+                }}>
+                  {importing ? <><Loader2 size={14} className="mr-1.5 animate-spin" /> Importing...</> : <><Upload size={14} className="mr-1.5" /> Import {importRows.filter(r => r.name?.trim()).length} Rows</>}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

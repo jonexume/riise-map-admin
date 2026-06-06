@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, programsTable, insertProgramSchema, pathwaysTable, learnersTable } from "@workspace/db";
+import { db, programsTable, insertProgramSchema, pathwaysTable, learnersTable, fundingSourcesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -110,6 +110,72 @@ router.delete("/programs/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting program:", error);
     res.status(500).json({ error: "Failed to delete program" });
+  }
+});
+
+// Bulk delete programs
+router.post("/programs/bulk-delete", async (req, res) => {
+  try {
+    const ids: number[] = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids array is required" }); return; }
+    const pathways = await db.select().from(pathwaysTable);
+    const blocked: { id: number; reason: string }[] = [];
+    const deleted: number[] = [];
+    for (const id of ids) {
+      const [program] = await db.select().from(programsTable).where(eq(programsTable.id, id));
+      if (!program) continue;
+      const assigned = pathways.some(p => p.pathwayCategory === program.name);
+      if (assigned) {
+        blocked.push({ id, reason: "Assigned to a pathway" });
+      } else {
+        await db.delete(programsTable).where(eq(programsTable.id, id));
+        deleted.push(id);
+      }
+    }
+    res.json({ deleted: deleted.length, blocked });
+  } catch (error) {
+    console.error("Error bulk deleting programs:", error);
+    res.status(500).json({ error: "Bulk delete failed" });
+  }
+});
+
+// Bulk import programs
+router.post("/programs/import", async (req, res) => {
+  try {
+    const rows: unknown[] = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
+    const funders = await db.select().from(fundingSourcesTable);
+    const funderNames = funders.map(f => f.name.toLowerCase().trim());
+    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
+    for (let i = 0; i < rows.length; i++) {
+      try {
+        const row: any = rows[i];
+        // Match funder by name
+        if (row.funderTag) {
+          const match = funders.find(f => f.name.toLowerCase().trim() === row.funderTag.toLowerCase().trim());
+          if (match) row.funderTag = match.name;
+        }
+        // Set defaults for metrics
+        row.activeLearners = parseInt(row.activeLearners) || 0;
+        row.completionRate = parseInt(row.completionRate) || 0;
+        row.readinessScore = parseInt(row.readinessScore) || 0;
+        row.eventParticipation = parseInt(row.eventParticipation) || 0;
+        row.placementReady = parseInt(row.placementReady) || 0;
+        if (!row.pathways) row.pathways = null;
+        const data = insertProgramSchema.parse(row);
+        // Check unique programTag
+        const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+        if (existing.length > 0) { results.errors.push({ row: i + 1, message: `programTag "${data.programTag}" already exists` }); continue; }
+        await db.insert(programsTable).values(data);
+        results.imported++;
+      } catch (e: any) {
+        results.errors.push({ row: i + 1, message: e.message || "Invalid data" });
+      }
+    }
+    res.json(results);
+  } catch (error) {
+    console.error("Error importing programs:", error);
+    res.status(500).json({ error: "Import failed" });
   }
 });
 

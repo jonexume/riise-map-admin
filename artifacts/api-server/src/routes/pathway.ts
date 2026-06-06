@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, pathwaysTable, insertPathwaySchema } from "@workspace/db";
+import { db, pathwaysTable, insertPathwaySchema, learnersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -73,6 +73,32 @@ router.delete("/pathways/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting pathway:", error);
     res.status(500).json({ error: "Failed to delete pathway" });
+  }
+});
+
+// Bulk delete pathways
+router.post("/pathways/bulk-delete", async (req, res) => {
+  try {
+    const ids: number[] = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids array is required" }); return; }
+    const learners = await db.select().from(learnersTable);
+    const blocked: { id: number; reason: string }[] = [];
+    const deleted: number[] = [];
+    for (const id of ids) {
+      const [pathway] = await db.select().from(pathwaysTable).where(eq(pathwaysTable.id, id));
+      if (!pathway) continue;
+      const assigned = learners.filter(l => l.pathway === pathway.name);
+      if (assigned.length > 0) {
+        blocked.push({ id, reason: `${assigned.length} learner${assigned.length > 1 ? "s" : ""} assigned` });
+      } else {
+        await db.delete(pathwaysTable).where(eq(pathwaysTable.id, id));
+        deleted.push(id);
+      }
+    }
+    res.json({ deleted: deleted.length, blocked });
+  } catch (error) {
+    console.error("Error bulk deleting pathways:", error);
+    res.status(500).json({ error: "Bulk delete failed" });
   }
 });
 
