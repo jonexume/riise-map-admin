@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 
@@ -853,7 +854,7 @@ export default function Learners() {
                       strengths: r.strengths?.trim() || null,
                       risks: r.risks?.trim() || null,
                     }));
-                    const res = await fetch(`${baseUrl}/api/learners/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const res = await authFetch(`${baseUrl}/api/learners/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
                     const result = await res.json();
                     queryClient.invalidateQueries({ queryKey: ["/api/learners"] });
                     toast({ title: "Import Complete", description: `${result.imported} learner${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
@@ -894,7 +895,7 @@ export default function Learners() {
               setBulkDeleting(true);
               try {
                 const baseUrl = import.meta.env.VITE_API_URL || "";
-                const res = await fetch(`${baseUrl}/api/learners/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
+                const res = await authFetch(`${baseUrl}/api/learners/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
                 const result = await res.json();
                 queryClient.invalidateQueries({ queryKey: ["/api/learners"] });
                 setSelectedIds(new Set());

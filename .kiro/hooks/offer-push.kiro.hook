@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Offer to Push",
+  "description": "After Kiro stops working, checks if there are unpushed commits and offers to push them to GitHub.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `git log @{u}.. --oneline 2>/dev/null || git log --oneline -5` to check for unpushed commits. If there are unpushed commits, ask the user if they'd like to push to GitHub now. If they say yes, push to the current branch with `git push`. If there are no unpushed commits, do nothing."
+  }
+}

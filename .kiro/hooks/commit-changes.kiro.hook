@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Commit Changes",
+  "description": "Stages all changes, generates a concise commit message based on the diff, and commits. Triggered manually when you're satisfied with your changes.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "1. Run `git status` to see what changed. 2. Run `git diff --staged` and `git diff` to understand the changes. 3. Stage all modified and new files with `git add -A`. 4. Generate a concise, conventional commit message summarizing the changes. 5. Commit with that message using `git commit -m \"...\"`. 6. Report what was committed."
+  }
+}

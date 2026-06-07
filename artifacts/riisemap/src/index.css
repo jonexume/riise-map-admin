@@ -282,9 +282,12 @@
 
 @media print {
   body { background: white !important; }
-  nav, header, [data-sidebar], [role="tablist"], button { display: none !important; }
+  nav, header, [data-sidebar], [role="tablist"], button, aside { display: none !important; }
+  .flex.h-screen { height: auto !important; overflow: visible !important; display: block !important; }
+  .flex-1.flex.flex-col.min-w-0.overflow-hidden { overflow: visible !important; height: auto !important; }
+  main.flex-1.overflow-y-auto { overflow: visible !important; height: auto !important; }
   #funding-report-content { display: block !important; }
-  #funding-report-content * { break-inside: avoid; }
+  #funding-report-content > * { break-inside: avoid; page-break-inside: avoid; }
   .print\:shadow-none { box-shadow: none !important; }
   .print\:border { border: 1px solid #e5e7eb !important; }
   .print\:space-y-4 > * + * { margin-top: 1rem; }

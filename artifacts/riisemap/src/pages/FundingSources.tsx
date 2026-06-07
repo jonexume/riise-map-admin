@@ -12,6 +12,7 @@ import { useGetFundingSources, useCreateFundingSource, useUpdateFundingSource, t
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 import Papa from "papaparse";
 
 interface Goal {
@@ -608,7 +609,7 @@ export default function FundingSources() {
       ) : (
         <div className="space-y-4">
           {sources.map((s: FundingSource) => (
-            <Card key={s.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
+            <Card key={s.id} className="relative border-card-border shadow-sm hover:shadow-md transition-shadow group/card">
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -666,6 +667,16 @@ export default function FundingSources() {
                   </div>
                 </div>
               </CardContent>
+              {/* Delete button – floats on right side, visible on hover */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover/card:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                onClick={() => setDeleteTarget({ id: s.id, name: s.name })}
+                aria-label={`Delete ${s.name}`}
+              >
+                <Trash2 size={14} />
+              </Button>
             </Card>
           ))}
         </div>

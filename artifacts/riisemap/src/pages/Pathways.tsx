@@ -15,6 +15,7 @@ import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, typ
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 import Papa from "papaparse";
 
 type View = "list" | "detail" | "add" | "edit";
@@ -246,7 +247,7 @@ export default function Pathways() {
     if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${baseUrl}/api/pathways/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await authFetch(`${baseUrl}/api/pathways/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         toast({ title: "Error", description: data?.error || "Failed to delete pathway.", variant: "destructive" });
@@ -752,7 +753,7 @@ export default function Pathways() {
                       projects: r.projects?.trim() || null,
                       readinessCriteria: r.readinessCriteria?.trim() || null,
                     }));
-                    const res = await fetch(`${baseUrl}/api/pathways/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const res = await authFetch(`${baseUrl}/api/pathways/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
                     const result = await res.json();
                     queryClient.invalidateQueries({ queryKey: ["/api/pathways"] });
                     toast({ title: "Import Complete", description: `${result.imported} pathway${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
@@ -792,7 +793,7 @@ export default function Pathways() {
             <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
               setBulkDeleting(true);
               try {
-                const res = await fetch(`${baseUrl}/api/pathways/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
+                const res = await authFetch(`${baseUrl}/api/pathways/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
                 const result = await res.json();
                 queryClient.invalidateQueries({ queryKey: ["/api/pathways"] });
                 setSelectedIds(new Set());

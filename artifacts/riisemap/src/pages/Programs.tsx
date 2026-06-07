@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
 import Papa from "papaparse";
 
@@ -209,7 +210,7 @@ export default function Programs() {
     if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${baseUrl}/api/programs/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await authFetch(`${baseUrl}/api/programs/${deleteTarget.id}`, { method: "DELETE" });
       if (res.status === 409) {
         const data = await res.json();
         setDeleteTarget(null);
@@ -804,7 +805,7 @@ export default function Programs() {
             <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
               setBulkDeleting(true);
               try {
-                const res = await fetch(`${baseUrl}/api/programs/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
+                const res = await authFetch(`${baseUrl}/api/programs/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds] }) });
                 const result = await res.json();
                 queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
                 setSelectedIds(new Set());
@@ -916,7 +917,7 @@ export default function Programs() {
                       startDate: r.startDate?.trim() || "",
                       endDate: r.endDate?.trim() || "",
                     }));
-                    const res = await fetch(`${baseUrl}/api/programs/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const res = await authFetch(`${baseUrl}/api/programs/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
                     const result = await res.json();
                     queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
                     toast({ title: "Import Complete", description: `${result.imported} program${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
