@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "name": "Offer to Push",
-  "description": "After Kiro stops working, checks if there are unpushed commits and offers to push them to GitHub.",
+  "description": "After Kiro stops working, checks for uncommitted changes (offers to commit) and unpushed commits (offers to push).",
   "version": "1",
   "when": {
     "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Run `git log @{u}.. --oneline 2>/dev/null || git log --oneline -5` to check for unpushed commits. If there are unpushed commits, ask the user if they'd like to push to GitHub now. If they say yes, push to the current branch with `git push`. If there are no unpushed commits, do nothing."
+    "prompt": "1. Run `git status --short` to check for uncommitted changes. 2. If there ARE uncommitted changes (modified, added, or untracked files), ask the user if they'd like to commit them now. If they say yes, stage all changes with `git add -A`, generate a concise conventional commit message based on `git diff --staged`, and commit. 3. After committing (or if there were no uncommitted changes), run `git log @{u}.. --oneline 2>/dev/null` to check for unpushed commits. 4. If there ARE unpushed commits, ask the user if they'd like to push to GitHub now. If they say yes, push with `git push`. 5. If there are no uncommitted changes AND no unpushed commits, do nothing."
   }
 }
