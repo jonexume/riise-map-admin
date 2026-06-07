@@ -82,7 +82,7 @@ export default function FundingSources() {
 
   const fetchGoals = useCallback(async (fundingSourceId: string) => {
     try {
-      const res = await fetch(`${baseUrl}/api/funding-sources/${fundingSourceId}/goals`);
+      const res = await authFetch(`${baseUrl}/api/funding-sources/${fundingSourceId}/goals`);
       if (res.ok) setGoals(await res.json());
     } catch { /* ignore */ }
   }, [baseUrl]);
@@ -175,7 +175,7 @@ export default function FundingSources() {
     if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
     try {
       const baseUrl = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${baseUrl}/api/funding-sources/${deleteTarget.id}`, { method: "DELETE" });
+      const res = await authFetch(`${baseUrl}/api/funding-sources/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         toast({ title: "Error", description: data?.error || "Failed to delete funding source.", variant: "destructive" });
@@ -276,7 +276,7 @@ export default function FundingSources() {
                     window.open(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, "_blank");
                   }}>Download</Button>
                   <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-destructive hover:text-destructive" onClick={async () => {
-                    await fetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, { method: "DELETE" });
+                    await authFetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, { method: "DELETE" });
                     setNarrativeFileName(null);
                     await queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
                     toast({ title: "Removed", description: "Narrative file removed." });
@@ -294,7 +294,7 @@ export default function FundingSources() {
                     reader.onload = async () => {
                       const base64 = (reader.result as string).split(",")[1];
                       try {
-                        const res = await fetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, {
+                        const res = await authFetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, {
                           method: "PUT", headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ fileName: file.name, fileData: base64 }),
                         });
@@ -340,7 +340,7 @@ export default function FundingSources() {
                     <div className="flex gap-2">
                       <Button size="sm" className="text-xs h-7" onClick={async () => {
                         try {
-                          await fetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editGoalForm) });
+                          await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editGoalForm) });
                           setEditingGoal(null);
                           fetchGoals(selected!);
                         } catch { toast({ title: "Error", description: "Failed to update goal.", variant: "destructive" }); }
@@ -357,7 +357,7 @@ export default function FundingSources() {
                     className="mt-0.5 flex-shrink-0"
                     onClick={async () => {
                       const next = goal.status === "completed" ? "not_started" : "completed";
-                      await fetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: goal.title, note: goal.note, status: next }) });
+                      await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: goal.title, note: goal.note, status: next }) });
                       fetchGoals(selected!);
                     }}
                   >
@@ -373,7 +373,7 @@ export default function FundingSources() {
                           <Paperclip size={10} />
                           <button className="hover:underline" onClick={() => window.open(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}/document`, "_blank")}>{goal.documentFileName}</button>
                           <button className="text-destructive ml-1 hover:text-destructive/70" onClick={async () => {
-                            await fetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}/document`, { method: "DELETE" });
+                            await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}/document`, { method: "DELETE" });
                             fetchGoals(selected!);
                           }}><X size={10} /></button>
                         </span>
@@ -388,7 +388,7 @@ export default function FundingSources() {
                             const reader = new FileReader();
                             reader.onload = async () => {
                               const base64 = (reader.result as string).split(",")[1];
-                              await fetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}/document`, {
+                              await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}/document`, {
                                 method: "PUT", headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({ fileName: file.name, fileData: base64 }),
                               });
@@ -404,7 +404,7 @@ export default function FundingSources() {
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button className="p-1 hover:bg-muted rounded" onClick={() => { setEditingGoal(goal); setEditGoalForm({ title: goal.title, note: goal.note || "", status: goal.status }); }}><Edit size={12} /></button>
                     <button className="p-1 hover:bg-muted rounded text-destructive" onClick={async () => {
-                      await fetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "DELETE" });
+                      await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals/${goal.id}`, { method: "DELETE" });
                       fetchGoals(selected!);
                     }}><Trash2 size={12} /></button>
                   </div>
@@ -423,7 +423,7 @@ export default function FundingSources() {
                   if (e.key === "Enter" && newGoalTitle.trim()) {
                     e.preventDefault();
                     (async () => {
-                      await fetch(`${baseUrl}/api/funding-sources/${selected}/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newGoalTitle.trim() }) });
+                      await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newGoalTitle.trim() }) });
                       setNewGoalTitle("");
                       fetchGoals(selected!);
                     })();
@@ -431,7 +431,7 @@ export default function FundingSources() {
                 }}
               />
               <Button variant="outline" size="sm" className="h-9 px-3" disabled={!newGoalTitle.trim()} onClick={async () => {
-                await fetch(`${baseUrl}/api/funding-sources/${selected}/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newGoalTitle.trim() }) });
+                await authFetch(`${baseUrl}/api/funding-sources/${selected}/goals`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: newGoalTitle.trim() }) });
                 setNewGoalTitle("");
                 fetchGoals(selected!);
               }}><Plus size={14} /></Button>
@@ -714,7 +714,7 @@ export default function FundingSources() {
             <Button variant="destructive" disabled={bulkDeleting} onClick={async () => {
               setBulkDeleting(true);
               try {
-                const res = await fetch(`${baseUrl}/api/funding-sources/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds].map(Number) }) });
+                const res = await authFetch(`${baseUrl}/api/funding-sources/bulk-delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selectedIds].map(Number) }) });
                 const result = await res.json();
                 queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
                 setSelectedIds(new Set());
@@ -837,7 +837,7 @@ export default function FundingSources() {
                       learnerCount: r.learnerCount?.trim() || null,
                       goals: [r.goal1, r.goal2, r.goal3, r.goal4, r.goal5].filter(g => g?.trim()).map(g => g!.trim()),
                     }));
-                    const res = await fetch(`${baseUrl}/api/funding-sources/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const res = await authFetch(`${baseUrl}/api/funding-sources/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
                     const result = await res.json();
                     queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
                     toast({ title: "Import Complete", description: `${result.imported} funding source${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });

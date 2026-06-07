@@ -3,9 +3,12 @@ import type { Request, Response, NextFunction } from "express";
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set");
+}
+
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (req.method === "OPTIONS") return next();
-  if (!supabaseUrl || !supabaseServiceKey) return next();
 
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {

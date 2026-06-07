@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/MetricCard";
 import { useGetLearners, useGetFundingSources, useGetPrograms, useGetPathways } from "@workspace/api-client-react";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   impactMetrics, engagementTrend, readinessTrend,
   cohortCompletion, placementReadyTrend
@@ -212,7 +213,7 @@ export default function Impact() {
 
   const fetchStories = useCallback(async () => {
     try {
-      const res = await fetch(`${baseUrl}/api/success-stories`);
+      const res = await authFetch(`${baseUrl}/api/success-stories`);
       if (res.ok) setStoryList(await res.json());
     } catch { /* ignore */ }
   }, [baseUrl]);
@@ -222,7 +223,7 @@ export default function Impact() {
   async function handleSaveStory() {
     if (!storyLearner.trim() || !storyNarrative.trim()) return;
     try {
-      await fetch(`${baseUrl}/api/success-stories`, {
+      await authFetch(`${baseUrl}/api/success-stories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -244,7 +245,7 @@ export default function Impact() {
   }
 
   async function handleDeleteStory(id: number) {
-    await fetch(`${baseUrl}/api/success-stories/${id}`, { method: "DELETE" });
+    await authFetch(`${baseUrl}/api/success-stories/${id}`, { method: "DELETE" });
     fetchStories();
   }
 
@@ -252,7 +253,7 @@ export default function Impact() {
     setStoryLearnerId(learnerId);
     if (!learnerId) return;
     try {
-      const res = await fetch(`${baseUrl}/api/learners/${learnerId}/summary`);
+      const res = await authFetch(`${baseUrl}/api/learners/${learnerId}/summary`);
       if (res.ok) {
         const summary = await res.json();
         setStoryLearner(summary.learnerName);

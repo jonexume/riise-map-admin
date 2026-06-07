@@ -555,7 +555,7 @@ export default function Pathways() {
         </div>
       </div>
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+        <div className="sticky top-0 z-20 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4 shadow-sm">
           <span className="text-sm text-amber-800 font-medium">{selectedIds.size} pathway{selectedIds.size > 1 ? "s" : ""} selected</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setSelectedIds(new Set())}>Clear</Button>
