@@ -282,13 +282,34 @@
 
 @media print {
   body { background: white !important; }
-  nav, header, [data-sidebar], [role="tablist"], button, aside { display: none !important; }
+  nav, header, [data-sidebar], [role="tablist"], aside { display: none !important; }
   .flex.h-screen { height: auto !important; overflow: visible !important; display: block !important; }
   .flex-1.flex.flex-col.min-w-0.overflow-hidden { overflow: visible !important; height: auto !important; }
   main.flex-1.overflow-y-auto { overflow: visible !important; height: auto !important; }
-  #funding-report-content { display: block !important; }
-  #funding-report-content > * { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Impact report: expand all collapsible sections */
+  [data-collapsible] [role="button"] { display: none !important; }
+  [data-collapsible] .hidden { display: block !important; }
+
+  /* Impact report: hide interactive controls */
+  .print\:hidden { display: none !important; }
+  select, button { display: none !important; }
+
+  /* Impact report: page breaks between funding source sections */
+  .print\:break-before-page { break-before: page; }
+
+  /* Impact report: show print header */
+  .print\:block { display: block !important; }
+
+  /* Impact report: single column layout */
+  .grid { display: block !important; }
+  .grid > * + * { margin-top: 1rem; }
+
+  /* General print utilities */
   .print\:shadow-none { box-shadow: none !important; }
   .print\:border { border: 1px solid #e5e7eb !important; }
   .print\:space-y-4 > * + * { margin-top: 1rem; }
+
+  /* Prevent content breaking inside sections */
+  [data-collapsible] { break-inside: avoid; page-break-inside: avoid; }
 }

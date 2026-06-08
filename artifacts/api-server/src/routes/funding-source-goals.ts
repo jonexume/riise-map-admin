@@ -15,6 +15,17 @@ function getMimeType(fileName: string): string {
 
 const router: IRouter = Router();
 
+// List all goals across all funding sources
+router.get("/funding-source-goals", async (req, res) => {
+  try {
+    const goals = await db.select().from(fundingSourceGoalsTable);
+    res.json(goals);
+  } catch (error) {
+    console.error("Error fetching all goals:", error);
+    res.status(500).json({ error: "Failed to fetch goals" });
+  }
+});
+
 // List goals for a funding source
 router.get("/funding-sources/:fundingSourceId/goals", async (req, res) => {
   try {
