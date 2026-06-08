@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
@@ -24,6 +24,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import { authFetch } from "@/lib/auth-fetch";
 
 export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
@@ -49,7 +50,13 @@ export default function LearnerDetail() {
   const [editingContent, setEditingContent] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/learner-statuses`).then(r => r.json()).then((data: any[]) => setStatusOptions(data.map(s => s.name))).catch(() => {});
+  }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,12 +166,7 @@ export default function LearnerDetail() {
               <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="New Learner">New Learner</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="At Risk">At Risk</SelectItem>
-                  <SelectItem value="Placement Ready">Placement Ready</SelectItem>
-                  <SelectItem value="Placed">Placed</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  {statusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

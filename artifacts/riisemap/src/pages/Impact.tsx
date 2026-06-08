@@ -319,7 +319,7 @@ export default function Impact() {
     downloadFile(buildExportReportText(reportType), filename);
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     if (!emailTo.trim()) {
       setEmailError("Please enter a recipient email address");
       return;
@@ -329,7 +329,21 @@ export default function Impact() {
       return;
     }
     setEmailError("");
-    setEmailSent(true);
+    try {
+      const res = await authFetch(`${baseUrl}/api/send-report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTo.trim(), cc: emailCc.trim() || undefined, subject: emailSubject, body: emailMessage }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setEmailError(data.error || "Failed to send email");
+        return;
+      }
+      setEmailSent(true);
+    } catch {
+      setEmailError("Failed to send email. Please try again.");
+    }
   };
 
   const closeEmailModal = () => {

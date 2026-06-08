@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import {
   Printer,
+  Mail,
   Copy,
   Check,
   CheckCircle2,
@@ -83,6 +84,8 @@ export function ImpactReport() {
     }
   });
 
+  // Email modal state — no longer needed, using mailto approach
+
   // Validate persisted selection still exists
   useEffect(() => {
     if (!data) return;
@@ -107,6 +110,13 @@ export function ImpactReport() {
     } catch {
       // Ignore storage errors
     }
+  };
+
+  const handleOpenEmail = () => {
+    const sourceName = selectedFundingSource ? selectedFundingSource.name : 'All Funding Sources';
+    const subject = `Funding Impact Report — ${sourceName}`;
+    const body = 'Please find the attached Funding Impact Report.\n\n(Use Print > Save as PDF to generate the report, then attach it to this email.)';
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   // Loading state
@@ -157,18 +167,29 @@ export function ImpactReport() {
         </Select>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={() => window.print()}
-          className="min-h-[44px] min-w-[44px]"
-        >
-          <Printer className="h-4 w-4 mr-2" />
-          Print Report
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleOpenEmail}
+            className="min-h-[44px] min-w-[44px]"
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Email Report
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => window.print()}
+            className="min-h-[44px] min-w-[44px]"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print Report
+          </Button>
+        </div>
       </div>
 
       {/* Portfolio summary (when "All" selected) */}
       {/* Portfolio summary (when "All" selected) */}
+      <div id="impact-report-content">
       {selectedSource === 'all' && (
         <>
           <PortfolioSummary data={data.portfolio} />
@@ -228,6 +249,7 @@ export function ImpactReport() {
           <FundingSourceSection data={selectedFundingSource} />
         </div>
       )}
+      </div>
     </div>
   );
 }

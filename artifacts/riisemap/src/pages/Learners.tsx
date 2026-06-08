@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useSearch } from "wouter";
 import {
   Search, LayoutGrid, List, ChevronRight, X,
@@ -78,6 +78,12 @@ export default function Learners() {
   );
   const [filterCoach, setFilterCoach] = useState("all");
   const [filterPathway, setFilterPathway] = useState("all");
+
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/learner-statuses`).then(r => r.json()).then((data: any[]) => setStatusOptions(data.map(s => s.name))).catch(() => {});
+  }, []);
 
   type SortKey = "name" | "pathway" | "coach" | "progress" | "readiness" | "status" | "lastActive";
   type SortDir = "asc" | "desc";
@@ -306,7 +312,7 @@ export default function Learners() {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-52 p-2" align="start">
-            {["On Track", "Needs Support", "Stalled", "Placement Ready", "New Learner"].map((status) => (
+            {statusOptions.map((status) => (
               <label key={status} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
                 <Checkbox
                   checked={filterStatus.includes(status)}

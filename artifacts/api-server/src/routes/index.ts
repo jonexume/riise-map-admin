@@ -6,6 +6,7 @@ import pathwaysRouter from "./pathway";
 import fundingSourcesRouter from "./funding-source";
 import fundingSourceGoalsRouter from "./funding-source-goals";
 import successStoriesRouter from "./success-story";
+import learnerStatusesRouter from "./learner-statuses";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(pathwaysRouter);
 router.use(fundingSourcesRouter);
 router.use(fundingSourceGoalsRouter);
 router.use(successStoriesRouter);
+router.use(learnerStatusesRouter);
 
 export default router;

@@ -259,3 +259,11 @@ export const successStoriesTable = pgTable("success_stories", {
 export const insertSuccessStorySchema = createInsertSchema(successStoriesTable).omit({ id: true, createdAt: true });
 export type InsertSuccessStory = z.infer<typeof insertSuccessStorySchema>;
 export type SuccessStory = typeof successStoriesTable.$inferSelect;
+
+// Learner Statuses Table
+export const learnerStatusesTable = pgTable("learner_statuses", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  sortOrder: integer("sort_order").notNull().default(0),
+});
+export type LearnerStatus = typeof learnerStatusesTable.$inferSelect;
