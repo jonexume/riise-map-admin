@@ -625,25 +625,79 @@ await fetch("/api/portal/projects/12", {
 
 ## Correctness Properties
 
-1. **Ownership Isolation**: ∀ request R to `/api/portal/*`, the response contains only data where `resource.learnerId === req.learner.id`. No learner can access another learner's data.
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-2. **Progress Consistency**: ∀ learner L, `L.progress === round((count(roadmaps where state="Complete") / count(all roadmaps)) * 100)`. Progress is never stale after a portal action.
+### Property 1: Ownership Isolation
 
-3. **Readiness Consistency**: ∀ learner L, `L.readiness === round((avg(readiness_scores.score) / 5) * 100)`. Updated immediately after self-assessment.
+*For any* request to `/api/portal/*` by an authenticated learner, all data in the response SHALL have `resource.learnerId` equal to the authenticated learner's ID, and any request for a resource belonging to a different learner SHALL return 404.
 
-4. **Activity Completeness**: ∀ state-changing portal action A on learner L, ∃ activity record in `learner_activities` with matching learnerId, type, and current date.
+**Validates: Requirements 3.1, 3.2, 3.3**
 
-5. **LastActive Freshness**: ∀ state-changing portal action A on learner L, `L.lastActive` is updated to current timestamp.
+### Property 2: Progress Consistency
 
-6. **No Status Regression (Projects)**: ∀ project P, if `P.status === "Complete"`, then no PATCH can set `P.status` to "In Progress" or "Not Started".
+*For any* learner with roadmap items, the learner's `progress` field SHALL equal `round((count(roadmaps where state="Complete") / count(all roadmaps)) * 100)`, and SHALL be 0 when no roadmap items exist. Progress is recomputed immediately after any roadmap state change.
 
-7. **Score Bounds**: ∀ readiness score S submitted via portal, `1 ≤ S.score ≤ 5` (integer).
+**Validates: Requirements 6.4, 11.2**
 
-8. **Dimension Validity**: ∀ readiness submission, each `dimension` must exist in the learner's pathway `readinessCriteria` array.
+### Property 3: Readiness Consistency
 
-9. **Role Enforcement**: ∀ request to `/api/portal/*`, the authenticated user must have `app_metadata.role === "learner"`. Admin tokens are rejected.
+*For any* learner with readiness scores (each in range 1–5), the learner's `readiness` field SHALL equal `round((average(scores) / 5) * 100)`, producing a value in the range 0–100. Readiness is recomputed immediately after any self-assessment submission.
 
-10. **Enrollment Requirement**: ∀ authenticated learner user, a matching record must exist in `learners` table (by email). Unenrolled users get 403.
+**Validates: Requirements 9.5, 11.3**
+
+### Property 4: Activity Completeness and LastActive Freshness
+
+*For any* state-changing portal action (roadmap update, project update, event update, readiness submission, or profile edit), the system SHALL insert an activity record in `learner_activities` with the correct learnerId, event description, type, and current date, AND SHALL update the learner's `lastActive` field to the current date.
+
+**Validates: Requirements 6.6, 7.7, 8.3, 9.6, 11.1, 11.5**
+
+### Property 5: No Project Status Regression
+
+*For any* project with status "Complete", any PATCH request attempting to set the status to "In Progress" or "Not Started" SHALL be rejected with 400 status. Project status transitions are monotonically forward-only.
+
+**Validates: Requirements 7.4**
+
+### Property 6: Score Bounds Enforcement
+
+*For any* readiness score submitted via the portal, the score value SHALL be an integer in the range 1–5 inclusive. Any score outside this range SHALL be rejected with 400 status.
+
+**Validates: Requirements 9.3, 13.4**
+
+### Property 7: Dimension Validity
+
+*For any* readiness submission, each submitted `dimension` string SHALL exist in the learner's pathway `readinessCriteria` array. Any dimension not in the pathway criteria SHALL cause rejection with 400 status.
+
+**Validates: Requirements 9.4**
+
+### Property 8: Completion Bounds Enforcement
+
+*For any* project completion value submitted via the portal, the value SHALL be an integer in the range 0–100 inclusive. Any value outside this range SHALL be rejected with 400 status.
+
+**Validates: Requirements 7.2, 7.3, 13.3**
+
+### Property 9: Project Auto-Status Transitions
+
+*For any* project update where completion reaches 100, the project status SHALL automatically be set to "Complete". *For any* project with status "Not Started" where completion changes to a value greater than 0, the project status SHALL automatically be set to "In Progress".
+
+**Validates: Requirements 7.5, 7.6**
+
+### Property 10: NextAction Priority Algorithm
+
+*For any* learner, the `nextAction` field SHALL be determined by priority: (1) first incomplete milestone ordered by due date, (2) if no incomplete milestones exist, first in-progress project, (3) if no in-progress projects exist, first upcoming event, (4) if none of the above exist, the string "All caught up!".
+
+**Validates: Requirements 6.5, 11.4**
+
+### Property 11: Profile Immutability
+
+*For any* profile update request, the fields email, pathway, program, coach, status, progress, and readiness SHALL remain unchanged regardless of what values are submitted. Only permitted fields (name, photo, background, strengths) SHALL be modifiable.
+
+**Validates: Requirements 4.2, 4.3**
+
+### Property 12: Readiness Upsert Idempotence
+
+*For any* valid readiness submission, submitting the same set of scores twice in succession SHALL produce the same final state in `learner_readiness_scores` — the second submission updates existing rows rather than creating duplicates, and the computed `readiness` value is identical after both submissions.
+
+**Validates: Requirements 9.2**
 
 ## Error Handling
 

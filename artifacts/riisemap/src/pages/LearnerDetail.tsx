@@ -7,16 +7,20 @@ import {
   Upload, Edit, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { StatusBadge } from "@/components/StatusBadge";
 import {
   useGetLearner, useUpdateLearner, type Learner,
   useGetLearnerRoadmaps, useGetLearnerProjects, useGetLearnerEvents,
   useGetLearnerNotes, useCreateLearnerNote, useUpdateLearnerNote, useDeleteLearnerNote,
-  useGetLearnerReadiness, useGetLearnerActivities
+  useGetLearnerReadiness, useGetLearnerActivities,
+  useGetPrograms, useGetPathways
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -26,6 +30,8 @@ export default function LearnerDetail() {
   const learnerId = parseInt(id || "0");
   const queryClient = useQueryClient();
   const { data: learner, isLoading } = useGetLearner(learnerId);
+  const { data: programs = [] } = useGetPrograms();
+  const { data: pathways = [] } = useGetPathways();
   const updateLearnerMutation = useUpdateLearner({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/learners/${learnerId}`] }) } });
   const { data: roadmap = [] } = useGetLearnerRoadmaps(learnerId);
   const { data: projects = [] } = useGetLearnerProjects(learnerId);
@@ -41,6 +47,8 @@ export default function LearnerDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +95,16 @@ export default function LearnerDetail() {
     updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, flaggedForSupport: !learner!.flaggedForSupport } });
   }
 
+  function startEditing() {
+    setEditForm({ name: learner!.name, email: learner!.email, pathway: learner!.pathway, program: learner!.program, coach: learner!.coach, status: learner!.status, readiness: String(learner!.readiness), progress: String(learner!.progress), lastActive: learner!.lastActive });
+    setIsEditing(true);
+  }
+
+  function saveEdit() {
+    updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, ...editForm, readiness: Number(editForm.readiness), progress: Number(editForm.progress) } });
+    setIsEditing(false);
+  }
+
   function handleSaveNote() {
     const trimmed = newNote.trim();
     if (!trimmed) return;
@@ -114,6 +132,101 @@ export default function LearnerDetail() {
       </Link>
 
       {/* Header */}
+      {isEditing ? (
+        <div className="bg-card border border-card-border rounded-lg p-5 mb-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label className="text-xs font-medium text-muted-foreground">Name</label><Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Email</label><Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Program</label>
+              <Select value={editForm.program} onValueChange={v => setEditForm(f => ({ ...f, program: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {programs.map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-xs font-medium text-muted-foreground">Pathway</label>
+              <Select value={editForm.pathway} onValueChange={v => setEditForm(f => ({ ...f, pathway: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {pathways.map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-xs font-medium text-muted-foreground">Coach</label><Input value={editForm.coach} onChange={e => setEditForm(f => ({ ...f, coach: e.target.value }))} className="mt-1" /></div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Status</label>
+              <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New Learner">New Learner</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="At Risk">At Risk</SelectItem>
+                  <SelectItem value="Placement Ready">Placement Ready</SelectItem>
+                  <SelectItem value="Placed">Placed</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t">
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Readiness Score</label>
+              <div className="flex items-center gap-2 mt-2">
+                <Slider
+                  value={[Number(editForm.readiness) || 0]}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                  trackColor={Number(editForm.readiness) <= 25 ? "#9ca3af" : Number(editForm.readiness) <= 50 ? "#3b82f6" : Number(editForm.readiness) <= 75 ? "#f59e0b" : "#22c55e"}
+                  onValueChange={([val]) => setEditForm(f => ({ ...f, readiness: String(val) }))}
+                />
+                <input type="number" min={0} max={100} value={editForm.readiness} onChange={e => setEditForm(f => ({ ...f, readiness: String(Math.min(100, Math.max(0, parseInt(e.target.value) || 0))) }))} className="w-12 h-7 text-sm text-center border rounded-md" />
+              </div>
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Roadmap Progress</label>
+              <div className="flex items-center gap-2 mt-2">
+                <Slider
+                  value={[Number(editForm.progress) || 0]}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                  trackColor={Number(editForm.progress) <= 25 ? "#9ca3af" : Number(editForm.progress) <= 50 ? "#3b82f6" : Number(editForm.progress) <= 75 ? "#f59e0b" : "#22c55e"}
+                  onValueChange={([val]) => setEditForm(f => ({ ...f, progress: String(val) }))}
+                />
+                <input type="number" min={0} max={100} value={editForm.progress} onChange={e => setEditForm(f => ({ ...f, progress: String(Math.min(100, Math.max(0, parseInt(e.target.value) || 0))) }))} className="w-12 h-7 text-sm text-center border rounded-md" />
+              </div>
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Profile Strength</label>
+              {(() => {
+                const fields = [editForm.name, editForm.email, editForm.program, editForm.pathway, editForm.coach, editForm.status];
+                const filled = fields.filter(f => f && f.trim()).length + (Number(editForm.readiness) > 0 ? 1 : 0) + (Number(editForm.progress) > 0 ? 1 : 0);
+                const pct = Math.round((filled / 8) * 100);
+                const color = pct <= 25 ? "#ef4444" : pct <= 50 ? "#3b82f6" : pct <= 75 ? "#f59e0b" : "#22c55e";
+                return (
+                  <>
+                    <p className="text-2xl font-semibold text-foreground mt-2">{pct}%</p>
+                    <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Last Active</label>
+              <p className="text-sm font-semibold text-foreground mt-2">{learner.lastActive}</p>
+              <p className="text-xs text-muted-foreground">Joined {learner.joinDate}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" className="text-xs h-8" onClick={saveEdit}><Check size={12} className="mr-1.5" />Save</Button>
+            <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => setIsEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div 
@@ -141,6 +254,9 @@ export default function LearnerDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={startEditing}>
+            <Edit size={12} className="mr-1.5" /> Edit
+          </Button>
           <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => setActiveTab("notes")}>
             <Plus size={12} className="mr-1.5" /> Add Note
           </Button>
@@ -160,23 +276,41 @@ export default function LearnerDetail() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Key metrics */}
+      {!isEditing && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Readiness Score</p>
-          <p className="text-2xl font-semibold text-foreground mt-0.5" data-testid="readiness-score">{learner.readiness}</p>
-          <p className="text-xs text-muted-foreground">out of 100</p>
+          <p className="text-2xl font-semibold mt-0.5" style={{ color: learner.readiness <= 25 ? "#9ca3af" : learner.readiness <= 50 ? "#3b82f6" : learner.readiness <= 75 ? "#f59e0b" : "#22c55e" }} data-testid="readiness-score">{learner.readiness}</p>
+          <p className="text-xs text-muted-foreground mt-1">out of 100</p>
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Roadmap Progress</p>
           <p className="text-2xl font-semibold text-foreground mt-0.5">{learner.progress}%</p>
-          <Progress value={learner.progress} className="h-1 mt-1.5" />
+          <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${learner.progress}%`, backgroundColor: learner.progress <= 25 ? "#9ca3af" : learner.progress <= 50 ? "#3b82f6" : learner.progress <= 75 ? "#f59e0b" : "#22c55e" }} />
+          </div>
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Profile Strength</p>
-          <p className="text-2xl font-semibold text-foreground mt-0.5">{learner.profileStrength || 0}%</p>
-          <Progress value={learner.profileStrength || 0} className="h-1 mt-1.5" />
+          {(() => {
+            const fields = [learner.name, learner.email, learner.program, learner.pathway, learner.coach, learner.status];
+            const filled = fields.filter(f => f && f.trim()).length
+              + (learner.readiness > 0 ? 1 : 0)
+              + (learner.progress > 0 ? 1 : 0);
+            const pct = Math.round((filled / 8) * 100);
+            const color = pct <= 25 ? "#ef4444" : pct <= 50 ? "#3b82f6" : pct <= 75 ? "#f59e0b" : "#22c55e";
+            return (
+              <>
+                <p className="text-2xl font-semibold text-foreground mt-0.5">{pct}%</p>
+                <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                </div>
+              </>
+            );
+          })()}
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Last Active</p>
@@ -184,8 +318,10 @@ export default function LearnerDetail() {
           <p className="text-xs text-muted-foreground">Joined {learner.joinDate}</p>
         </div>
       </div>
+      )}
 
       {/* Tabs */}
+      {!isEditing && (
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-5 bg-muted/50">
           <TabsTrigger value="overview" className="text-xs"><User size={12} className="mr-1" />Overview</TabsTrigger>
@@ -459,6 +595,7 @@ export default function LearnerDetail() {
           </div>
         </TabsContent>
       </Tabs>
+      )}
 
     </div>
   );

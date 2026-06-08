@@ -313,3 +313,4 @@
   /* Prevent content breaking inside sections */
   [data-collapsible] { break-inside: avoid; page-break-inside: avoid; }
 }
+
