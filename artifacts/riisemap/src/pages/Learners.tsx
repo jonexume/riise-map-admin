@@ -79,6 +79,21 @@ export default function Learners() {
   const [filterCoach, setFilterCoach] = useState("all");
   const [filterPathway, setFilterPathway] = useState("all");
 
+  type SortKey = "name" | "pathway" | "coach" | "progress" | "readiness" | "status" | "lastActive";
+  type SortDir = "asc" | "desc";
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    try { return (sessionStorage.getItem("learners_sortKey") as SortKey) || "name"; } catch { return "name"; }
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    try { return (sessionStorage.getItem("learners_sortDir") as SortDir) || "asc"; } catch { return "asc"; }
+  });
+  const handleSort = (key: SortKey) => {
+    const newDir = sortKey === key && sortDir === "asc" ? "desc" : "asc";
+    setSortKey(key);
+    setSortDir(newDir);
+    try { sessionStorage.setItem("learners_sortKey", key); sessionStorage.setItem("learners_sortDir", newDir); } catch {}
+  };
+
   const [showInvite, setShowInvite] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showBulkDelete, setShowBulkDelete] = useState(false);
@@ -99,6 +114,12 @@ export default function Learners() {
     const matchCoach = filterCoach === "all" || l.coach === filterCoach;
     const matchPathway = filterPathway === "all" || l.pathway === filterPathway;
     return matchSearch && matchStatus && matchCoach && matchPathway;
+  }).sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const av = a[sortKey] ?? "";
+    const bv = b[sortKey] ?? "";
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+    return String(av).localeCompare(String(bv)) * dir;
   });
 
   const coaches = [...new Set(allLearners.map((l) => l.coach))];
@@ -372,13 +393,11 @@ export default function Learners() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 w-8" />
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Learner</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pathway</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Coach</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide w-40">Progress</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Readiness</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Active</th>
+                    {([["name","Learner"],["pathway","Pathway"],["coach","Coach"],["progress","Progress"],["readiness","Readiness"],["status","Status"],["lastActive","Last Active"]] as [SortKey, string][]).map(([key, label]) => (
+                      <th key={key} className={`text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors${key === "progress" ? " w-40" : ""}`} onClick={() => handleSort(key)}>
+                        {label}{sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
+                      </th>
+                    ))}
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>

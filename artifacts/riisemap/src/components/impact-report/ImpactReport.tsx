@@ -140,10 +140,12 @@ export function ImpactReport() {
 
       {/* Controls bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
-        <Select value={selectedSource} onValueChange={handleSourceChange}>
-          <SelectTrigger className="w-full sm:w-[280px] min-h-[44px]">
-            <SelectValue placeholder="Select funding source" />
-          </SelectTrigger>
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-foreground">Funding Source</label>
+          <Select value={selectedSource} onValueChange={handleSourceChange}>
+            <SelectTrigger className="w-full sm:w-[280px] min-h-[44px]">
+              <SelectValue placeholder="Select funding source" />
+            </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Funding Sources</SelectItem>
             {data.fundingSources.map((fs) => (
@@ -153,6 +155,7 @@ export function ImpactReport() {
             ))}
           </SelectContent>
         </Select>
+        </div>
 
         <Button
           variant="outline"
