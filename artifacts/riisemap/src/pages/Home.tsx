@@ -23,14 +23,16 @@ const quickActions = [
 export default function Home() {
   const [dismissedPriorities, setDismissedPriorities] = useState<number[]>([]);
   const [priorities, setPriorities] = useState<{ text: string; href: string; urgency: string }[]>([]);
-  const [counts, setCounts] = useState<{ learners: number; atRisk: number }>({ learners: 0, atRisk: 0 });
+  const [counts, setCounts] = useState<{ learners: number; atRisk: number; programs: number; fundingSources: number }>({ learners: 0, atRisk: 0, programs: 0, fundingSources: 0 });
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
     authFetch(`${baseUrl}/api/dashboard-priorities`).then(r => r.json()).then(setPriorities).catch(() => {});
     authFetch(`${baseUrl}/api/learners`).then(r => r.json()).then((learners: any[]) => {
-      setCounts({ learners: learners.length, atRisk: learners.filter(l => l.readiness < 25 || l.flaggedForSupport).length });
+      setCounts(c => ({ ...c, learners: learners.length, atRisk: learners.filter(l => l.readiness < 25 || l.flaggedForSupport).length }));
     }).catch(() => {});
+    authFetch(`${baseUrl}/api/programs`).then(r => r.json()).then((d: any[]) => setCounts(c => ({ ...c, programs: d.length }))).catch(() => {});
+    authFetch(`${baseUrl}/api/funding-sources`).then(r => r.json()).then((d: any[]) => setCounts(c => ({ ...c, fundingSources: d.length }))).catch(() => {});
   }, []);
 
   const hour = new Date().getHours();
@@ -46,6 +48,22 @@ export default function Home() {
         <p className="text-sm text-muted-foreground mt-1">
           Here's what needs your attention today — May 16, 2026
         </p>
+      </div>
+
+      {/* Summary Metrics */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-card border border-card-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground">Total Learners</p>
+          <p className="text-2xl font-semibold text-foreground mt-0.5">{counts.learners}</p>
+        </div>
+        <div className="bg-card border border-card-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground">Active Programs</p>
+          <p className="text-2xl font-semibold text-foreground mt-0.5">{counts.programs}</p>
+        </div>
+        <div className="bg-card border border-card-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground">Funding Sources</p>
+          <p className="text-2xl font-semibold text-foreground mt-0.5">{counts.fundingSources}</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

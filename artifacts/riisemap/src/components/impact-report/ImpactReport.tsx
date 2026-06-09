@@ -270,9 +270,9 @@ export function ImpactReport() {
       {selectedFundingSource && (
         <div>
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="mb-4 text-xs print:hidden"
+            className="mb-4 print:hidden"
             onClick={() => handleSourceChange('all')}
           >
             ← Back to All Funding Sources

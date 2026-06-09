@@ -43,6 +43,7 @@ export default function Login({ onLogin }: LoginProps) {
           </div>
           <span className="text-xl font-semibold text-foreground">RiiseMap</span>
         </div>
+        <p className="text-sm text-muted-foreground mb-6">Funding impact, clearly tracked.</p>
 
         <h1 className="text-2xl font-semibold text-foreground mb-1">Sign In</h1>
         <p className="text-sm text-muted-foreground mb-6">Enter your credentials to access the platform.</p>
