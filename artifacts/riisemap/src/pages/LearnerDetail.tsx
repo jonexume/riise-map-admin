@@ -51,11 +51,13 @@ export default function LearnerDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
     authFetch(`${baseUrl}/api/learner-statuses`).then(r => r.json()).then((data: any[]) => setStatusOptions(data.map(s => s.name))).catch(() => {});
+    authFetch(`${baseUrl}/api/pathway-programs`).then(r => r.json()).then(setPathwayProgramLinks).catch(() => {});
   }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,19 +146,25 @@ export default function LearnerDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div><label className="text-xs font-medium text-muted-foreground">Name</label><Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
             <div><label className="text-xs font-medium text-muted-foreground">Email</label><Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" /></div>
-            <div><label className="text-xs font-medium text-muted-foreground">Program</label>
-              <Select value={editForm.program} onValueChange={v => setEditForm(f => ({ ...f, program: v }))}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <div><label className="text-xs font-medium text-muted-foreground">Pathway</label>
+              <Select value={editForm.pathway} onValueChange={v => setEditForm(f => ({ ...f, pathway: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select pathway..." /></SelectTrigger>
                 <SelectContent>
-                  {programs.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                  {pathways.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div><label className="text-xs font-medium text-muted-foreground">Pathway</label>
-              <Select value={editForm.pathway} onValueChange={v => setEditForm(f => ({ ...f, pathway: v }))}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <div><label className="text-xs font-medium text-muted-foreground">Program</label>
+              <Select value={editForm.program} onValueChange={v => setEditForm(f => ({ ...f, program: v }))} disabled={!editForm.pathway}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={editForm.pathway ? "Select program..." : "Select pathway first"} /></SelectTrigger>
                 <SelectContent>
-                  {pathways.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                  {(() => {
+                    const selectedPathway = pathways.find((p: any) => p.name === editForm.pathway);
+                    const linkedProgramIds = selectedPathway ? pathwayProgramLinks.filter(l => l.pathwayId === selectedPathway.id).map(l => l.programId) : [];
+                    return programs.filter((p: any) => p.name).map((p: any) => (
+                      <SelectItem key={p.id} value={p.name}>{linkedProgramIds.includes(p.id) ? `★ ${p.name}` : p.name}</SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             </div>

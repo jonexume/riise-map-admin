@@ -267,3 +267,11 @@ export const learnerStatusesTable = pgTable("learner_statuses", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 export type LearnerStatus = typeof learnerStatusesTable.$inferSelect;
+
+// Pathway Programs Join Table
+export const pathwayProgramsTable = pgTable("pathway_programs", {
+  id: serial("id").primaryKey(),
+  pathwayId: integer("pathway_id").notNull().references(() => pathwaysTable.id, { onDelete: "cascade" }),
+  programId: integer("program_id").notNull().references(() => programsTable.id, { onDelete: "cascade" }),
+});
+export type PathwayProgram = typeof pathwayProgramsTable.$inferSelect;

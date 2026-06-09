@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { db, pathwaysTable, insertPathwaySchema, learnersTable, programsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, pathwaysTable, insertPathwaySchema, learnersTable, programsTable, pathwayProgramsTable } from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -81,15 +81,11 @@ router.post("/pathways/import", async (req, res) => {
   try {
     const rows: unknown[] = req.body;
     if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
-    const existingPrograms = await db.select().from(programsTable);
-    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
+    const results = { imported: 0, ids: [] as number[], errors: [] as { row: number; message: string }[] };
     for (let i = 0; i < rows.length; i++) {
       try {
         const row: any = rows[i];
-        if (row.programCategory) {
-          const match = existingPrograms.find(p => p.name.toLowerCase().trim() === row.programCategory.toLowerCase().trim());
-          if (match) row.programCategory = match.name;
-        } else { row.programCategory = null; }
+        row.programCategory = null;
         row.activeLearners = parseInt(row.activeLearners) || 0;
         row.estimatedWeeks = parseInt(row.estimatedWeeks) || 16;
         row.skills = row.skills ? row.skills.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
@@ -97,8 +93,9 @@ router.post("/pathways/import", async (req, res) => {
         row.projects = row.projects ? row.projects.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
         row.readinessCriteria = row.readinessCriteria ? row.readinessCriteria.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
         const data = insertPathwaySchema.parse(row);
-        await db.insert(pathwaysTable).values(data);
+        const [created] = await db.insert(pathwaysTable).values(data).returning();
         results.imported++;
+        results.ids.push(created.id);
       } catch (e: any) {
         results.errors.push({ row: i + 1, message: e.message || "Invalid data" });
       }
@@ -133,6 +130,42 @@ router.post("/pathways/bulk-delete", async (req, res) => {
   } catch (error) {
     console.error("Error bulk deleting pathways:", error);
     res.status(500).json({ error: "Bulk delete failed" });
+  }
+});
+
+// Get programs for a pathway
+router.get("/pathways/:id/programs", async (req, res) => {
+  try {
+    const pathwayId = parseInt(req.params.id);
+    const links = await db.select().from(pathwayProgramsTable).where(eq(pathwayProgramsTable.pathwayId, pathwayId));
+    res.json(links.map(l => l.programId));
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch pathway programs" });
+  }
+});
+
+// Set programs for a pathway (replace all)
+router.put("/pathways/:id/programs", async (req, res) => {
+  try {
+    const pathwayId = parseInt(req.params.id);
+    const { programIds } = req.body as { programIds: number[] };
+    await db.delete(pathwayProgramsTable).where(eq(pathwayProgramsTable.pathwayId, pathwayId));
+    if (programIds && programIds.length > 0) {
+      await db.insert(pathwayProgramsTable).values(programIds.map(programId => ({ pathwayId, programId })));
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update pathway programs" });
+  }
+});
+
+// Get all pathway-program associations
+router.get("/pathway-programs", async (req, res) => {
+  try {
+    const all = await db.select().from(pathwayProgramsTable);
+    res.json(all);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch pathway programs" });
   }
 });
 

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Users, TrendingUp, Star, ChevronRight, Plus, X, Upload, Download, AlertTriangle, Check, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useGetPrograms, useGetLearners, useCreateProgram, useUpdateProgram, useGetFundingSources, type Program, type Learner } from "@workspace/api-client-react";
+import { useGetPrograms, useGetLearners, useGetPathways, useCreateProgram, useUpdateProgram, useGetFundingSources, type Program, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -34,6 +34,19 @@ export default function Programs() {
   const { data: programList = [], isLoading: programsLoading } = useGetPrograms();
   const { data: learners = [] } = useGetLearners();
   const { data: fundingSources = [] } = useGetFundingSources();
+  const { data: allPathways = [] } = useGetPathways();
+  const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/pathway-programs`).then(r => r.json()).then(setPathwayProgramLinks).catch(() => {});
+  }, []);
+
+  const getLinkedPathways = (programId: number) => {
+    const linkedIds = pathwayProgramLinks.filter(l => l.programId === programId).map(l => l.pathwayId);
+    return allPathways.filter((p: any) => linkedIds.includes(p.id));
+  };
+
   const createProgramMutation = useCreateProgram({
     mutation: {
       onSuccess: () => {
@@ -284,14 +297,15 @@ export default function Programs() {
             </CardContent>
           </Card>
           <Card className="border-card-border">
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Active Pathways</CardTitle></CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm">Linked Pathways</CardTitle></CardHeader>
             <CardContent className="pt-0 space-y-2">
-              {(!program.pathways || program.pathways.length === 0) ? (
-                <p className="text-sm text-muted-foreground">No pathways assigned yet.</p>
-              ) : program.pathways.map(p => (
-                <div key={p} className="flex items-center gap-2 text-sm">
+              {getLinkedPathways(program.id).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No pathways linked yet.</p>
+              ) : getLinkedPathways(program.id).map((pw: any) => (
+                <div key={pw.id} className="flex items-center gap-2 text-sm">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                  <span className="text-foreground">{p}</span>
+                  <span className="text-foreground">{pw.name}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{pw.estimatedWeeks} wks</span>
                 </div>
               ))}
             </CardContent>
@@ -459,6 +473,16 @@ export default function Programs() {
                       <p className="text-lg font-semibold text-foreground flex items-center gap-1"><TrendingUp size={14} className="text-emerald-500" />{p.placementReady}</p>
                     </div>
                   </div>
+                  {getLinkedPathways(p.id).length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <p className="text-xs text-muted-foreground mb-1.5">Linked Pathways</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {getLinkedPathways(p.id).map((pw: any) => (
+                          <span key={pw.id} className="text-xs bg-muted px-2 py-0.5 rounded-full text-foreground">{pw.name}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 </div>
 
@@ -595,16 +619,6 @@ export default function Programs() {
                 </div>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">Linked Pathways</Label>
-                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
-                <Input
-                  className="h-10 text-sm"
-                  placeholder="e.g. Customer Success Associate, IT Support Specialist"
-                  value={form.pathways}
-                  onChange={e => setForm(f => ({ ...f, pathways: e.target.value }))}
-                />
-              </div>
             </div>
 
             <div className="flex gap-3 px-6 pb-6">
@@ -728,15 +742,6 @@ export default function Programs() {
                 </div>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">Linked Pathways</Label>
-                <p className="text-xs text-muted-foreground mt-0.5 mb-1.5">Separate multiple pathways with commas.</p>
-                <Input
-                  className="h-10 text-sm"
-                  value={form.pathways}
-                  onChange={e => setForm(f => ({ ...f, pathways: e.target.value }))}
-                />
-              </div>
             </div>
 
             <div className="flex gap-3 px-6 pb-6">

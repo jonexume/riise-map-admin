@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Users, Clock, ChevronRight, ArrowLeft, CheckCircle2,
   Edit, Plus, X, Check, Trash2, Loader2, Upload, Download, AlertTriangle
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, type Pathway } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ interface FormState {
   targetProfile: string;
   estimatedWeeks: string;
   programCategory: string;
+  selectedProgramIds: number[];
   skills: string[];
   milestones: string[];
   projects: string[];
@@ -38,6 +40,7 @@ const BLANK: FormState = {
   targetProfile: "",
   estimatedWeeks: "",
   programCategory: "",
+  selectedProgramIds: [],
   skills: [],
   milestones: [],
   projects: [],
@@ -115,6 +118,14 @@ export default function Pathways() {
 
   const [view, setView] = useState<View>("list");
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [detailProgramIds, setDetailProgramIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (selectedId && view === "detail") {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      authFetch(`${baseUrl}/api/pathways/${selectedId}/programs`).then(r => r.json()).then(setDetailProgramIds).catch(() => setDetailProgramIds([]));
+    }
+  }, [selectedId, view]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(BLANK);
@@ -198,15 +209,20 @@ export default function Pathways() {
     estimatedWeeks: parseInt(form.estimatedWeeks) || 16,
     activeLearners: editingId ? (pathways.find(p => p.id === editingId)?.activeLearners ?? 0) : 0,
     programCategory: form.programCategory || null,
-    skills: form.skills,
-    milestones: form.milestones,
-    projects: form.projects,
-    readinessCriteria: form.readinessCriteria,
+    skills: form.skills.filter(s => s.trim()),
+    milestones: form.milestones.filter(s => s.trim()),
+    projects: form.projects.filter(s => s.trim()),
+    readinessCriteria: form.readinessCriteria.filter(s => s.trim()),
   });
 
   const handleSubmit = async () => {
     try {
-      await createMutation.mutateAsync({ data: buildPayload() });
+      const result = await createMutation.mutateAsync({ data: buildPayload() });
+      // Save program associations
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      if (form.selectedProgramIds.length > 0) {
+        await authFetch(`${baseUrl}/api/pathways/${(result as any).id}/programs`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ programIds: form.selectedProgramIds }) });
+      }
       setSubmitted(true);
     } catch (error) {
       toast({ title: "Error", description: "Failed to create pathway. Please try again.", variant: "destructive" });
@@ -217,6 +233,9 @@ export default function Pathways() {
     if (!editingId || !validateStep()) return;
     try {
       await updateMutation.mutateAsync({ id: editingId, data: buildPayload() });
+      // Save program associations
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      await authFetch(`${baseUrl}/api/pathways/${editingId}/programs`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ programIds: form.selectedProgramIds }) });
       toast({ title: "Pathway Updated", description: `${form.name} has been updated.` });
       setView("list");
       resetForm();
@@ -227,17 +246,22 @@ export default function Pathways() {
 
   const openEdit = (p: Pathway) => {
     setEditingId(p.id);
+    const toArr = (v: unknown): string[] => Array.isArray(v) ? v.map(String) : [];
     setForm({
       name: p.name,
       description: p.description,
       targetProfile: p.targetProfile,
       estimatedWeeks: String(p.estimatedWeeks),
       programCategory: p.programCategory || "",
-      skills: Array.isArray(p.skills) ? p.skills : [],
-      milestones: Array.isArray(p.milestones) ? p.milestones : [],
-      projects: Array.isArray(p.projects) ? p.projects : [],
-      readinessCriteria: Array.isArray(p.readinessCriteria) ? p.readinessCriteria : [],
+      selectedProgramIds: [],
+      skills: toArr(p.skills),
+      milestones: toArr(p.milestones),
+      projects: toArr(p.projects),
+      readinessCriteria: toArr(p.readinessCriteria),
     });
+    // Fetch associated programs
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/pathways/${p.id}/programs`).then(r => r.json()).then((ids: number[]) => setForm(f => ({ ...f, selectedProgramIds: ids }))).catch(() => {});
     setStep(0);
     setErrors({});
     setView("edit");
@@ -308,6 +332,21 @@ export default function Pathways() {
             <p className="text-xs text-foreground mt-1 leading-relaxed">{pathway.targetProfile}</p>
           </div>
         </div>
+        {/* Associated Programs */}
+        <Card className="border-card-border mb-6">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Associated Programs</CardTitle></CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {detailProgramIds.length > 0 ? detailProgramIds.map(pid => {
+              const prog = programs.find(p => p.id === pid);
+              return prog ? (
+                <div key={pid} className="flex items-center gap-2 text-sm">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+                  <span className="text-foreground">{prog.name}</span>
+                </div>
+              ) : null;
+            }) : <p className="text-xs text-muted-foreground">No programs associated yet</p>}
+          </CardContent>
+        </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {[
             { title: "Key Skills", items: pathway.skills, icon: null, color: "" },
@@ -485,15 +524,30 @@ export default function Pathways() {
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-foreground">Associated Program</Label>
-                    <Select value={form.programCategory} onValueChange={v => set("programCategory", v)}>
-                      <SelectTrigger className="mt-1.5 h-10 text-sm"><SelectValue placeholder="Select program..." /></SelectTrigger>
-                      <SelectContent>
-                        {programs.map(p => (
-                          <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-sm font-medium text-foreground">Associated Programs</Label>
+                    <div className="mt-1.5 border rounded-lg p-2 space-y-0.5 max-h-48 overflow-y-auto bg-muted/20">
+                      {programs.map(p => (
+                        <label key={p.id} className="flex items-center gap-2.5 text-sm cursor-pointer px-3 py-2 rounded-md hover:bg-background transition-colors">
+                          <Checkbox
+                            checked={form.selectedProgramIds.includes(p.id)}
+                            onCheckedChange={(checked) => {
+                              setForm(f => ({
+                                ...f,
+                                selectedProgramIds: checked
+                                  ? [...f.selectedProgramIds, p.id]
+                                  : f.selectedProgramIds.filter(id => id !== p.id),
+                              }));
+                            }}
+                          />
+                          <span className="text-foreground">{p.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {form.selectedProgramIds.length > 0 && (
+                      <button className="text-xs text-muted-foreground hover:text-foreground mt-1.5" onClick={() => setForm(f => ({ ...f, selectedProgramIds: [] }))}>
+                        Clear all ({form.selectedProgramIds.length} selected)
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -675,10 +729,11 @@ export default function Pathways() {
               <p className="text-sm text-muted-foreground">Upload a CSV file to bulk-import pathways. The program column should match the name of an existing program.</p>
               <div className="flex gap-3">
                 <Button variant="outline" size="sm" onClick={() => {
+                  const progNames = programs.map((p: any) => p.name).join(" | ");
                   const csv = [
-                    "name,description,targetProfile,estimatedWeeks,programCategory,skills,milestones,projects,readinessCriteria",
-                    "# REQUIRED (max 255),REQUIRED description,REQUIRED target learner profile,REQUIRED number of weeks,Optional (must match existing program name),Optional (separate with |),Optional (separate with |),Optional (separate with |),Optional (separate with |)",
-                    "IT Support Specialist,\"Prepare learners for entry-level IT support and help desk roles\",Career changers with customer service experience,16,Cloud Operations Bootcamp,Networking|Troubleshooting|Customer Service|Active Directory,CompTIA A+ Study|Help Desk Simulation|Resume Review,Ticket System Project|Network Lab,Interview ready|Portfolio complete|Cert exam passed",
+                    "name,description,targetProfile,estimatedWeeks,programs,skills,milestones,projects,readinessCriteria",
+                    `# REQUIRED,REQUIRED description,REQUIRED target learner profile,REQUIRED (number),Optional (separate with | — available: ${progNames}),(separate with |),(separate with |),(separate with |),(separate with |)`,
+                    `Cloud Foundations,"Prepare learners for cloud infrastructure roles",Career changers interested in cloud computing,12,${programs[0]?.name || "Program Name"},AWS basics|Networking|Linux,Cloud Concepts Exam|Lab Completion|Resume Review,Deploy a Web App|VPC Design Lab,Interview ready|Portfolio complete`,
                     "",
                   ].join("\n");
                   const blob = new Blob([csv], { type: "text/csv" });
@@ -747,14 +802,27 @@ export default function Pathways() {
                       description: r.description.trim(),
                       targetProfile: r.targetProfile?.trim() || "Career changers and motivated learners",
                       estimatedWeeks: parseInt(r.estimatedWeeks) || 16,
-                      programCategory: r.programCategory?.trim() || null,
                       skills: r.skills?.trim() || null,
                       milestones: r.milestones?.trim() || null,
                       projects: r.projects?.trim() || null,
                       readinessCriteria: r.readinessCriteria?.trim() || null,
+                      _programs: r.programs?.trim() || null,
                     }));
-                    const res = await authFetch(`${baseUrl}/api/pathways/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
+                    const res = await authFetch(`${baseUrl}/api/pathways/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows.map(({ _programs, ...rest }) => rest)) });
                     const result = await res.json();
+                    // Save program associations for imported pathways
+                    if (result.imported > 0 && result.ids) {
+                      for (let i = 0; i < result.ids.length; i++) {
+                        const progStr = validRows[i]?._programs;
+                        if (progStr) {
+                          const progNameList = progStr.split("|").map((s: string) => s.trim()).filter(Boolean);
+                          const progIds = programs.filter((p: any) => progNameList.includes(p.name)).map((p: any) => p.id);
+                          if (progIds.length > 0) {
+                            await authFetch(`${baseUrl}/api/pathways/${result.ids[i]}/programs`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ programIds: progIds }) });
+                          }
+                        }
+                      }
+                    }
                     queryClient.invalidateQueries({ queryKey: ["/api/pathways"] });
                     toast({ title: "Import Complete", description: `${result.imported} pathway${result.imported !== 1 ? "s" : ""} imported.${result.errors?.length ? ` ${result.errors.length} failed.` : ""}` });
                     setShowImport(false);

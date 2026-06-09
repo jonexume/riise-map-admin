@@ -1,8 +1,7 @@
 import { cn } from "@/lib/utils";
-import type { LearnerStatus } from "@/data/mockData";
 
 interface StatusBadgeProps {
-  status: LearnerStatus | string;
+  status: string;
   className?: string;
 }
 
@@ -28,6 +27,9 @@ const statusConfig: Record<string, { bg: string; text: string; dot: string }> = 
   "Office Hours": { bg: "bg-teal-50 border border-teal-200", text: "text-teal-700", dot: "bg-teal-500" },
   "Networking Event": { bg: "bg-sky-50 border border-sky-200", text: "text-sky-700", dot: "bg-sky-500" },
   "Active": { bg: "bg-emerald-50 border border-emerald-200", text: "text-emerald-700", dot: "bg-emerald-500" },
+  "At Risk": { bg: "bg-orange-50 border border-orange-200", text: "text-orange-700", dot: "bg-orange-500" },
+  "Placed": { bg: "bg-teal-50 border border-teal-200", text: "text-teal-700", dot: "bg-teal-500" },
+  "Inactive": { bg: "bg-gray-50 border border-gray-200", text: "text-gray-500", dot: "bg-gray-400" },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {

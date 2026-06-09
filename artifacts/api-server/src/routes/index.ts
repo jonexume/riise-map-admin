@@ -8,6 +8,7 @@ import fundingSourceGoalsRouter from "./funding-source-goals";
 import successStoriesRouter from "./success-story";
 import learnerStatusesRouter from "./learner-statuses";
 import dashboardPrioritiesRouter from "./dashboard-priorities";
+import resetWorkspaceRouter from "./reset-workspace";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(fundingSourceGoalsRouter);
 router.use(successStoriesRouter);
 router.use(learnerStatusesRouter);
 router.use(dashboardPrioritiesRouter);
+router.use(resetWorkspaceRouter);
 
 export default router;

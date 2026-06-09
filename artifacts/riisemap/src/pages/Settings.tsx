@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { organization } from "@/data/mockData";
+import { authFetch } from "@/lib/auth-fetch";
 
 const dataDefinitions = [
   { term: "Active Learner", definition: "A learner who has logged in, completed a milestone, attended an event, or interacted with a coach in the last 14 days.", threshold: "14 days" },
@@ -33,6 +34,20 @@ const allStaff = [
 
 export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const res = await authFetch(`${baseUrl}/api/reset-workspace`, { method: "POST" });
+      if (res.ok) { setResetDone(true); setResetConfirm(""); }
+    } catch {}
+    finally { setResetting(false); }
+  };
+
   const [orgName, setOrgName] = useState(organization.name);
   const [orgTagline, setOrgTagline] = useState(organization.tagline);
   const [orgWebsite, setOrgWebsite] = useState(organization.website);
@@ -393,6 +408,33 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reset Workspace */}
+      <Card className="border-destructive/30 mt-8">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-destructive">Reset Workspace</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">Clear the current organization's workspace and start fresh. This will permanently delete all Learners, Pathways, Programs, and Funding Sources.</p>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder='Type "RESET" to confirm'
+              value={resetConfirm}
+              onChange={e => setResetConfirm(e.target.value)}
+              className="w-60 text-sm"
+            />
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={resetConfirm !== "RESET" || resetting}
+              onClick={handleReset}
+            >
+              {resetting ? "Resetting..." : "Reset Workspace"}
+            </Button>
+          </div>
+          {resetDone && <p className="text-sm text-emerald-600 font-medium">Workspace reset successfully.</p>}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -21,7 +21,6 @@ import {
   computeProgressRate,
   computeProgramAggregates,
   computeTimeProgress,
-  filterPathwaysByPrograms,
   filterProgramsByFunder,
   generateTemplateNarrative,
   sortFundingSources,
@@ -106,8 +105,23 @@ export function useImpactReportData(): UseImpactReportDataResult {
     queryFn: fetchAllGoals,
   });
 
-  const isLoading = fsLoading || progLoading || pathLoading || learnLoading || goalsLoading;
-  const isError = fsError || progError || pathError || learnError || goalsError;
+  // Fetch pathway-program links
+  const {
+    data: pathwayProgramLinks = [],
+    isLoading: linksLoading,
+    isError: linksError,
+  } = useQuery<{ id: number; pathwayId: number; programId: number }[]>({
+    queryKey: ['/api/pathway-programs'],
+    queryFn: async () => {
+      const baseUrl = import.meta.env.VITE_API_URL || '';
+      const res = await authFetch(`${baseUrl}/api/pathway-programs`);
+      if (!res.ok) throw new Error('Failed to fetch pathway-programs');
+      return res.json();
+    },
+  });
+
+  const isLoading = fsLoading || progLoading || pathLoading || learnLoading || goalsLoading || linksLoading;
+  const isError = fsError || progError || pathError || learnError || goalsError || linksError;
 
   // Compute the report data once all data is loaded
   const data = useMemo<ImpactReportData | null>(() => {
@@ -129,9 +143,21 @@ export function useImpactReportData(): UseImpactReportDataResult {
         // 1. Filter programs linked to this funding source
         const linkedPrograms = filterProgramsByFunder(programs, fs.name);
 
-        // 2. Filter pathways linked to linked programs
-        const programNames = linkedPrograms.map((p) => p.name);
-        const linkedPathways = filterPathwaysByPrograms(pathways, programNames);
+        // 2. Filter pathways linked to linked programs via join table
+        const linkedProgramIds = linkedPrograms.map((p) => p.id);
+        const linkedPathwayIds = pathwayProgramLinks
+          .filter((l) => linkedProgramIds.includes(l.programId))
+          .map((l) => l.pathwayId);
+        const linkedPathways = pathways
+          .filter((pw) => linkedPathwayIds.includes(pw.id))
+          .map((pw) => ({
+            id: pw.id,
+            name: pw.name,
+            estimatedWeeks: pw.estimatedWeeks,
+            activeLearners: pw.activeLearners,
+            skills: Array.isArray(pw.skills) ? (pw.skills as string[]).slice(0, 15) : [],
+            milestoneCount: Array.isArray(pw.milestones) ? pw.milestones.length : 0,
+          }));
 
         // 3. Enrolled learners = sum of activeLearners from linked programs
         const enrolledLearners = linkedPrograms.reduce(

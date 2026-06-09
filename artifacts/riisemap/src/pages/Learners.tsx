@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearners, useCreateLearner, type Learner } from "@workspace/api-client-react";
+import { useGetLearners, useCreateLearner, useGetPathways, useGetPrograms, type Learner } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { authFetch } from "@/lib/auth-fetch";
@@ -45,18 +45,6 @@ const BLANK_INVITE: InviteForm = {
     "Hi,\n\nYou've been invited to join the Atlanta Workforce Tech Alliance's workforce development program.\n\nThrough RiiseMap, you'll have access to career pathways, coaching, projects, and events designed to help you break into tech.\n\nClick the link below to get started.\n\nLooking forward to supporting your journey,\nDenise Carter\nProgram Manager, Atlanta Workforce Tech Alliance",
 };
 
-const PATHWAYS_BY_PROGRAM: Record<string, string[]> = {
-  tech: ["IT Support Specialist", "Technical Support Associate", "Project Coordinator"],
-  cs: ["Customer Success Associate"],
-  data: ["Junior Data Operations Analyst"],
-};
-
-const PROGRAM_LABELS: Record<string, string> = {
-  tech: "Tech Career Launch",
-  cs: "Customer Success Accelerator",
-  data: "Data Operations Starter",
-};
-
 export default function Learners() {
   const queryClient = useQueryClient();
   const { data: allLearners = [], isLoading } = useGetLearners();
@@ -68,6 +56,14 @@ export default function Learners() {
     }
   });
   const [newLearnerId, setNewLearnerId] = useState<string | null>(null);
+  const { data: allPathways = [] } = useGetPathways();
+  const { data: allPrograms = [] } = useGetPrograms();
+  const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/pathway-programs`).then(r => r.json()).then(setPathwayProgramLinks).catch(() => {});
+  }, []);
 
   const [view, setView] = useState<"grid" | "list">("list");
   const [search, setSearch] = useState("");
@@ -138,7 +134,6 @@ export default function Learners() {
   const setField = (field: keyof InviteForm, value: string) => {
     setInviteForm((f) => ({ ...f, [field]: value }));
     setInviteErrors((e) => ({ ...e, [field]: "" }));
-    if (field === "program") setInviteForm((f) => ({ ...f, program: value, pathway: "" }));
   };
 
   const formatPhone = (value: string) => {
@@ -215,7 +210,7 @@ export default function Learners() {
         data: {
           name: `${inviteForm.firstName.trim()} ${inviteForm.lastName.trim()}`,
           pathway: inviteForm.pathway || "Not yet assigned",
-          program: inviteForm.program ? PROGRAM_LABELS[inviteForm.program] : "Not yet enrolled",
+          program: inviteForm.program || "Not yet enrolled",
           coach: inviteForm.coach || "Unassigned",
           progress: 0,
           readiness: 0,
@@ -254,11 +249,6 @@ export default function Learners() {
       setInviteErrors({});
     }, 300);
   };
-
-  const availablePathways =
-    inviteForm.program && PATHWAYS_BY_PROGRAM[inviteForm.program]
-      ? PATHWAYS_BY_PROGRAM[inviteForm.program]
-      : pathwayOptions;
 
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto">
@@ -589,7 +579,7 @@ export default function Learners() {
                   {inviteForm.program && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Program</span>
-                      <span className="font-medium text-foreground">{PROGRAM_LABELS[inviteForm.program]}</span>
+                      <span className="font-medium text-foreground">{inviteForm.program || "Not selected"}</span>
                     </div>
                   )}
                   {inviteForm.pathway && (
@@ -708,40 +698,44 @@ export default function Learners() {
                     </div>
                   </div>
 
-                  {/* Program & Pathway */}
+                  {/* Pathway & Program */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-sm font-medium text-foreground">Program</Label>
-                      <Select
-                        value={inviteForm.program}
-                        onValueChange={(v) => {
-                          setInviteForm((f) => ({ ...f, program: v, pathway: "" }));
-                        }}
-                      >
-                        <SelectTrigger className="mt-1.5 h-10 text-sm">
-                          <SelectValue placeholder="Select program..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="tech">Tech Career Launch</SelectItem>
-                          <SelectItem value="cs">Customer Success Accelerator</SelectItem>
-                          <SelectItem value="data">Data Operations Starter</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <div>
                       <Label className="text-sm font-medium text-foreground">Pathway</Label>
                       <Select
                         value={inviteForm.pathway}
-                        onValueChange={(v) => setField("pathway", v)}
-                        disabled={!inviteForm.program}
+                        onValueChange={(v) => setInviteForm((f) => ({ ...f, pathway: v }))}
                       >
                         <SelectTrigger className="mt-1.5 h-10 text-sm">
-                          <SelectValue placeholder={inviteForm.program ? "Select pathway..." : "Select program first"} />
+                          <SelectValue placeholder="Select pathway..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {availablePathways.map((p) => (
-                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          {allPathways.filter((p: any) => p.name).map((p: any) => (
+                            <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-foreground">Program</Label>
+                      <Select
+                        value={inviteForm.program}
+                        onValueChange={(v) => setField("program", v)}
+                        disabled={!inviteForm.pathway}
+                      >
+                        <SelectTrigger className="mt-1.5 h-10 text-sm">
+                          <SelectValue placeholder={inviteForm.pathway ? "Select program..." : "Select pathway first"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(() => {
+                            const selectedPathway = allPathways.find((p: any) => p.name === inviteForm.pathway);
+                            const linkedProgramIds = selectedPathway ? pathwayProgramLinks.filter(l => l.pathwayId === selectedPathway.id).map(l => l.programId) : [];
+                            return allPrograms.filter((p: any) => p.name).map((p: any) => (
+                              <SelectItem key={p.id} value={p.name}>
+                                {linkedProgramIds.includes(p.id) ? `★ ${p.name}` : p.name}
+                              </SelectItem>
+                            ));
+                          })()}
                         </SelectContent>
                       </Select>
                     </div>
@@ -750,19 +744,12 @@ export default function Learners() {
                   {/* Coach */}
                   <div>
                     <Label className="text-sm font-medium text-foreground">Assign Coach</Label>
-                    <Select value={inviteForm.coach} onValueChange={(v) => setField("coach", v)}>
-                      <SelectTrigger className="mt-1.5 h-10 text-sm">
-                        <SelectValue placeholder="Select a coach..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Denise Carter">Denise Carter — Program Manager</SelectItem>
-                        <SelectItem value="Raymond Brooks">Raymond Brooks — Career Coach</SelectItem>
-                        <SelectItem value="Alicia Monroe">Alicia Monroe — Career Coach</SelectItem>
-                        <SelectItem value="Marcus Webb">Marcus Webb — Career Coach</SelectItem>
-                        <SelectItem value="Tonya Fleming">Tonya Fleming — Career Coach</SelectItem>
-                        <SelectItem value="David Park">David Park — Career Coach</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      className="mt-1.5 h-10 text-sm"
+                      placeholder="Enter coach name..."
+                      value={inviteForm.coach}
+                      onChange={(e) => setField("coach", e.target.value)}
+                    />
                   </div>
 
                   {/* Personal message */}
@@ -808,10 +795,12 @@ export default function Learners() {
               <p className="text-sm text-muted-foreground">Upload a CSV file to bulk-import learners. Program and pathway values should match existing records.</p>
               <div className="flex gap-3">
                 <Button variant="outline" size="sm" onClick={() => {
+                  const progNames = allPrograms.map((p: any) => p.name).join(" | ");
+                  const pathNames = allPathways.map((p: any) => p.name).join(" | ");
                   const csv = [
-                    "name,email,program,pathway,coach,status,strengths,risks",
-                    "# REQUIRED (max 255),REQUIRED (unique),REQUIRED (match existing program),REQUIRED (match existing pathway),REQUIRED coach name,Optional (defaults to New Learner),Optional (separate with |),Optional (separate with |)",
-                    "Jane Smith,jane.smith@example.com,Cloud Operations Bootcamp,AWS Cloud Practitioner,Raymond Brooks,New Learner,Problem solving|Communication,Needs time management support",
+                    "name,email,pathway,program,coach,status,readiness,progress",
+                    `# REQUIRED,REQUIRED (unique),REQUIRED (${pathNames}),REQUIRED (${progNames}),REQUIRED,Optional (defaults to New Learner),Optional (0-100),Optional (0-100)`,
+                    `Jane Smith,jane.smith@example.com,${allPathways[0]?.name || "Pathway Name"},${allPrograms[0]?.name || "Program Name"},Coach Name,New Learner,0,0`,
                     "",
                   ].join("\n");
                   const blob = new Blob([csv], { type: "text/csv" });
@@ -848,7 +837,7 @@ export default function Learners() {
                   </thead>
                   <tbody>
                     {importRows.map((row, i) => {
-                      const isMissing = !row.name?.trim() || !row.email?.trim() || !row.program?.trim() || !row.pathway?.trim() || !row.coach?.trim();
+                      const isMissing = !row.name?.trim() || !row.email?.trim() || !row.pathway?.trim() || !row.program?.trim() || !row.coach?.trim();
                       const isDuplicate = allLearners.some(l => l.email.toLowerCase() === (row.email || "").toLowerCase().trim());
                       return (
                         <tr key={i} className={cn("border-t", isMissing && "bg-red-50", isDuplicate && !isMissing && "bg-amber-50")}>
@@ -873,15 +862,15 @@ export default function Learners() {
                   setImporting(true);
                   try {
                     const baseUrl = import.meta.env.VITE_API_URL || "";
-                    const validRows = importRows.filter(r => r.name?.trim() && r.email?.trim() && r.program?.trim() && r.pathway?.trim() && r.coach?.trim()).map(r => ({
+                    const validRows = importRows.filter(r => r.name?.trim() && r.email?.trim() && r.pathway?.trim() && r.program?.trim() && r.coach?.trim()).map(r => ({
                       name: r.name.trim(),
                       email: r.email.trim(),
-                      program: r.program.trim(),
                       pathway: r.pathway.trim(),
+                      program: r.program.trim(),
                       coach: r.coach.trim(),
                       status: r.status?.trim() || "New Learner",
-                      strengths: r.strengths?.trim() || null,
-                      risks: r.risks?.trim() || null,
+                      readiness: parseInt(r.readiness) || 0,
+                      progress: parseInt(r.progress) || 0,
                     }));
                     const res = await authFetch(`${baseUrl}/api/learners/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validRows) });
                     const result = await res.json();
