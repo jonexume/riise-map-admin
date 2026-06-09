@@ -42,7 +42,7 @@ export default function Home() {
     <div className="px-6 py-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground" data-testid="greeting-header">
+        <h1 className="text-3xl font-semibold text-foreground" data-testid="greeting-header">
           {greeting}, Denise
         </h1>
         <p className="text-sm text-muted-foreground mt-1">

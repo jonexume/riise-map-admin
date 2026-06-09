@@ -254,9 +254,9 @@ export default function Learners() {
     <div className="px-6 py-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Learners</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Learners</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {isLoading ? "Loading..." : `${allLearners.length} learners enrolled across 3 programs`}
+            {isLoading ? "Loading..." : `${allLearners.length} learners enrolled across ${allPrograms.length} programs`}
           </p>
           {allLearners.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>

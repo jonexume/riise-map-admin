@@ -386,7 +386,7 @@ export default function Programs() {
     <div className="px-6 py-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Programs</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Programs</h1>
           <p className="text-sm text-muted-foreground mt-0.5">{programList.length} programs across Atlanta Workforce Tech Alliance</p>
           {programList.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
@@ -431,7 +431,7 @@ export default function Programs() {
       <div className="space-y-4">
         {programList.map(p => (
           <Card key={p.id} data-testid={`program-card-${p.id}`} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
+            <CardContent className="p-8">
               <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <Checkbox

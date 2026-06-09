@@ -563,7 +563,7 @@ export default function FundingSources() {
     <div className="px-6 py-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Funding Sources</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Funding Sources</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {sources.length} funding source{sources.length !== 1 ? "s" : ""} tracking ${sources.reduce((a: number, s: FundingSource) => a + (Number(s.amount) || 0), 0).toLocaleString()} in total funding
           </p>

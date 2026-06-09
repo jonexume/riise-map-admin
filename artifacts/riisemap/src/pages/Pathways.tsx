@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, type Pathway } from "@workspace/api-client-react";
+import { useGetPathways, useCreatePathway, useUpdatePathway, useGetPrograms, useGetLearners, type Pathway } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -113,6 +113,7 @@ export default function Pathways() {
   const { toast } = useToast();
   const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
   const { data: programs = [] } = useGetPrograms();
+  const { data: allLearners = [] } = useGetLearners();
   const createMutation = useCreatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
   const updateMutation = useUpdatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
 
@@ -321,7 +322,7 @@ export default function Pathways() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <div className="bg-card border border-card-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">Active Learners</p>
-            <p className="text-2xl font-semibold text-foreground">{pathway.activeLearners}</p>
+            <p className="text-2xl font-semibold text-foreground">{allLearners.filter(l => l.pathway === pathway.name).length}</p>
           </div>
           <div className="bg-card border border-card-border rounded-lg p-4">
             <p className="text-xs text-muted-foreground">Estimated Duration</p>
@@ -593,9 +594,9 @@ export default function Pathways() {
     <div className="px-6 py-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Career Pathways</h1>
+          <h1 className="text-3xl font-semibold text-foreground">Career Pathways</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {pathways.length} pathways guiding {pathways.reduce((a, p) => a + p.activeLearners, 0)} learners toward tech careers
+            {pathways.length} pathways guiding {allLearners.length} learners toward tech careers
           </p>
           {pathways.length > 0 && <p className="text-xs text-muted-foreground/70 mt-0.5">Select items with checkboxes to delete multiple at once</p>}
         </div>
@@ -654,11 +655,11 @@ export default function Pathways() {
                 <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
                 <h2 className="text-base font-semibold text-foreground">{p.name}</h2>
-                {p.activeLearners === 0 && <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full ml-2 flex-shrink-0">New</span>}
+                {allLearners.filter(l => l.pathway === p.name).length === 0 && <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full ml-2 flex-shrink-0">New</span>}
               </div>
               <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{p.description}</p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                <span className="flex items-center gap-1"><Users size={12} className="text-primary" />{p.activeLearners} learners</span>
+                <span className="flex items-center gap-1"><Users size={12} className="text-primary" />{allLearners.filter(l => l.pathway === p.name).length} learners</span>
                 <span className="flex items-center gap-1"><Clock size={12} />{p.estimatedWeeks} weeks</span>
               </div>
               <div className="flex flex-wrap gap-1.5 mb-4">
