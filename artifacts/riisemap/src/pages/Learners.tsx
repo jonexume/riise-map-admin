@@ -87,10 +87,14 @@ export default function Learners() {
 
   type SortKey = "name" | "pathway" | "coach" | "progress" | "readiness" | "status" | "lastActive";
   type SortDir = "asc" | "desc";
+  const sortParam = new URLSearchParams(searchString).get("sort") as SortKey | null;
+  const dirParam = new URLSearchParams(searchString).get("dir") as SortDir | null;
   const [sortKey, setSortKey] = useState<SortKey>(() => {
+    if (sortParam) return sortParam;
     try { return (sessionStorage.getItem("learners_sortKey") as SortKey) || "name"; } catch { return "name"; }
   });
   const [sortDir, setSortDir] = useState<SortDir>(() => {
+    if (dirParam) return dirParam;
     try { return (sessionStorage.getItem("learners_sortDir") as SortDir) || "asc"; } catch { return "asc"; }
   });
   const handleSort = (key: SortKey) => {
@@ -128,8 +132,8 @@ export default function Learners() {
     return String(av).localeCompare(String(bv)) * dir;
   });
 
-  const coaches = [...new Set(allLearners.map((l) => l.coach))];
-  const pathwayOptions = [...new Set(allLearners.map((l) => l.pathway))];
+  const coaches = [...new Set(allLearners.map((l) => l.coach))].filter(Boolean);
+  const pathwayOptions = [...new Set(allLearners.map((l) => l.pathway))].filter(Boolean);
 
   const setField = (field: keyof InviteForm, value: string) => {
     setInviteForm((f) => ({ ...f, [field]: value }));

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import {
   Users, AlertTriangle, TrendingUp, CheckSquare, Calendar, Star,
@@ -10,37 +10,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/MetricCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { recentMomentum, impactMetrics } from "@/data/mockData";
+import { authFetch } from "@/lib/auth-fetch";
 import { cn } from "@/lib/utils";
-
-const priorities = [
-  { id: 1, text: "3 learners may need support this week", action: "Review learners", href: "/learners", urgency: "high" },
-  { id: 2, text: "2 milestones are overdue", action: "View milestones", href: "/learners?status=Stalled,Needs Support", urgency: "medium" },
-  { id: 3, text: "Customer Success cohort engagement is down 8%", action: "Open cohort", href: "/programs", urgency: "medium" },
-  { id: 5, text: "Quarterly funder report is due in 12 days", action: "Start report", href: "/impact", urgency: "low" },
-];
 
 const quickActions = [
   { label: "Invite Learners", icon: UserPlus, href: "/learners", color: "text-primary" },
-  { label: "Review At-Risk Learners", icon: Flag, href: "/learners?status=Stalled,Needs Support", color: "text-amber-600" },
-  { label: "Export Report", icon: FileText, href: "/impact", color: "text-indigo-600" },
-  { label: "Create Impact Story", icon: Sparkles, href: "/impact", color: "text-purple-600" },
+  { label: "Review At-Risk Learners", icon: Flag, href: "/learners?sort=readiness&dir=asc", color: "text-amber-600", countKey: "atRisk" as const },
+  { label: "Print Impact Report", icon: FileText, href: "/impact", color: "text-indigo-600" },
+  { label: "Add Funding Source", icon: Sparkles, href: "/funding-sources", color: "text-purple-600" },
 ];
 
 export default function Home() {
   const [dismissedPriorities, setDismissedPriorities] = useState<number[]>([]);
+  const [priorities, setPriorities] = useState<{ text: string; href: string; urgency: string }[]>([]);
+  const [counts, setCounts] = useState<{ learners: number; atRisk: number }>({ learners: 0, atRisk: 0 });
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/dashboard-priorities`).then(r => r.json()).then(setPriorities).catch(() => {});
+    authFetch(`${baseUrl}/api/learners`).then(r => r.json()).then((learners: any[]) => {
+      setCounts({ learners: learners.length, atRisk: learners.filter(l => l.readiness < 25 || l.flaggedForSupport).length });
+    }).catch(() => {});
+  }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
-  const metrics = [
-    { label: "Active Learners", value: impactMetrics.activeLearners, icon: Users, iconColor: "bg-primary/10", subtitle: "Across 3 programs" },
-    { label: "Learners At Risk", value: impactMetrics.activeLearners > 0 ? 8 : 0, icon: AlertTriangle, iconColor: "bg-amber-50", subtitle: "Need attention soon" },
-    { label: "Avg Readiness Score", value: 68, icon: Star, iconColor: "bg-emerald-50", subtitle: "Out of 100" },
-    { label: "Roadmap Completion", value: `${impactMetrics.roadmapCompletion}%`, icon: CheckSquare, iconColor: "bg-blue-50", subtitle: "Avg across cohorts" },
-    { label: "Event Participation", value: `${impactMetrics.eventParticipationRate}%`, icon: Calendar, iconColor: "bg-purple-50", subtitle: "Last 30 days" },
-    { label: "Placement-Ready", value: impactMetrics.placementReadyLearners, icon: TrendingUp, iconColor: "bg-teal-50", subtitle: "Ready for job search" },
-  ];
 
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto space-y-8">
@@ -67,10 +61,9 @@ export default function Home() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 pt-0">
-              {priorities.filter(p => !dismissedPriorities.includes(p.id)).map((p) => (
+              {priorities.filter((_, i) => !dismissedPriorities.includes(i)).map((p, i) => (
                 <div
-                  key={p.id}
-                  data-testid={`priority-item-${p.id}`}
+                  key={i}
                   className={cn(
                     "flex items-center gap-3 p-3.5 rounded-lg border",
                     p.urgency === "high" ? "border-red-100 bg-red-50/50" :
@@ -90,9 +83,8 @@ export default function Home() {
                       size="sm"
                       variant="outline"
                       className="text-xs h-7 px-3 shrink-0"
-                      data-testid={`priority-action-${p.id}`}
                     >
-                      {p.action}
+                      View
                       <ChevronRight size={12} className="ml-1" />
                     </Button>
                   </Link>
@@ -111,6 +103,7 @@ export default function Home() {
             <CardContent className="space-y-2 pt-0">
               {quickActions.map((action) => {
                 const Icon = action.icon;
+                const count = action.countKey ? counts[action.countKey] : null;
                 return (
                   <Link key={action.label} href={action.href}>
                     <button
@@ -119,6 +112,9 @@ export default function Home() {
                     >
                       <Icon size={15} className={cn("flex-shrink-0", action.color)} />
                       <span className="text-sm text-foreground">{action.label}</span>
+                      {count != null && count > 0 && (
+                        <span className="text-xs font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{count}</span>
+                      )}
                       <ArrowRight size={13} className="ml-auto text-muted-foreground/50" />
                     </button>
                   </Link>

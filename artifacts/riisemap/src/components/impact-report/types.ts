@@ -21,6 +21,7 @@ export interface PortfolioSummaryData {
     offTrack: number;
     notStarted: number;
     noTargets: number;
+    expiringSoon: number;
   };
 }
 
@@ -65,7 +66,8 @@ export type HealthStatus =
   | 'at_risk'
   | 'off_track'
   | 'not_started'
-  | 'no_targets';
+  | 'no_targets'
+  | 'expiring_soon';
 
 export interface GoalData {
   id: number;

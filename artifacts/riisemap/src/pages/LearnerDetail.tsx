@@ -148,7 +148,7 @@ export default function LearnerDetail() {
               <Select value={editForm.program} onValueChange={v => setEditForm(f => ({ ...f, program: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {programs.map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                  {programs.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -156,7 +156,7 @@ export default function LearnerDetail() {
               <Select value={editForm.pathway} onValueChange={v => setEditForm(f => ({ ...f, pathway: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {pathways.map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                  {pathways.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -166,7 +166,7 @@ export default function LearnerDetail() {
               <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {statusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {statusOptions.filter(s => s).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

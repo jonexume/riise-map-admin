@@ -66,6 +66,10 @@ const HEALTH_CONFIG: Record<
     label: 'No Targets Defined',
     className: 'text-gray-600 bg-gray-50',
   },
+  expiring_soon: {
+    label: 'Expiring Soon',
+    className: 'text-orange-600 bg-orange-50',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -85,6 +89,11 @@ export function ImpactReport() {
   });
 
   // Email modal state — no longer needed, using mailto approach
+
+  const [filterStatus, setFilterStatus] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('status') || 'all';
+  });
 
   // Validate persisted selection still exists
   useEffect(() => {
@@ -194,8 +203,28 @@ export function ImpactReport() {
         <>
           <PortfolioSummary data={data.portfolio} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.fundingSources.map((fs) => {
+          <Card className="mt-6">
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Status</label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="w-[180px] min-h-[44px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="on_track">On Track</SelectItem>
+                    <SelectItem value="at_risk">At Risk</SelectItem>
+                    <SelectItem value="off_track">Off Track</SelectItem>
+                    <SelectItem value="expiring_soon">Expiring Soon</SelectItem>
+                    <SelectItem value="not_started">Not Started</SelectItem>
+                    <SelectItem value="no_targets">No Targets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.fundingSources.filter(fs => filterStatus === 'all' || fs.healthStatus === filterStatus).map((fs) => {
               const healthCfg = HEALTH_CONFIG[fs.healthStatus];
               return (
                 <Card
@@ -232,6 +261,8 @@ export function ImpactReport() {
               );
             })}
           </div>
+            </CardContent>
+          </Card>
         </>
       )}
 

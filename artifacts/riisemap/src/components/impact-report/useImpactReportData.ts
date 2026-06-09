@@ -165,12 +165,17 @@ export function useImpactReportData(): UseImpactReportDataResult {
         );
 
         // 7. Compute health status
+        const endDate = fs.endDate ? new Date(fs.endDate) : null;
+        const now = new Date();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const isExpiringSoon = endDate != null && endDate.getTime() > now.getTime() && (endDate.getTime() - now.getTime()) < thirtyDaysMs;
         const healthStatus = computeHealthStatus(
           progressRate,
           timeResult.value,
           fs.learnerCount ?? null,
           sortedGoals.length,
           timeResult.isNotStarted,
+          isExpiringSoon,
         );
 
         // 8. Pace gap

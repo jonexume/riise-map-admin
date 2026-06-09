@@ -160,7 +160,9 @@ export function computeHealthStatus(
   learnerCount: number | null,
   goalCount: number,
   isNotStarted: boolean,
+  isExpiringSoon: boolean = false,
 ): HealthStatus {
+  if (isExpiringSoon) return 'expiring_soon';
   if (isNotStarted) return 'not_started';
   if (learnerCount == null && goalCount === 0) return 'no_targets';
 
@@ -457,6 +459,7 @@ export function computePortfolioSummary(
     offTrack: 0,
     notStarted: 0,
     noTargets: 0,
+    expiringSoon: 0,
   };
 
   for (const source of sources) {
@@ -475,6 +478,9 @@ export function computePortfolioSummary(
         break;
       case 'no_targets':
         healthStatusCounts.noTargets++;
+        break;
+      case 'expiring_soon':
+        healthStatusCounts.expiringSoon++;
         break;
     }
   }
