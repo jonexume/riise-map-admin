@@ -146,7 +146,7 @@ test.describe('RiiseMap CRUD Tests', () => {
         await card.click();
         await page.waitForTimeout(2000);
         // Page should still be functional (no error overlay)
-        await expect(page.locator('text=Impact')).toBeVisible();
+        await expect(page.locator('h1:has-text("Impact")')).toBeVisible();
       }
     });
   });
