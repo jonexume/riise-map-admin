@@ -27,12 +27,12 @@ export default function Home() {
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
-    authFetch(`${baseUrl}/api/dashboard-priorities`).then(r => r.json()).then(setPriorities).catch(() => {});
-    authFetch(`${baseUrl}/api/learners`).then(r => r.json()).then((learners: any[]) => {
+    authFetch(`${baseUrl}/api/dashboard-priorities`).then(r => r.ok ? r.json() : []).then(setPriorities).catch(() => {});
+    authFetch(`${baseUrl}/api/learners`).then(r => r.ok ? r.json() : []).then((learners: any[]) => {
       setCounts(c => ({ ...c, learners: learners.length, atRisk: learners.filter(l => l.readiness < 25 || l.flaggedForSupport).length }));
     }).catch(() => {});
-    authFetch(`${baseUrl}/api/programs`).then(r => r.json()).then((d: any[]) => setCounts(c => ({ ...c, programs: d.length }))).catch(() => {});
-    authFetch(`${baseUrl}/api/funding-sources`).then(r => r.json()).then((d: any[]) => setCounts(c => ({ ...c, fundingSources: d.length }))).catch(() => {});
+    authFetch(`${baseUrl}/api/programs`).then(r => r.ok ? r.json() : []).then((d: any[]) => setCounts(c => ({ ...c, programs: d.length }))).catch(() => {});
+    authFetch(`${baseUrl}/api/funding-sources`).then(r => r.ok ? r.json() : []).then((d: any[]) => setCounts(c => ({ ...c, fundingSources: d.length }))).catch(() => {});
   }, []);
 
   const hour = new Date().getHours();
