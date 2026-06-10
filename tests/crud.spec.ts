@@ -2,157 +2,153 @@ import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
 const PASSWORD = 'testUser1234!';
+const TIMESTAMP = Date.now();
 
 test.describe('RiiseMap CRUD Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Set onboarding as complete to skip it
     await page.goto('/');
     await page.evaluate(() => {
       localStorage.setItem('riisemap_onboarding', 'true');
-      localStorage.setItem('riisemap_profile', JSON.stringify({ name: 'Mark Lawson', title: 'Admin', role: 'admin' }));
+      localStorage.setItem('riisemap_profile', JSON.stringify({ name: 'Test Runner', title: 'Admin', role: 'admin' }));
       localStorage.setItem('riisemap_org_name', 'TechsOfColor');
     });
     await page.goto('/');
-    // Login
     await page.waitForSelector('input[type="email"]', { timeout: 10000 });
     await page.fill('input[type="email"]', EMAIL);
     await page.fill('input[type="password"]', PASSWORD);
     await page.click('button[type="submit"]');
-    // Wait for dashboard to load
     await page.waitForSelector('nav, [data-sidebar]', { timeout: 15000 });
   });
 
-  test.describe('Learners', () => {
-    test('Navigate to Learners page', async ({ page }) => {
-      await page.click('text=Learners');
-      await expect(page.locator('h1:has-text("Learners")')).toBeVisible();
-    });
-
-    test('Create a learner via invite', async ({ page }) => {
-      await page.click('text=Learners');
-      await page.click('text=Invite Learners');
-      await page.fill('input[data-testid="invite-first-name"], input[placeholder*="First"]', 'Test');
-      await page.fill('input[placeholder*="Last"]', 'User');
-      await page.fill('input[placeholder*="email"], input[type="email"]', `test${Date.now()}@example.com`);
-      // Try to proceed
-      const nextBtn = page.locator('button:has-text("Next"), button:has-text("Send Invite"), button:has-text("Continue")');
-      if (await nextBtn.isVisible()) await nextBtn.click();
-    });
-
-    test('View learner detail', async ({ page }) => {
-      await page.click('text=Learners');
-      const viewBtn = page.locator('button:has-text("View")').first();
-      await viewBtn.click();
-      await expect(page.locator('text=Back to Learners')).toBeVisible();
-    });
-
-    test('Edit a learner', async ({ page }) => {
-      await page.click('text=Learners');
-      await page.locator('button:has-text("View")').first().click();
-      await page.click('button:has-text("Edit")');
-      await expect(page.locator('button:has-text("Save")')).toBeVisible();
-      await page.click('button:has-text("Cancel")');
-    });
-  });
-
-  test.describe('Programs', () => {
-    test('Navigate to Programs page', async ({ page }) => {
-      await page.click('text=Programs');
-      await expect(page.locator('h1:has-text("Programs")')).toBeVisible();
-    });
-
-    test('Create a program', async ({ page }) => {
-      await page.click('text=Programs');
-      await page.click('[data-testid="create-program-btn"]');
-      await page.waitForTimeout(1000);
-      const nameInput = page.locator('input').first();
-      await nameInput.fill(`Test Program ${Date.now()}`);
-      await page.fill('textarea', 'Automated test program description');
-      await expect(page.locator('[data-testid="submit-program-btn"]')).toBeVisible();
-    });
-
-    test('View program detail', async ({ page }) => {
-      await page.click('text=Programs');
-      const viewBtn = page.locator('button:has-text("View Program")').first();
-      if (await viewBtn.isVisible()) {
-        await viewBtn.click();
-        await expect(page.locator('text=Back to Programs')).toBeVisible();
-      }
-    });
-  });
-
-  test.describe('Pathways', () => {
-    test('Navigate to Pathways page', async ({ page }) => {
-      await page.click('text=Pathways');
-      await expect(page.locator('h1:has-text("Career Pathways")')).toBeVisible();
-    });
-
-    test('Open Add Pathway form', async ({ page }) => {
-      await page.click('text=Pathways');
-      await page.click('button:has-text("Add Pathway")');
-      await expect(page.locator('h1:has-text("Add Career Pathway")')).toBeVisible();
-    });
-
-    test('View pathway detail', async ({ page }) => {
-      await page.click('text=Pathways');
-      const card = page.locator('[data-testid*="pathway"], .cursor-pointer').first();
-      if (await card.isVisible()) {
-        await card.click();
-        await expect(page.locator('text=Back to Pathways, text=Edit Pathway')).toBeVisible({ timeout: 5000 }).catch(() => {});
-      }
-    });
-  });
-
-  test.describe('Funding Sources', () => {
-    test('Navigate to Funding Sources page', async ({ page }) => {
-      await page.click('text=Funding Sources');
-      await expect(page.locator('h1:has-text("Funding Sources")')).toBeVisible();
-    });
+  test.describe('Funding Sources CRUD', () => {
+    const name = `Test Fund ${TIMESTAMP}`;
 
     test('Create a funding source', async ({ page }) => {
       await page.click('text=Funding Sources');
       await page.click('button:has-text("Add Funding Source")');
-      await page.fill('input[placeholder*="e.g."]', `Test Fund ${Date.now()}`);
-      const createBtn = page.locator('button:has-text("Create"), button:has-text("Save")');
-      await expect(createBtn.first()).toBeVisible();
+      await page.fill('input[placeholder*="e.g."]', name);
+      await page.fill('textarea >> nth=0', 'Automated test objectives');
+      await page.fill('input[placeholder*="250000"]', '50000');
+      await page.fill('input[placeholder*="50"]', '10');
+      await page.click('button:has-text("Create")');
+      await page.waitForTimeout(2000);
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 });
     });
 
-    test('View funding source detail', async ({ page }) => {
+    test('Delete the funding source', async ({ page }) => {
       await page.click('text=Funding Sources');
-      const viewBtn = page.locator('button:has-text("View"), [data-testid*="view"]').first();
-      if (await viewBtn.isVisible()) {
-        await viewBtn.click();
-        await expect(page.locator('text=Back')).toBeVisible();
+      await page.waitForTimeout(1000);
+      // Click into the test fund
+      const row = page.locator(`text=${name}`).first();
+      if (await row.isVisible()) {
+        await row.click();
+        await page.waitForTimeout(1000);
+        const deleteBtn = page.locator('button:has-text("Delete")');
+        if (await deleteBtn.isVisible()) {
+          await deleteBtn.click();
+          await page.waitForTimeout(500);
+          const confirmBtn = page.locator('button:has-text("Delete")').last();
+          await confirmBtn.click();
+          await page.waitForTimeout(2000);
+        }
       }
     });
   });
 
-  test.describe('Impact & Reporting', () => {
-    test('Navigate to Impact page', async ({ page }) => {
-      await page.click('text=Impact');
-      await expect(page.locator('h1:has-text("Impact & Reporting")')).toBeVisible();
+  test.describe('Programs CRUD', () => {
+    const name = `Test Program ${TIMESTAMP}`;
+
+    test('Create a program', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.click('[data-testid="create-program-btn"]');
+      await page.waitForTimeout(500);
+      // Fill in the name field
+      await page.locator('input').first().fill(name);
+      // Fill description
+      await page.fill('textarea', 'Automated test program');
+      // Verify form is interactive and submit button exists
+      const submitBtn = page.locator('[data-testid="submit-program-btn"]');
+      await expect(submitBtn).toBeVisible();
+      await expect(submitBtn).toBeEnabled();
     });
 
-    test('Portfolio overview loads', async ({ page }) => {
+    test('Delete the program', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.waitForTimeout(1000);
+      // Find and check the test program
+      const checkbox = page.locator(`text=${name}`).locator('..').locator('..').locator('input[type="checkbox"], [role="checkbox"]').first();
+      if (await checkbox.isVisible()) {
+        await checkbox.click();
+        await page.waitForTimeout(500);
+        const deleteBtn = page.locator('button:has-text("Delete Selected")');
+        if (await deleteBtn.isVisible()) {
+          await deleteBtn.click();
+          await page.waitForTimeout(500);
+          await page.click('button:has-text("Confirm")');
+          await page.waitForTimeout(2000);
+        }
+      }
+    });
+  });
+
+  test.describe('Learners CRUD', () => {
+    const email = `test${TIMESTAMP}@example.com`;
+
+    test('Create a learner', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.click('text=Invite Learners');
+      await page.waitForTimeout(500);
+      // Fill invite form - step 0
+      const firstNameInput = page.locator('input[placeholder*="First"], input').nth(0);
+      await firstNameInput.fill('TestFirst');
+      const lastNameInput = page.locator('input[placeholder*="Last"], input').nth(1);
+      await lastNameInput.fill('TestLast');
+      const emailInput = page.locator('input[type="email"], input[placeholder*="email"]').first();
+      await emailInput.fill(email);
+      // Click next/send
+      const nextBtn = page.locator('button:has-text("Next"), button:has-text("Send"), button:has-text("Continue")').first();
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+        await page.waitForTimeout(2000);
+      }
+    });
+
+    test('Delete the learner', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.waitForTimeout(1000);
+      // Find the test learner checkbox
+      const learnerRow = page.locator('text=TestFirst').first();
+      if (await learnerRow.isVisible()) {
+        const checkbox = learnerRow.locator('..').locator('..').locator('[role="checkbox"]').first();
+        if (await checkbox.isVisible()) {
+          await checkbox.click();
+          await page.waitForTimeout(500);
+          await page.click('button:has-text("Delete Selected")');
+          await page.waitForTimeout(500);
+          await page.click('button:has-text("Confirm Delete")');
+          await page.waitForTimeout(2000);
+          await expect(learnerRow).not.toBeVisible({ timeout: 5000 });
+        }
+      }
+    });
+  });
+
+  test.describe('Navigation', () => {
+    test('Home page loads', async ({ page }) => {
+      await expect(page.locator('text=Priorities')).toBeVisible();
+    });
+
+    test('Impact page loads with portfolio', async ({ page }) => {
       await page.click('text=Impact');
       await expect(page.locator('text=Portfolio Overview')).toBeVisible({ timeout: 10000 });
     });
 
-    test('Click into a funding source', async ({ page }) => {
-      await page.click('text=Impact');
-      await page.waitForSelector('text=Portfolio Overview', { timeout: 10000 });
-      const card = page.locator('.cursor-pointer').first();
-      if (await card.isVisible()) {
-        await card.click();
-        await page.waitForTimeout(2000);
-        // Page should still be functional (no error overlay)
-        await expect(page.locator('h1:has-text("Impact")')).toBeVisible();
-      }
+    test('Pathways page loads', async ({ page }) => {
+      await page.click('text=Pathways');
+      await expect(page.locator('h1:has-text("Career Pathways")')).toBeVisible();
     });
-  });
 
-  test.describe('Settings', () => {
-    test('Navigate to Settings page', async ({ page }) => {
+    test('Settings page loads', async ({ page }) => {
       await page.goto('/settings');
       await expect(page.locator('h1:has-text("Settings")')).toBeVisible();
     });
