@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, programsTable, insertProgramSchema, pathwaysTable, learnersTable, fundingSourcesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -57,6 +58,7 @@ router.post("/programs", async (req, res) => {
     }
 
     const [newProgram] = await db.insert(programsTable).values(data).returning();
+    await logAudit(req, "created", "program", newProgram.id, newProgram.name);
     res.status(201).json(newProgram);
   } catch (error) {
     console.error("Error creating program:", error);
@@ -130,6 +132,7 @@ router.post("/programs/bulk-delete", async (req, res) => {
       } else {
         await db.delete(programsTable).where(eq(programsTable.id, id));
         deleted.push(id);
+        await logAudit(req, "deleted", "program", id, program.name);
       }
     }
     res.json({ deleted: deleted.length, blocked });

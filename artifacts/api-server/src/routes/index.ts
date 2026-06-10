@@ -9,6 +9,7 @@ import successStoriesRouter from "./success-story";
 import learnerStatusesRouter from "./learner-statuses";
 import dashboardPrioritiesRouter from "./dashboard-priorities";
 import resetWorkspaceRouter from "./reset-workspace";
+import auditLogRouter from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(successStoriesRouter);
 router.use(learnerStatusesRouter);
 router.use(dashboardPrioritiesRouter);
 router.use(resetWorkspaceRouter);
+router.use(auditLogRouter);
 
 export default router;

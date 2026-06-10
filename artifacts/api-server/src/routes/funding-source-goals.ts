@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, fundingSourceGoalsTable, insertFundingSourceGoalSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
@@ -44,6 +45,7 @@ router.post("/funding-sources/:fundingSourceId/goals", async (req, res) => {
     const fundingSourceId = parseInt(req.params.fundingSourceId);
     const data = insertFundingSourceGoalSchema.parse({ ...req.body, fundingSourceId });
     const [created] = await db.insert(fundingSourceGoalsTable).values(data).returning();
+    await logAudit(req, "created", "funding_goal", created.id, created.title);
     res.status(201).json(created);
   } catch (error) {
     console.error("Error creating goal:", error);
@@ -62,6 +64,7 @@ router.put("/funding-sources/:fundingSourceId/goals/:goalId", async (req, res) =
       .where(and(eq(fundingSourceGoalsTable.id, goalId), eq(fundingSourceGoalsTable.fundingSourceId, fundingSourceId)))
       .returning();
     if (!updated) { res.status(404).json({ error: "Goal not found" }); return; }
+    await logAudit(req, "updated", "funding_goal", goalId, updated.title);
     res.json(updated);
   } catch (error) {
     console.error("Error updating goal:", error);
@@ -78,6 +81,7 @@ router.delete("/funding-sources/:fundingSourceId/goals/:goalId", async (req, res
       .where(and(eq(fundingSourceGoalsTable.id, goalId), eq(fundingSourceGoalsTable.fundingSourceId, fundingSourceId)))
       .returning();
     if (!deleted) { res.status(404).json({ error: "Goal not found" }); return; }
+    await logAudit(req, "deleted", "funding_goal", goalId, deleted.title);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error deleting goal:", error);

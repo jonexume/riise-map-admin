@@ -6,6 +6,7 @@ import {
   insertLearnerNoteSchema
 } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -52,6 +53,7 @@ router.post("/learners", async (req, res) => {
     }
 
     const [newLearner] = await db.insert(learnersTable).values(data).returning();
+    await logAudit(req, "created", "learner", newLearner.id, newLearner.name);
     res.status(201).json(newLearner);
   } catch (error) {
     console.error("Error creating learner:", error);
@@ -69,6 +71,7 @@ router.put("/learners/:id", async (req, res) => {
       res.status(404).json({ error: "Learner not found" });
       return;
     }
+    await logAudit(req, "updated", "learner", id, updatedLearner.name);
     res.json(updatedLearner);
   } catch (error) {
     console.error("Error updating learner:", error);
@@ -152,7 +155,10 @@ router.post("/learners/bulk-delete", async (req, res) => {
     let deleted = 0;
     for (const id of ids) {
       const result = await db.delete(learnersTable).where(eq(learnersTable.id, id)).returning();
-      if (result.length > 0) deleted++;
+      if (result.length > 0) {
+        deleted++;
+        await logAudit(req, "deleted", "learner", id, result[0].name);
+      }
     }
     res.json({ deleted });
   } catch (error) {

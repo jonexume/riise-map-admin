@@ -275,3 +275,16 @@ export const pathwayProgramsTable = pgTable("pathway_programs", {
   programId: integer("program_id").notNull().references(() => programsTable.id, { onDelete: "cascade" }),
 });
 export type PathwayProgram = typeof pathwayProgramsTable.$inferSelect;
+
+// Audit Log Table
+export const auditLogTable = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
+  action: varchar("action", { length: 20 }).notNull(), // created, updated, deleted
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // learner, program, pathway, funding_source, etc.
+  entityId: integer("entity_id"),
+  entityName: varchar("entity_name", { length: 255 }),
+  userEmail: varchar("user_email", { length: 255 }),
+  details: text("details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+export type AuditLog = typeof auditLogTable.$inferSelect;

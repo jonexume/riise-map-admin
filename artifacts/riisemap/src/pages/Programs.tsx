@@ -95,6 +95,7 @@ export default function Programs() {
     else if (form.cohort.trim().length > 50) errs.cohort = "Cohort must be 50 characters or less";
     if (!form.startDate.trim()) errs.startDate = "Start date is required";
     if (!form.endDate.trim()) errs.endDate = "End date is required";
+    else if (form.startDate && form.endDate && form.startDate > form.endDate) errs.endDate = "End date must be after start date";
     if (!form.funderTag.trim()) errs.funderTag = "Funder is required";
     else if (form.funderTag.trim().length > 100) errs.funderTag = "Funder must be 100 characters or less";
     setFormErrors(errs);

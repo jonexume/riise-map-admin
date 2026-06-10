@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, pathwaysTable, insertPathwaySchema, learnersTable, programsTable, pathwayProgramsTable } from "@workspace/db";
 import { eq, and, inArray } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -36,6 +37,7 @@ router.post("/pathways", async (req, res) => {
   try {
     const data = insertPathwaySchema.parse(req.body);
     const [newPathway] = await db.insert(pathwaysTable).values(data).returning();
+    await logAudit(req, "created", "pathway", newPathway.id, newPathway.name);
     res.status(201).json(newPathway);
   } catch (error) {
     console.error("Error creating pathway:", error);

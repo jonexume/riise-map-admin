@@ -304,8 +304,7 @@ test.describe('RiiseMap Button & Navigation Tests', () => {
       await page.waitForTimeout(500);
       // Fill required fields on step 1
       await page.fill('input[placeholder*="pathway name"], input', 'Step Test Pathway');
-      await page.fill('textarea >> nth=0', 'Test description');
-      await page.fill('textarea >> nth=1', 'Test target profile');
+      await page.fill('textarea', 'Test description for the pathway');
       // Select duration
       const durationSelect = page.locator('text=Select weeks');
       if (await durationSelect.isVisible()) {
