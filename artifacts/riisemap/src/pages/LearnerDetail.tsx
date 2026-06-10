@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
   FileText, BarChart3, Activity, Plus, Flag, CheckSquare,
@@ -50,6 +50,9 @@ export default function LearnerDetail() {
   const [editingContent, setEditingContent] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [, navigate] = useLocation();
   const [statusOptions, setStatusOptions] = useState<string[]>([]);
   const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +115,15 @@ export default function LearnerDetail() {
   function saveEdit() {
     updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, ...editForm, readiness: Number(editForm.readiness), progress: Number(editForm.progress) } });
     setIsEditing(false);
+  }
+
+  async function handleDeleteLearner() {
+    if (deleteConfirmText !== learner!.name) return;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    try {
+      await authFetch(`${baseUrl}/api/learners/${learnerId}`, { method: "DELETE" });
+      navigate("/learners");
+    } catch {}
   }
 
   function handleSaveNote() {
@@ -284,6 +296,9 @@ export default function LearnerDetail() {
               }
             </Button>
           </div>
+          <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 size={12} className="mr-1.5" /> Delete
+          </Button>
         </div>
       </div>
       )}
@@ -443,6 +458,41 @@ export default function LearnerDetail() {
           </div>
         </TabsContent>
       </Tabs>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-2">Delete Learner</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will permanently delete <span className="font-medium text-foreground">{learner.name}</span> and all their associated data. This cannot be undone.
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Type <span className="font-mono font-medium text-foreground">{learner.name}</span> to confirm:
+            </p>
+            <Input
+              className="h-10 text-sm mb-4"
+              placeholder="Type learner name to confirm..."
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteConfirmText !== learner.name}
+                onClick={handleDeleteLearner}
+              >
+                Delete Learner
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

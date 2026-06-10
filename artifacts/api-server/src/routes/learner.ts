@@ -147,6 +147,20 @@ router.post("/learners/import", async (req, res) => {
   }
 });
 
+// Delete single learner
+router.delete("/learners/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [deleted] = await db.delete(learnersTable).where(eq(learnersTable.id, id)).returning();
+    if (!deleted) { res.status(404).json({ error: "Learner not found" }); return; }
+    await logAudit(req, "deleted", "learner", id, deleted.name);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error deleting learner:", error);
+    res.status(500).json({ error: "Failed to delete learner" });
+  }
+});
+
 // Bulk delete learners
 router.post("/learners/bulk-delete", async (req, res) => {
   try {
