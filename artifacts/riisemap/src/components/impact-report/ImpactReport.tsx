@@ -167,7 +167,7 @@ export function ImpactReport() {
             </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Funding Sources</SelectItem>
-            {data.fundingSources.map((fs) => (
+            {[...data.fundingSources].sort((a, b) => a.name.localeCompare(b.name)).map((fs) => (
               <SelectItem key={fs.id} value={String(fs.id)}>
                 {fs.name}
               </SelectItem>

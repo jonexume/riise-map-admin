@@ -106,6 +106,7 @@ export default function FundingSources() {
     if (form.objectives.length > 1000) errs.objectives = "Must be 1000 characters or less";
     if (form.amount && isNaN(Number(form.amount))) errs.amount = "Must be a valid number";
     if (form.learnerCount && isNaN(Number(form.learnerCount))) errs.learnerCount = "Must be a valid number";
+    if (form.startDate && form.endDate && form.startDate > form.endDate) errs.endDate = "End date must be after start date";
     setFormErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -543,7 +544,8 @@ export default function FundingSources() {
             </div>
             <div>
               <Label className="text-sm font-medium">End Date</Label>
-              <Input type="date" className="mt-1.5 h-10 text-sm" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
+              <Input type="date" className={`mt-1.5 h-10 text-sm ${formErrors.endDate ? "border-destructive" : ""}`} value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} />
+              {formErrors.endDate && <p className="text-xs text-destructive mt-1">{formErrors.endDate}</p>}
             </div>
           </div>
         </div>

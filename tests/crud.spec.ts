@@ -38,15 +38,23 @@ test.describe('RiiseMap CRUD Tests', () => {
     test('Delete the funding source', async ({ page }) => {
       await page.click('text=Funding Sources');
       await page.waitForTimeout(1000);
-      // Click into the test fund
-      const row = page.locator(`text=${name}`).first();
-      if (await row.isVisible()) {
-        await row.click();
+      // Find and click View on the test fund
+      const viewBtn = page.locator(`text=${name}`).first().locator('..').locator('..').locator('button:has-text("View")');
+      const directLink = page.locator(`text=${name}`).first();
+      if (await directLink.isVisible()) {
+        await directLink.click();
         await page.waitForTimeout(1000);
-        const deleteBtn = page.locator('button:has-text("Delete")');
+        // Click delete button on detail page
+        const deleteBtn = page.locator('button:has-text("Delete")').first();
         if (await deleteBtn.isVisible()) {
           await deleteBtn.click();
           await page.waitForTimeout(500);
+          // Type the name to confirm
+          const confirmInput = page.locator('input[placeholder*="Type"]');
+          if (await confirmInput.isVisible()) {
+            await confirmInput.fill(name);
+          }
+          // Click the confirm delete button
           const confirmBtn = page.locator('button:has-text("Delete")').last();
           await confirmBtn.click();
           await page.waitForTimeout(2000);

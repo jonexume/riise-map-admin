@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, fundingSourcesTable, insertFundingSourceSchema, fundingSourceGoalsTable, fundingSourceLearnersTable, fundingSourcePathwaysTable } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
@@ -42,6 +43,7 @@ router.post("/funding-sources", async (req, res) => {
     if (req.body.amount != null) req.body.amount = String(req.body.amount);
     const data = insertFundingSourceSchema.parse(req.body);
     const [created] = await db.insert(fundingSourcesTable).values(data).returning();
+    await logAudit(req, "created", "funding_source", created.id, created.name);
     res.status(201).json(created);
   } catch (error) {
     console.error("Error creating funding source:", error);
@@ -56,6 +58,7 @@ router.put("/funding-sources/:id", async (req, res) => {
     const data = insertFundingSourceSchema.parse(req.body);
     const [updated] = await db.update(fundingSourcesTable).set(data).where(eq(fundingSourcesTable.id, id)).returning();
     if (!updated) { res.status(404).json({ error: "Funding source not found" }); return; }
+    await logAudit(req, "updated", "funding_source", id, updated.name);
     res.json(updated);
   } catch (error) {
     console.error("Error updating funding source:", error);
@@ -68,6 +71,7 @@ router.delete("/funding-sources/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const [deleted] = await db.delete(fundingSourcesTable).where(eq(fundingSourcesTable.id, id)).returning();
     if (!deleted) { res.status(404).json({ error: "Funding source not found" }); return; }
+    await logAudit(req, "deleted", "funding_source", id, deleted.name);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error deleting funding source:", error);
@@ -174,6 +178,7 @@ router.post("/funding-sources/bulk-delete", async (req, res) => {
       } else {
         await db.delete(fundingSourcesTable).where(eq(fundingSourcesTable.id, id));
         deleted.push(id);
+        await logAudit(req, "deleted", "funding_source", id);
       }
     }
     res.json({ deleted: deleted.length, blocked });
