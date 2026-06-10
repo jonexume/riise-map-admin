@@ -7,10 +7,12 @@
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "build:lambda": "cd artifacts/api-server && node ./build.mjs --lambda",
-    "deploy:api": "pnpm run build:lambda && sam deploy --guided"
+    "deploy:api": "pnpm run build:lambda && sam deploy --guided",
+    "test:e2e": "npx playwright test"
   },
   "private": true,
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "prettier": "^3.8.3",
     "typescript": "~5.9.3"
   }
