@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { signIn } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,19 +19,14 @@ export default function Login({ onLogin }: LoginProps) {
     setError("");
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    setLoading(false);
-
-    if (authError) {
+    try {
+      await signIn(email.trim(), password);
+      onLogin();
+    } catch {
       setError("Invalid email or password");
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    onLogin();
   };
 
   return (
