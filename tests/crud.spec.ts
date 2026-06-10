@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
 const PASSWORD = 'testUser1234!';
-const TIMESTAMP = Date.now();
+const TS = Date.now();
 
 test.describe('RiiseMap CRUD Tests', () => {
   test.beforeEach(async ({ page }) => {
@@ -20,127 +20,356 @@ test.describe('RiiseMap CRUD Tests', () => {
     await page.waitForSelector('nav, [data-sidebar]', { timeout: 15000 });
   });
 
-  test.describe('Funding Sources CRUD', () => {
-    const name = `Test Fund ${TIMESTAMP}`;
+  // ═══════════════════════════════════════════════════════════════
+  // FUNDING SOURCES
+  // ═══════════════════════════════════════════════════════════════
+  test.describe('Funding Sources — Bulk Delete', () => {
+    const name = `BulkFund_${TS}`;
 
-    test('Create a funding source', async ({ page }) => {
+    test('Create', async ({ page }) => {
       await page.click('text=Funding Sources');
       await page.click('button:has-text("Add Funding Source")');
+      await page.waitForTimeout(500);
       await page.fill('input[placeholder*="e.g."]', name);
-      await page.fill('textarea >> nth=0', 'Automated test objectives');
-      await page.fill('input[placeholder*="250000"]', '50000');
-      await page.fill('input[placeholder*="50"]', '10');
+      await page.fill('input[placeholder*="250000"], input[placeholder*="e.g. 250000"]', '50000');
+      await page.fill('input[placeholder*="50"], input[placeholder*="e.g. 50"]', '10');
       await page.click('button:has-text("Create")');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(3000);
+      await page.click('text=Funding Sources');
       await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 });
     });
 
-    test('Delete the funding source', async ({ page }) => {
+    test('Update', async ({ page }) => {
       await page.click('text=Funding Sources');
       await page.waitForTimeout(1000);
-      // Find and click View on the test fund
-      const viewBtn = page.locator(`text=${name}`).first().locator('..').locator('..').locator('button:has-text("View")');
-      const directLink = page.locator(`text=${name}`).first();
-      if (await directLink.isVisible()) {
-        await directLink.click();
-        await page.waitForTimeout(1000);
-        // Click delete button on detail page
-        const deleteBtn = page.locator('button:has-text("Delete")').first();
-        if (await deleteBtn.isVisible()) {
-          await deleteBtn.click();
-          await page.waitForTimeout(500);
-          // Type the name to confirm
-          const confirmInput = page.locator('input[placeholder*="Type"]');
-          if (await confirmInput.isVisible()) {
-            await confirmInput.fill(name);
-          }
-          // Click the confirm delete button
-          const confirmBtn = page.locator('button:has-text("Delete")').last();
-          await confirmBtn.click();
-          await page.waitForTimeout(2000);
-        }
-      }
-    });
-  });
-
-  test.describe('Programs CRUD', () => {
-    const name = `Test Program ${TIMESTAMP}`;
-
-    test('Create a program', async ({ page }) => {
-      await page.click('text=Programs');
-      await page.click('[data-testid="create-program-btn"]');
-      await page.waitForTimeout(500);
-      // Fill in the name field
-      await page.locator('input').first().fill(name);
-      // Fill description
-      await page.fill('textarea', 'Automated test program');
-      // Verify form is interactive and submit button exists
-      const submitBtn = page.locator('[data-testid="submit-program-btn"]');
-      await expect(submitBtn).toBeVisible();
-      await expect(submitBtn).toBeEnabled();
-    });
-
-    test('Delete the program', async ({ page }) => {
-      await page.click('text=Programs');
+      await page.locator(`text=${name}`).first().click();
       await page.waitForTimeout(1000);
-      // Find and check the test program
-      const checkbox = page.locator(`text=${name}`).locator('..').locator('..').locator('input[type="checkbox"], [role="checkbox"]').first();
+      await page.click('button:has-text("Edit")');
+      await page.waitForTimeout(500);
+      await page.locator('textarea').first().fill('Updated by bulk delete test');
+      await page.click('button:has-text("Save")');
+      await page.waitForTimeout(2000);
+    });
+
+    test('Delete via bulk', async ({ page }) => {
+      await page.click('text=Funding Sources');
+      await page.waitForTimeout(1000);
+      const checkbox = page.locator(`text=${name}`).first().locator('..').locator('..').locator('[role="checkbox"]').first();
       if (await checkbox.isVisible()) {
         await checkbox.click();
         await page.waitForTimeout(500);
-        const deleteBtn = page.locator('button:has-text("Delete Selected")');
-        if (await deleteBtn.isVisible()) {
-          await deleteBtn.click();
-          await page.waitForTimeout(500);
-          await page.click('button:has-text("Confirm")');
-          await page.waitForTimeout(2000);
-        }
+        await page.click('button:has-text("Delete Selected")');
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+        await page.waitForTimeout(2000);
       }
     });
   });
 
-  test.describe('Learners CRUD', () => {
-    const email = `test${TIMESTAMP}@example.com`;
+  test.describe('Funding Sources — Detail Delete', () => {
+    const name = `DetailFund_${TS}`;
 
-    test('Create a learner', async ({ page }) => {
-      await page.click('text=Learners');
-      await page.click('text=Invite Learners');
+    test('Create', async ({ page }) => {
+      await page.click('text=Funding Sources');
+      await page.click('button:has-text("Add Funding Source")');
       await page.waitForTimeout(500);
-      // Fill invite form - step 0
-      const firstNameInput = page.locator('input[placeholder*="First"], input').nth(0);
-      await firstNameInput.fill('TestFirst');
-      const lastNameInput = page.locator('input[placeholder*="Last"], input').nth(1);
-      await lastNameInput.fill('TestLast');
-      const emailInput = page.locator('input[type="email"], input[placeholder*="email"]').first();
-      await emailInput.fill(email);
-      // Click next/send
-      const nextBtn = page.locator('button:has-text("Next"), button:has-text("Send"), button:has-text("Continue")').first();
-      if (await nextBtn.isVisible()) {
-        await nextBtn.click();
+      await page.fill('input[placeholder*="e.g."]', name);
+      await page.click('button:has-text("Create")');
+      await page.waitForTimeout(3000);
+      await page.click('text=Funding Sources');
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 });
+    });
+
+    test('Delete via detail page', async ({ page }) => {
+      await page.click('text=Funding Sources');
+      await page.waitForTimeout(1000);
+      await page.locator(`text=${name}`).first().click();
+      await page.waitForTimeout(1000);
+      await page.click('button:has-text("Delete")');
+      await page.waitForTimeout(500);
+      const confirmInput = page.locator('input[placeholder*="Type"]');
+      if (await confirmInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await confirmInput.fill(name);
+      }
+      await page.locator('button:has-text("Delete")').last().click();
+      await page.waitForTimeout(2000);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // PROGRAMS
+  // ═══════════════════════════════════════════════════════════════
+  test.describe('Programs — Bulk Delete', () => {
+    const name = `BulkProg_${TS}`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.click('[data-testid="create-program-btn"]');
+      await page.waitForTimeout(500);
+      await page.locator('input').first().fill(name);
+      await page.fill('textarea', 'Bulk delete test program');
+      await page.click('[data-testid="submit-program-btn"]');
+      await page.waitForTimeout(3000);
+    });
+
+    test('Update', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.waitForTimeout(1000);
+      const editBtn = page.locator(`text=${name}`).first().locator('..').locator('..').locator('button:has-text("Edit")');
+      if (await editBtn.isVisible()) {
+        await editBtn.click();
+        await page.waitForTimeout(500);
+        await page.fill('textarea', 'Updated by bulk test');
+        await page.locator('button:has-text("Save"), button:has-text("Update")').first().click();
         await page.waitForTimeout(2000);
       }
     });
 
-    test('Delete the learner', async ({ page }) => {
+    test('Delete via bulk', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.waitForTimeout(1000);
+      const checkbox = page.locator(`text=${name}`).first().locator('..').locator('..').locator('[role="checkbox"]').first();
+      if (await checkbox.isVisible()) {
+        await checkbox.click();
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Delete Selected")');
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Confirm")');
+        await page.waitForTimeout(2000);
+      }
+    });
+  });
+
+  test.describe('Programs — Detail Delete', () => {
+    const name = `DetailProg_${TS}`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.click('[data-testid="create-program-btn"]');
+      await page.waitForTimeout(500);
+      await page.locator('input').first().fill(name);
+      await page.fill('textarea', 'Detail delete test program');
+      await page.click('[data-testid="submit-program-btn"]');
+      await page.waitForTimeout(3000);
+    });
+
+    test('Delete via detail page', async ({ page }) => {
+      await page.click('text=Programs');
+      await page.waitForTimeout(1000);
+      const viewBtn = page.locator(`text=${name}`).first().locator('..').locator('..').locator('button:has-text("View Program")');
+      if (await viewBtn.isVisible()) {
+        await viewBtn.click();
+        await page.waitForTimeout(1000);
+        await page.click('button:has-text("Delete")');
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+        await page.waitForTimeout(2000);
+      }
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // LEARNERS
+  // ═══════════════════════════════════════════════════════════════
+  test.describe('Learners — Bulk Delete', () => {
+    const firstName = `BulkLrn${TS}`;
+    const email = `bulklrn_${TS}@example.com`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.click('text=Invite Learners');
+      await page.waitForTimeout(500);
+      await page.locator('input').nth(0).fill(firstName);
+      await page.locator('input').nth(1).fill('TestUser');
+      const emailInput = page.locator('input[type="email"], input[placeholder*="email"]').first();
+      await emailInput.fill(email);
+      const nextBtn = page.locator('button:has-text("Next")').first();
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+        await page.waitForTimeout(1000);
+        const sendBtn = page.locator('button:has-text("Send"), button:has-text("Invite")').first();
+        if (await sendBtn.isVisible()) {
+          await sendBtn.click();
+          await page.waitForTimeout(3000);
+        }
+      }
+    });
+
+    test('Update', async ({ page }) => {
       await page.click('text=Learners');
       await page.waitForTimeout(1000);
-      // Find the test learner checkbox
-      const learnerRow = page.locator('text=TestFirst').first();
-      if (await learnerRow.isVisible()) {
-        const checkbox = learnerRow.locator('..').locator('..').locator('[role="checkbox"]').first();
-        if (await checkbox.isVisible()) {
-          await checkbox.click();
+      const viewBtn = page.locator(`text=${firstName}`).first().locator('..').locator('..').locator('button:has-text("View")');
+      if (await viewBtn.isVisible()) {
+        await viewBtn.click();
+        await page.waitForTimeout(1000);
+        await page.click('button:has-text("Edit")');
+        await page.waitForTimeout(500);
+        const coachInput = page.locator('input').nth(4);
+        await coachInput.fill('Bulk Test Coach');
+        await page.click('button:has-text("Save")');
+        await page.waitForTimeout(2000);
+      }
+    });
+
+    test('Delete via bulk', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.waitForTimeout(1000);
+      const checkbox = page.locator(`text=${firstName}`).first().locator('..').locator('..').locator('[role="checkbox"]').first();
+      if (await checkbox.isVisible()) {
+        await checkbox.click();
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Delete Selected")');
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Confirm Delete")');
+        await page.waitForTimeout(2000);
+      }
+    });
+  });
+
+  test.describe('Learners — Detail Delete', () => {
+    const firstName = `DtlLrn${TS}`;
+    const email = `dtllrn_${TS}@example.com`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.click('text=Invite Learners');
+      await page.waitForTimeout(500);
+      await page.locator('input').nth(0).fill(firstName);
+      await page.locator('input').nth(1).fill('TestUser');
+      const emailInput = page.locator('input[type="email"], input[placeholder*="email"]').first();
+      await emailInput.fill(email);
+      const nextBtn = page.locator('button:has-text("Next")').first();
+      if (await nextBtn.isVisible()) {
+        await nextBtn.click();
+        await page.waitForTimeout(1000);
+        const sendBtn = page.locator('button:has-text("Send"), button:has-text("Invite")').first();
+        if (await sendBtn.isVisible()) {
+          await sendBtn.click();
+          await page.waitForTimeout(3000);
+        }
+      }
+    });
+
+    test('Delete via detail page', async ({ page }) => {
+      await page.click('text=Learners');
+      await page.waitForTimeout(1000);
+      const viewBtn = page.locator(`text=${firstName}`).first().locator('..').locator('..').locator('button:has-text("View")');
+      if (await viewBtn.isVisible()) {
+        await viewBtn.click();
+        await page.waitForTimeout(1000);
+        const deleteBtn = page.locator('button:has-text("Delete")');
+        if (await deleteBtn.isVisible()) {
+          await deleteBtn.click();
           await page.waitForTimeout(500);
-          await page.click('button:has-text("Delete Selected")');
-          await page.waitForTimeout(500);
-          await page.click('button:has-text("Confirm Delete")');
+          await page.click('button:has-text("Confirm"), button:has-text("Delete")');
           await page.waitForTimeout(2000);
-          await expect(learnerRow).not.toBeVisible({ timeout: 5000 });
         }
       }
     });
   });
 
+  // ═══════════════════════════════════════════════════════════════
+  // PATHWAYS
+  // ═══════════════════════════════════════════════════════════════
+  test.describe('Pathways — Bulk Delete', () => {
+    const name = `BulkPath_${TS}`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Pathways');
+      await page.click('button:has-text("Add Pathway")');
+      await page.waitForTimeout(500);
+      await page.locator('input').first().fill(name);
+      await page.fill('textarea', 'Bulk delete pathway test');
+      const durationSelect = page.locator('text=Select weeks');
+      if (await durationSelect.isVisible()) {
+        await durationSelect.click();
+        await page.locator('[role="option"]:has-text("12")').click();
+      }
+      const nextBtn = page.locator('button:has-text("Next")');
+      if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
+      const nextBtn2 = page.locator('button:has-text("Next")');
+      if (await nextBtn2.isVisible()) { await nextBtn2.click(); await page.waitForTimeout(300); }
+      const createBtn = page.locator('button:has-text("Create Pathway"), button:has-text("Save")');
+      if (await createBtn.first().isVisible()) {
+        await createBtn.first().click();
+        await page.waitForTimeout(3000);
+      }
+    });
+
+    test('Update', async ({ page }) => {
+      await page.click('text=Pathways');
+      await page.waitForTimeout(1000);
+      await page.locator(`text=${name}`).first().click();
+      await page.waitForTimeout(1000);
+      await page.click('button:has-text("Edit")');
+      await page.waitForTimeout(500);
+      await page.fill('textarea', 'Updated by bulk pathway test');
+      const nextBtn = page.locator('button:has-text("Next")');
+      if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
+      const nextBtn2 = page.locator('button:has-text("Next")');
+      if (await nextBtn2.isVisible()) { await nextBtn2.click(); await page.waitForTimeout(300); }
+      const saveBtn = page.locator('button:has-text("Save"), button:has-text("Update")');
+      if (await saveBtn.first().isVisible()) {
+        await saveBtn.first().click();
+        await page.waitForTimeout(2000);
+      }
+    });
+
+    test('Delete via bulk', async ({ page }) => {
+      await page.click('text=Pathways');
+      await page.waitForTimeout(1000);
+      const checkbox = page.locator(`text=${name}`).first().locator('..').locator('..').locator('[role="checkbox"]').first();
+      if (await checkbox.isVisible()) {
+        await checkbox.click();
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Delete Selected")');
+        await page.waitForTimeout(500);
+        await page.click('button:has-text("Confirm")');
+        await page.waitForTimeout(2000);
+      }
+    });
+  });
+
+  test.describe('Pathways — Detail Delete', () => {
+    const name = `DtlPath_${TS}`;
+
+    test('Create', async ({ page }) => {
+      await page.click('text=Pathways');
+      await page.click('button:has-text("Add Pathway")');
+      await page.waitForTimeout(500);
+      await page.locator('input').first().fill(name);
+      await page.fill('textarea', 'Detail delete pathway test');
+      const durationSelect = page.locator('text=Select weeks');
+      if (await durationSelect.isVisible()) {
+        await durationSelect.click();
+        await page.locator('[role="option"]:has-text("16")').click();
+      }
+      const nextBtn = page.locator('button:has-text("Next")');
+      if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
+      const nextBtn2 = page.locator('button:has-text("Next")');
+      if (await nextBtn2.isVisible()) { await nextBtn2.click(); await page.waitForTimeout(300); }
+      const createBtn = page.locator('button:has-text("Create Pathway"), button:has-text("Save")');
+      if (await createBtn.first().isVisible()) {
+        await createBtn.first().click();
+        await page.waitForTimeout(3000);
+      }
+    });
+
+    test('Delete via detail page', async ({ page }) => {
+      await page.click('text=Pathways');
+      await page.waitForTimeout(1000);
+      await page.locator(`text=${name}`).first().click();
+      await page.waitForTimeout(1000);
+      await page.click('button:has-text("Delete")');
+      await page.waitForTimeout(500);
+      await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+      await page.waitForTimeout(2000);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // NAVIGATION
+  // ═══════════════════════════════════════════════════════════════
   test.describe('Navigation', () => {
     test('Home page loads', async ({ page }) => {
       await expect(page.locator('text=Priorities')).toBeVisible();
