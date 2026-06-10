@@ -10,6 +10,7 @@ import {
   Loader2,
   FileText,
   AlertCircle,
+  ChevronDown,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -25,6 +26,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import {
   Table,
   TableHeader,
@@ -94,6 +97,7 @@ export function ImpactReport() {
     const params = new URLSearchParams(window.location.search);
     return params.get('status') || 'all';
   });
+  const [selectorOpen, setSelectorOpen] = useState(false);
 
   // Validate persisted selection still exists
   useEffect(() => {
@@ -158,22 +162,42 @@ export function ImpactReport() {
       />
 
       {/* Controls bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Funding Source</label>
-          <Select value={selectedSource} onValueChange={handleSourceChange}>
-            <SelectTrigger className="w-full sm:w-[280px] min-h-[44px]">
-              <SelectValue placeholder="Select funding source" />
-            </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Funding Sources</SelectItem>
-            {[...data.fundingSources].sort((a, b) => a.name.localeCompare(b.name)).map((fs) => (
-              <SelectItem key={fs.id} value={String(fs.id)}>
-                {fs.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between print:hidden">
+        <div className="space-y-3">
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">Funding Source</label>
+          <Popover open={selectorOpen} onOpenChange={setSelectorOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-[320px] h-11 justify-between font-normal text-sm shadow-sm">
+                <span className="truncate">{selectedSource === 'all' ? 'All Funding Sources' : data.fundingSources.find(fs => String(fs.id) === selectedSource)?.name || 'Select...'}</span>
+                <ChevronDown className="h-4 w-4 opacity-50 ml-2 shrink-0" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search funding sources..." />
+                <CommandList>
+                  <CommandEmpty>No results found.</CommandEmpty>
+                  <CommandItem value="all" onSelect={() => { handleSourceChange('all'); setSelectorOpen(false); }}>
+                    All Funding Sources
+                  </CommandItem>
+                  {(['on_track', 'at_risk', 'off_track', 'expiring_soon', 'not_started', 'no_targets'] as const)
+                    .map(status => {
+                      const sources = [...data.fundingSources].filter(fs => fs.healthStatus === status).sort((a, b) => a.name.localeCompare(b.name));
+                      if (sources.length === 0) return null;
+                      return (
+                        <CommandGroup key={status} heading={HEALTH_CONFIG[status].label}>
+                          {sources.map(fs => (
+                            <CommandItem key={fs.id} value={fs.name} onSelect={() => { handleSourceChange(String(fs.id)); setSelectorOpen(false); }}>
+                              {fs.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      );
+                    })}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="flex gap-2">
