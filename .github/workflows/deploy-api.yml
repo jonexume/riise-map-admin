@@ -12,7 +12,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - uses: aws-actions/setup-sam@v2
 
@@ -31,8 +31,8 @@ jobs:
             --stack-name riisemap-api \
             --parameter-overrides \
               "DatabaseUrl=${{ secrets.DATABASE_URL }}" \
-              "SupabaseUrl=${{ secrets.SUPABASE_URL }}" \
-              "SupabaseServiceRoleKey=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              "CognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }}" \
+              "CognitoClientId=${{ secrets.COGNITO_CLIENT_ID }}" \
               "Stage=prod" \
             --capabilities CAPABILITY_IAM \
             --resolve-s3 \
