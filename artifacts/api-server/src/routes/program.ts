@@ -83,6 +83,7 @@ router.put("/programs/:id", async (req, res) => {
       res.status(404).json({ error: "Program not found" });
       return;
     }
+    await logAudit(req, "updated", "program", id, updatedProgram.name);
     res.json(updatedProgram);
   } catch (error) {
     console.error("Error updating program:", error);
@@ -108,6 +109,7 @@ router.delete("/programs/:id", async (req, res) => {
     }
 
     await db.delete(programsTable).where(eq(programsTable.id, id));
+    await logAudit(req, "deleted", "program", id, program[0].name);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error deleting program:", error);
