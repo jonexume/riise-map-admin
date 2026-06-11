@@ -28,9 +28,10 @@ export const learnersTable = pgTable("learners", {
   risks: jsonb("risks"),
   profileStrength: integer("profileStrength"),
   flaggedForSupport: boolean("flaggedForSupport").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const insertLearnerSchema = createInsertSchema(learnersTable).omit({ id: true });
+export const insertLearnerSchema = createInsertSchema(learnersTable).omit({ id: true, createdAt: true });
 export type InsertLearner = z.infer<typeof insertLearnerSchema>;
 export type Learner = typeof learnersTable.$inferSelect;
 
