@@ -105,7 +105,19 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
     // ── UPDATE ──
     await page.click('a:has-text("Programs")');
     await page.waitForTimeout(1000);
-    await page.locator(`text=${name}`).first().locator('..').locator('..').locator('..').locator('button:has-text("Edit")').first().click();
+    // Scroll to our program and use the card's data-testid
+    await page.locator(`text=${name}`).first().scrollIntoViewIfNeeded();
+    // Each program card has data-testid="program-card-{id}" - click its Edit button
+    // Find the Edit button that is visible after scrolling to our program name
+    const allEditBtns = page.locator('button:has-text("Edit")');
+    const editCount = await allEditBtns.count();
+    let clicked = false;
+    for (let i = 0; i < editCount; i++) {
+      const btn = allEditBtns.nth(i);
+      const card = await btn.evaluate((el: any) => el.closest('[data-testid]')?.textContent || '');
+      if (card.includes(name)) { await btn.click(); clicked = true; break; }
+    }
+    if (!clicked) await allEditBtns.first().click();
     await page.waitForTimeout(500);
     await page.fill('textarea', 'Updated via GUI test');
     await page.locator('button:has-text("Save"), button:has-text("Update")').first().click();
@@ -114,7 +126,16 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
     // ── DELETE ──
     await page.click('a:has-text("Programs")');
     await page.waitForTimeout(1000);
-    await page.locator(`text=${name}`).first().locator('..').locator('..').locator('..').locator('button:has-text("View Program")').first().click();
+    await page.locator(`text=${name}`).first().scrollIntoViewIfNeeded();
+    const allViewBtns = page.locator('button:has-text("View Program")');
+    const viewCount = await allViewBtns.count();
+    let viewClicked = false;
+    for (let i = 0; i < viewCount; i++) {
+      const btn = allViewBtns.nth(i);
+      const card = await btn.evaluate((el: any) => el.closest('[data-testid]')?.textContent || '');
+      if (card.includes(name)) { await btn.click(); viewClicked = true; break; }
+    }
+    if (!viewClicked) await allViewBtns.first().click();
     await page.waitForTimeout(1000);
     await page.click('button:has-text("Delete")');
     await page.waitForTimeout(500);

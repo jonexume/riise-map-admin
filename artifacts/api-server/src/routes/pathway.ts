@@ -55,6 +55,7 @@ router.put("/pathways/:id", async (req, res) => {
       res.status(404).json({ error: "Pathway not found" });
       return;
     }
+    await logAudit(req, "updated", "pathway", id, updatedPathway.name);
     res.json(updatedPathway);
   } catch (error) {
     console.error("Error updating pathway:", error);
@@ -71,6 +72,7 @@ router.delete("/pathways/:id", async (req, res) => {
       res.status(404).json({ error: "Pathway not found" });
       return;
     }
+    await logAudit(req, "deleted", "pathway", id, deleted.name);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error deleting pathway:", error);
@@ -126,6 +128,7 @@ router.post("/pathways/bulk-delete", async (req, res) => {
       } else {
         await db.delete(pathwaysTable).where(eq(pathwaysTable.id, id));
         deleted.push(id);
+        await logAudit(req, "deleted", "pathway", id, pathway.name);
       }
     }
     res.json({ deleted: deleted.length, blocked });
