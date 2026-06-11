@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, fundingSourcesTable, insertFundingSourceSchema, fundingSourceGoalsTable, fundingSourceLearnersTable, fundingSourcePathwaysTable } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { logAudit } from "./audit-log";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

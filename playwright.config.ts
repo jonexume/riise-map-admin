@@ -7,6 +7,7 @@ export default defineConfig({
     baseURL: 'https://rollback-may27.dxzx9111fv2of.amplifyapp.com',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
+    viewport: { width: 1440, height: 900 },
   },
   retries: 0,
   reporter: [['list']],
