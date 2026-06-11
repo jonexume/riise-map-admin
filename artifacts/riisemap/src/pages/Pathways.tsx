@@ -114,6 +114,13 @@ export default function Pathways() {
   const { data: pathways = [], isLoading: pathwaysLoading } = useGetPathways();
   const { data: programs = [] } = useGetPrograms();
   const { data: allLearners = [] } = useGetLearners();
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name-az" | "name-za">("newest");
+  const sortedPathways = [...pathways].sort((a: any, b: any) => {
+    if (sortBy === "newest") return b.id - a.id;
+    if (sortBy === "oldest") return a.id - b.id;
+    if (sortBy === "name-az") return a.name.localeCompare(b.name);
+    return b.name.localeCompare(a.name);
+  });
   const createMutation = useCreatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
   const updateMutation = useUpdatePathway({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/pathways'] }) } });
 
@@ -636,8 +643,23 @@ export default function Pathways() {
           </CardContent>
         </Card>
       ) : (
+      <>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-muted-foreground">Sort by:</span>
+        <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+          <SelectTrigger className="w-40 h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="name-az">Name A–Z</SelectItem>
+            <SelectItem value="name-za">Name Z–A</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {pathways.map(p => (
+        {sortedPathways.map(p => (
           <Card key={p.id} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-5">
               <div className="flex items-start gap-3">
@@ -681,6 +703,7 @@ export default function Pathways() {
           </Card>
         ))}
       </div>
+      </>
       )}
 
       {/* Delete Confirmation Modal */}
