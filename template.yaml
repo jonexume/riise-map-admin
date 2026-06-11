@@ -6,20 +6,19 @@ Globals:
   Function:
     Timeout: 30
     MemorySize: 512
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
 
 Parameters:
   DatabaseUrl:
     Type: String
-    Description: Supabase PostgreSQL connection string (use pooled connection on port 6543)
+    Description: PostgreSQL connection string
     NoEcho: true
-  SupabaseUrl:
+  CognitoUserPoolId:
     Type: String
-    Description: Supabase project URL (e.g. https://xxx.supabase.co)
-  SupabaseServiceRoleKey:
+    Description: Cognito User Pool ID
+  CognitoClientId:
     Type: String
-    Description: Supabase service role key (for server-side auth verification)
-    NoEcho: true
+    Description: Cognito App Client ID
   Stage:
     Type: String
     Default: prod
@@ -36,8 +35,9 @@ Resources:
           DATABASE_URL: !Ref DatabaseUrl
           NODE_ENV: production
           STAGE: !Ref Stage
-          SUPABASE_URL: !Ref SupabaseUrl
-          SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+          AUTH_PROVIDER: cognito
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
       Events:
         RootProxy:
           Type: HttpApi
