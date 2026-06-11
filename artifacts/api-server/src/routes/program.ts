@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, programsTable, insertProgramSchema, pathwaysTable, learnersTable, fundingSourcesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();

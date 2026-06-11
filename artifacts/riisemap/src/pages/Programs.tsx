@@ -35,6 +35,13 @@ export default function Programs() {
   const { data: learners = [] } = useGetLearners();
   const { data: fundingSources = [] } = useGetFundingSources();
   const { data: allPathways = [] } = useGetPathways();
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name-az" | "name-za">("newest");
+  const sortedPrograms = [...programList].sort((a: any, b: any) => {
+    if (sortBy === "newest") return b.id - a.id;
+    if (sortBy === "oldest") return a.id - b.id;
+    if (sortBy === "name-az") return a.name.localeCompare(b.name);
+    return b.name.localeCompare(a.name);
+  });
   const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
 
   useEffect(() => {
@@ -430,7 +437,21 @@ export default function Programs() {
         </Card>
       ) : (
       <div className="space-y-4">
-        {programList.map(p => (
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-xs text-muted-foreground">Sort by:</span>
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger className="w-40 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="name-az">Name A–Z</SelectItem>
+              <SelectItem value="name-za">Name Z–A</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {sortedPrograms.map(p => (
           <Card key={p.id} data-testid={`program-card-${p.id}`} className="border-card-border shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row md:items-start gap-4">

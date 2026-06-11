@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, pathwaysTable, insertPathwaySchema, learnersTable, programsTable, pathwayProgramsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc } from "drizzle-orm";
 import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
