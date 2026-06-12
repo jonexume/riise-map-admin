@@ -47,7 +47,7 @@ export default function LearnerDetail() {
   const deleteNoteMutation = useDeleteLearnerNote(learnerId);
   const [newNote, setNewNote] = useState("");
   const [noteSaved, setNoteSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("notes");
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
   const [editingContent, setEditingContent] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -240,9 +240,8 @@ export default function LearnerDetail() {
               })()}
             </div>
             <div className="bg-muted/30 border rounded-lg p-3">
-              <label className="text-xs font-medium text-muted-foreground">Last Active</label>
-              <p className="text-sm font-semibold text-foreground mt-2">{learner.lastActive}</p>
-              <p className="text-xs text-muted-foreground">Joined {learner.joinDate}</p>
+              <label className="text-xs font-medium text-muted-foreground">Created</label>
+              <p className="text-sm font-semibold text-foreground mt-2">{learner.createdAt ? new Date(learner.createdAt).toLocaleDateString() : "—"}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -281,23 +280,6 @@ export default function LearnerDetail() {
           <Button variant="outline" size="sm" className="text-xs h-8" onClick={startEditing}>
             <Edit size={12} className="mr-1.5" /> Edit
           </Button>
-          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => setActiveTab("notes")}>
-            <Plus size={12} className="mr-1.5" /> Add Note
-          </Button>
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn("text-xs h-8", learner.flaggedForSupport && "border-amber-300 bg-amber-50")}
-              onClick={handleFlag}
-              data-testid="btn-flag"
-            >
-              {learner.flaggedForSupport
-                ? <><Flag size={12} className="mr-1.5 text-amber-600" /><span className="text-amber-700">Flagged for Support</span></>
-                : <><Flag size={12} className="mr-1.5" /> Flag for Support</>
-              }
-            </Button>
-          </div>
           <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
             <Trash2 size={12} className="mr-1.5" /> Delete
           </Button>
@@ -340,9 +322,8 @@ export default function LearnerDetail() {
           })()}
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Last Active</p>
-          <p className="text-sm font-semibold text-foreground mt-1">{learner.lastActive}</p>
-          <p className="text-xs text-muted-foreground">Joined {learner.joinDate}</p>
+          <p className="text-xs text-muted-foreground">Created</p>
+          <p className="text-sm font-semibold text-foreground mt-1">{learner.createdAt ? new Date(learner.createdAt).toLocaleDateString() : "—"}</p>
         </div>
       </div>
       )}
@@ -351,52 +332,8 @@ export default function LearnerDetail() {
       {!isEditing && (
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-5 bg-muted/50">
-          <TabsTrigger value="overview" className="text-xs"><User size={12} className="mr-1" />Overview</TabsTrigger>
           <TabsTrigger value="notes" className="text-xs"><FileText size={12} className="mr-1" />Notes</TabsTrigger>
         </TabsList>
-
-        {/* Overview */}
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Card className="border-card-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">About</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-muted-foreground">{learner.background || "Background information not yet added."}</p>
-                {strengths.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-foreground mb-2">Strengths</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {strengths.map(s => (
-                        <span key={s} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="border-card-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Next Recommended Action</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                  <p className="text-sm text-blue-800">{learner.nextAction}</p>
-                </div>
-                {risks.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-foreground mb-2">Attention Areas</p>
-                    <div className="space-y-1.5">
-                      {risks.map(r => (
-                        <div key={r} className="flex items-center gap-2 text-xs text-amber-700">
-                          <AlertCircle size={12} className="text-amber-500 flex-shrink-0" />
-                          {r}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
 
         {/* Notes */}
         <TabsContent value="notes">

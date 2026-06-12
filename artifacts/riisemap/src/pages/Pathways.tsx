@@ -202,6 +202,7 @@ export default function Pathways() {
       if (!form.description.trim()) e.description = "Description is required";
       else if (form.description.trim().length > LIMITS.description) e.description = `Must be ${LIMITS.description} characters or less`;
       if (form.targetProfile.trim().length > LIMITS.targetProfile) e.targetProfile = `Must be ${LIMITS.targetProfile} characters or less`;
+      if (!form.estimatedWeeks) e.estimatedWeeks = "Estimated duration is required";
       setErrors(e);
       return Object.keys(e).length === 0;
     }
@@ -353,6 +354,21 @@ export default function Pathways() {
                 </div>
               ) : null;
             }) : <p className="text-xs text-muted-foreground">No programs associated yet</p>}
+          </CardContent>
+        </Card>
+        {/* Enrolled Learners */}
+        <Card className="border-card-border mb-6">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Enrolled Learners ({allLearners.filter(l => l.pathway === pathway.name).length})</CardTitle></CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {allLearners.filter(l => l.pathway === pathway.name).length > 0 ? allLearners.filter(l => l.pathway === pathway.name).map((l: any) => (
+              <div key={l.id} className="flex items-center gap-3 text-sm">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                  {l.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+                </div>
+                <span className="text-foreground flex-1">{l.name}</span>
+                <span className="text-xs text-muted-foreground">Progress {l.progress}%</span>
+              </div>
+            )) : <p className="text-xs text-muted-foreground">No learners enrolled in this pathway</p>}
           </CardContent>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -521,15 +537,16 @@ export default function Pathways() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-foreground">Estimated Duration</Label>
+                    <Label className="text-sm font-medium text-foreground">Estimated Duration <span className="text-destructive">*</span></Label>
                     <Select value={form.estimatedWeeks} onValueChange={v => set("estimatedWeeks", v)}>
-                      <SelectTrigger className="mt-1.5 h-10 text-sm"><SelectValue placeholder="Select weeks..." /></SelectTrigger>
+                      <SelectTrigger className={`mt-1.5 h-10 text-sm ${errors.estimatedWeeks ? "border-destructive" : ""}`}><SelectValue placeholder="Select weeks..." /></SelectTrigger>
                       <SelectContent>
                         {[8, 10, 12, 14, 16, 18, 20, 22, 24].map(w => (
                           <SelectItem key={w} value={String(w)}>{w} weeks</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.estimatedWeeks && <p className="text-xs text-destructive mt-1">{errors.estimatedWeeks}</p>}
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-foreground">Associated Programs</Label>
