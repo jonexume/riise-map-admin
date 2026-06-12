@@ -273,52 +273,6 @@ export default function FundingSources() {
                 Save Narrative
               </Button>
             )}
-
-            {/* Narrative file attachment */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Narrative Document</p>
-              {narrativeFileName ? (
-                <div className="flex items-center gap-2">
-                  <FileText size={14} className="text-primary flex-shrink-0" />
-                  <span className="text-sm text-foreground truncate">{narrativeFileName}</span>
-                  <Button variant="outline" size="sm" className="text-xs h-7 px-2 ml-auto" onClick={() => {
-                    window.open(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, "_blank");
-                  }}>Download</Button>
-                  <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-destructive hover:text-destructive" onClick={async () => {
-                    await authFetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, { method: "DELETE" });
-                    setNarrativeFileName(null);
-                    await queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
-                    toast({ title: "Removed", description: "Narrative file removed." });
-                  }}>Remove</Button>
-                </div>
-              ) : (
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Paperclip size={14} />
-                  <span>Attach PDF or Word document (max 5MB)</span>
-                  <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    if (file.size > 5 * 1024 * 1024) { toast({ title: "Error", description: "File must be under 5MB.", variant: "destructive" }); return; }
-                    const reader = new FileReader();
-                    reader.onload = async () => {
-                      const base64 = (reader.result as string).split(",")[1];
-                      try {
-                        const res = await authFetch(`${baseUrl}/api/funding-sources/${source.id}/narrative-file`, {
-                          method: "PUT", headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ fileName: file.name, fileData: base64 }),
-                        });
-                        if (!res.ok) { const d = await res.json().catch(() => null); toast({ title: "Error", description: d?.error || "Upload failed.", variant: "destructive" }); return; }
-                        setNarrativeFileName(file.name);
-                        await queryClient.invalidateQueries({ queryKey: ["/api/funding-sources"] });
-                        toast({ title: "Uploaded", description: `${file.name} attached.` });
-                      } catch { toast({ title: "Error", description: "Upload failed.", variant: "destructive" }); }
-                    };
-                    reader.readAsDataURL(file);
-                    e.target.value = "";
-                  }} />
-                </label>
-              )}
-            </div>
           </CardContent>
         </Card>
 
