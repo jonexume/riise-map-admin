@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
-const PASSWORD = 'testUser1234!';
+const PASSWORD = 'RiiseMap2026!';
 
 test.describe('RiiseMap Button & Navigation Tests', () => {
   test.beforeEach(async ({ page }) => {
@@ -212,15 +212,16 @@ test.describe('RiiseMap Button & Navigation Tests', () => {
 
     test('Learners: status filter dropdown works', async ({ page }) => {
       await page.click('text=Learners');
-      await page.click('text=All Statuses');
+      await page.waitForSelector('tbody tr', { timeout: 10000 });
+      await page.click('[data-testid="filter-status"]');
       await page.waitForTimeout(500);
-      // Checkboxes should appear
       const checkboxes = page.locator('[role="checkbox"]');
       expect(await checkboxes.count()).toBeGreaterThan(0);
     });
 
     test('Learners: coach filter dropdown works', async ({ page }) => {
       await page.click('text=Learners');
+      await page.waitForSelector('tbody tr', { timeout: 10000 });
       await page.click('[data-testid="filter-coach"]');
       await page.waitForTimeout(500);
       const options = page.locator('[role="option"]');
@@ -229,6 +230,7 @@ test.describe('RiiseMap Button & Navigation Tests', () => {
 
     test('Learners: pathway filter dropdown works', async ({ page }) => {
       await page.click('text=Learners');
+      await page.waitForSelector('tbody tr', { timeout: 10000 });
       await page.click('[data-testid="filter-pathway"]');
       await page.waitForTimeout(500);
       const options = page.locator('[role="option"]');

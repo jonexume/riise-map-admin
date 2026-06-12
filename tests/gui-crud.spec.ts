@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
-const PASSWORD = 'testUser1234!';
+const PASSWORD = 'RiiseMap2026!';
 const TS = Date.now();
 
 async function login(page: any) {

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
-const PASSWORD = 'testUser1234!';
+const PASSWORD = 'RiiseMap2026!';
 const TS = Date.now();
 
 test.describe('RiiseMap CRUD Tests', () => {
@@ -82,17 +82,17 @@ test.describe('RiiseMap CRUD Tests', () => {
 
     test('Delete via detail page', async ({ page }) => {
       await page.click('text=Funding Sources');
-      await page.waitForTimeout(1000);
-      await page.locator(`text=${name}`).first().click();
-      await page.waitForTimeout(1000);
-      await page.click('button:has-text("Delete")');
-      await page.waitForTimeout(500);
-      const confirmInput = page.locator('input[placeholder*="Type"]');
-      if (await confirmInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await confirmInput.fill(name);
-      }
-      await page.locator('button:has-text("Delete")').last().click();
+      await page.waitForSelector('text=Add Funding Source', { timeout: 10000 });
       await page.waitForTimeout(2000);
+      const card = page.locator('[class*="card"], [class*="Card"]').filter({ hasText: name }).first();
+      await card.locator('button:has-text("View")').click();
+      await page.waitForTimeout(2000);
+      await page.click('button:has-text("Delete")');
+      const confirmInput = page.locator('input[placeholder*="Type"]');
+      await confirmInput.waitFor({ state: 'visible', timeout: 5000 });
+      await confirmInput.fill(name);
+      await page.locator('button:has-text("Delete")').last().click();
+      await page.waitForTimeout(3000);
     });
   });
 
@@ -298,11 +298,10 @@ test.describe('RiiseMap CRUD Tests', () => {
 
     test('Update', async ({ page }) => {
       await page.click('text=Pathways');
+      await page.waitForTimeout(2000);
+      const card = page.locator('[class*="card"], [class*="Card"]').filter({ hasText: name }).first();
+      await card.locator('button:has-text("Edit")').click();
       await page.waitForTimeout(1000);
-      await page.locator(`text=${name}`).first().click();
-      await page.waitForTimeout(1000);
-      await page.click('button:has-text("Edit")');
-      await page.waitForTimeout(500);
       await page.fill('textarea', 'Updated by bulk pathway test');
       const nextBtn = page.locator('button:has-text("Next")');
       if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
@@ -357,9 +356,10 @@ test.describe('RiiseMap CRUD Tests', () => {
 
     test('Delete via detail page', async ({ page }) => {
       await page.click('text=Pathways');
-      await page.waitForTimeout(1000);
-      await page.locator(`text=${name}`).first().click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(2000);
+      const card = page.locator('[class*="card"], [class*="Card"]').filter({ hasText: name }).first();
+      await card.locator('button:has-text("View Details")').click();
+      await page.waitForTimeout(2000);
       await page.click('button:has-text("Delete")');
       await page.waitForTimeout(500);
       await page.click('button:has-text("Confirm"), button:has-text("Delete")');
