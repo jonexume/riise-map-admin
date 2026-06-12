@@ -13,7 +13,6 @@ import Pathways from "@/pages/Pathways";
 import Impact from "@/pages/Impact";
 import FundingSources from "@/pages/FundingSources";
 import SettingsPage from "@/pages/Settings";
-import Onboarding from "@/pages/Onboarding";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ConfirmSignup from "@/pages/ConfirmSignup";
@@ -56,9 +55,6 @@ function Router() {
 
 function App() {
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
-  const [onboarded, setOnboarded] = useState<boolean>(
-    () => !!localStorage.getItem("riisemap_onboarding")
-  );
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
@@ -160,8 +156,6 @@ function App() {
       <TooltipProvider>
         {authState.status !== "authenticated" ? (
           renderAuthPage()
-        ) : !onboarded ? (
-          <Onboarding onComplete={() => setOnboarded(true)} />
         ) : (
           <UserProvider>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
