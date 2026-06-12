@@ -31,6 +31,7 @@ jobs:
             --stack-name riisemap-api \
             --parameter-overrides \
               "DatabaseUrl=${{ secrets.DATABASE_URL }}" \
+              "AuthProvider=${{ secrets.AUTH_PROVIDER }}" \
               "CognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }}" \
               "CognitoClientId=${{ secrets.COGNITO_CLIENT_ID }}" \
               "Stage=prod" \

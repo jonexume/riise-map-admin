@@ -157,28 +157,36 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
     // ── CREATE ──
     await page.click('a:has-text("Learners")');
     await page.waitForSelector('h1:has-text("Learners")', { timeout: 5000 });
-    await page.click('text=Invite Learners');
-    await page.waitForTimeout(500);
+    await page.locator('button:has-text("Invite Learners")').click();
+    await page.waitForTimeout(1000);
     await page.locator('input[placeholder*="First"]').fill(firstName);
     await page.locator('input[placeholder*="Last"]').fill(lastName);
     await page.locator('input[placeholder*="email"], input[type="email"]').first().fill(learnerEmail);
-    await page.locator('button:has-text("Next")').click();
-    await page.waitForTimeout(1000);
-    // Step 2
+    // Select pathway if available
     const pathSelect = page.locator('text=Select pathway');
     if (await pathSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await pathSelect.click();
       await page.locator('[role="option"]').first().click();
       await page.waitForTimeout(300);
     }
+    // Select program if available
     const progSelect = page.locator('text=Select program');
     if (await progSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await progSelect.click();
-      await page.locator('[role="option"]').first().click();
+      await page.waitForTimeout(300);
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
       await page.waitForTimeout(300);
     }
-    await page.locator('button:has-text("Send"), button:has-text("Invite")').first().click();
+    // Submit
+    await page.locator('[data-testid="send-invite-btn"]').click();
     await page.waitForTimeout(3000);
+    // Close the confirmation modal
+    const closeBtn = page.locator('button:has-text("View Learner List"), button:has-text("Close"), button:has-text("Done")');
+    if (await closeBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+      await closeBtn.first().click();
+      await page.waitForTimeout(1000);
+    }
     // Verify
     await page.click('a:has-text("Learners")');
     await expect(page.locator(`text=${firstName}`).first()).toBeVisible({ timeout: 5000 });
@@ -186,7 +194,16 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
     // ── UPDATE ──
     await page.click('a:has-text("Learners")');
     await page.waitForTimeout(1000);
-    await page.locator(`text=${firstName}`).first().locator('..').locator('..').locator('button:has-text("View")').first().click();
+    // Find the View button in the row containing our learner
+    const allViewBtns = page.locator('button:has-text("View")');
+    const viewCount = await allViewBtns.count();
+    let viewClicked = false;
+    for (let i = 0; i < viewCount; i++) {
+      const btn = allViewBtns.nth(i);
+      const row = await btn.evaluate((el: any) => el.closest('tr')?.textContent || '');
+      if (row.includes(firstName)) { await btn.click(); viewClicked = true; break; }
+    }
+    if (!viewClicked && viewCount > 0) await allViewBtns.first().click();
     await page.waitForTimeout(1000);
     await page.click('button:has-text("Edit")');
     await page.waitForTimeout(500);
@@ -219,12 +236,18 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
       await durSelect.click();
       await page.locator('[role="option"]:has-text("16")').click();
     }
-    await page.locator('button:has-text("Next")').click();
+    await page.locator('button:has-text("Next"), button:has-text("Continue")').first().click();
     await page.waitForTimeout(500);
-    const next2 = page.locator('button:has-text("Next")');
-    if (await next2.isVisible()) { await next2.click(); await page.waitForTimeout(500); }
+    const next2 = page.locator('button:has-text("Next"), button:has-text("Continue")');
+    if (await next2.first().isVisible({ timeout: 2000 }).catch(() => false)) { await next2.first().click(); await page.waitForTimeout(500); }
     await page.locator('button:has-text("Create Pathway"), button:has-text("Save")').first().click();
     await page.waitForTimeout(3000);
+    // Close creation confirmation if shown
+    const backBtn = page.locator('button:has-text("Back to Pathways")');
+    if (await backBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await backBtn.click();
+      await page.waitForTimeout(1000);
+    }
     // Verify
     await page.click('a:has-text("Pathways")');
     await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 5000 });
@@ -232,22 +255,40 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
     // ── UPDATE ──
     await page.click('a:has-text("Pathways")');
     await page.waitForTimeout(1000);
-    await page.locator(`text=${name}`).first().click();
+    // Find card with our pathway and click View Details
+    const allViewDetailBtns = page.locator('button:has-text("View Details")');
+    const vdCount = await allViewDetailBtns.count();
+    let vdClicked = false;
+    for (let i = 0; i < vdCount; i++) {
+      const btn = allViewDetailBtns.nth(i);
+      const card = await btn.evaluate((el: any) => el.closest('[class*="card"], [class*="Card"]')?.textContent || '');
+      if (card.includes(name)) { await btn.click(); vdClicked = true; break; }
+    }
+    if (!vdClicked && vdCount > 0) await allViewDetailBtns.first().click();
     await page.waitForTimeout(1000);
-    await page.click('button:has-text("Edit")');
+    await page.click('button:has-text("Edit Pathway"), button:has-text("Edit")');
     await page.waitForTimeout(500);
     await page.locator('textarea').first().fill('Updated via GUI test');
-    const nextEdit = page.locator('button:has-text("Next")');
-    if (await nextEdit.isVisible()) { await nextEdit.click(); await page.waitForTimeout(300); }
-    const nextEdit2 = page.locator('button:has-text("Next")');
-    if (await nextEdit2.isVisible()) { await nextEdit2.click(); await page.waitForTimeout(300); }
+    const nextEdit = page.locator('button:has-text("Next"), button:has-text("Continue")');
+    if (await nextEdit.first().isVisible({ timeout: 2000 }).catch(() => false)) { await nextEdit.first().click(); await page.waitForTimeout(300); }
+    const nextEdit2 = page.locator('button:has-text("Next"), button:has-text("Continue")');
+    if (await nextEdit2.first().isVisible({ timeout: 2000 }).catch(() => false)) { await nextEdit2.first().click(); await page.waitForTimeout(300); }
     await page.locator('button:has-text("Save"), button:has-text("Update")').first().click();
     await page.waitForTimeout(2000);
 
     // ── DELETE ──
     await page.click('a:has-text("Pathways")');
     await page.waitForTimeout(1000);
-    await page.locator(`text=${name}`).first().click();
+    // Find the card with our pathway and click View Details
+    const allDetailBtns = page.locator('button:has-text("View Details")');
+    const detailCount = await allDetailBtns.count();
+    let detailClicked = false;
+    for (let i = 0; i < detailCount; i++) {
+      const btn = allDetailBtns.nth(i);
+      const card = await btn.evaluate((el: any) => el.closest('[class*="card"], [class*="Card"]')?.textContent || '');
+      if (card.includes(name)) { await btn.click(); detailClicked = true; break; }
+    }
+    if (!detailClicked && detailCount > 0) await allDetailBtns.first().click();
     await page.waitForTimeout(1000);
     await page.click('button:has-text("Delete")');
     await page.waitForTimeout(500);

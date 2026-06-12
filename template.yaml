@@ -11,8 +11,12 @@ Globals:
 Parameters:
   DatabaseUrl:
     Type: String
-    Description: PostgreSQL connection string
+    Description: RDS PostgreSQL connection string
     NoEcho: true
+  AuthProvider:
+    Type: String
+    Description: Authentication provider (cognito)
+    Default: cognito
   CognitoUserPoolId:
     Type: String
     Description: Cognito User Pool ID
@@ -35,7 +39,7 @@ Resources:
           DATABASE_URL: !Ref DatabaseUrl
           NODE_ENV: production
           STAGE: !Ref Stage
-          AUTH_PROVIDER: cognito
+          AUTH_PROVIDER: !Ref AuthProvider
           COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
           COGNITO_CLIENT_ID: !Ref CognitoClientId
       Events:
