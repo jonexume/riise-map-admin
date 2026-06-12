@@ -5,10 +5,16 @@ import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
 
-// Get all pathways
+function getOrgId(req: any): number | null {
+  return req.dbUser?.orgId ?? null;
+}
+
 router.get("/pathways", async (req, res) => {
   try {
-    const pathways = await db.select().from(pathwaysTable);
+    const orgId = getOrgId(req);
+    const pathways = orgId
+      ? await db.select().from(pathwaysTable).where(eq(pathwaysTable.orgId, orgId))
+      : await db.select().from(pathwaysTable);
     res.json(pathways);
   } catch (error) {
     console.error("Error fetching pathways:", error);
@@ -16,15 +22,13 @@ router.get("/pathways", async (req, res) => {
   }
 });
 
-// Get single pathway
 router.get("/pathways/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const pathway = await db.select().from(pathwaysTable).where(eq(pathwaysTable.id, id));
-    if (pathway.length === 0) {
-      res.status(404).json({ error: "Pathway not found" });
-      return;
-    }
+    const orgId = getOrgId(req);
+    const where = orgId ? and(eq(pathwaysTable.id, id), eq(pathwaysTable.orgId, orgId)) : eq(pathwaysTable.id, id);
+    const pathway = await db.select().from(pathwaysTable).where(where);
+    if (pathway.length === 0) { res.status(404).json({ error: "Pathway not found" }); return; }
     res.json(pathway[0]);
   } catch (error) {
     console.error("Error fetching pathway:", error);
@@ -32,11 +36,11 @@ router.get("/pathways/:id", async (req, res) => {
   }
 });
 
-// Create pathway
 router.post("/pathways", async (req, res) => {
   try {
     const data = insertPathwaySchema.parse(req.body);
-    const [newPathway] = await db.insert(pathwaysTable).values(data).returning();
+    const orgId = getOrgId(req);
+    const [newPathway] = await db.insert(pathwaysTable).values({ ...data, orgId }).returning();
     await logAudit(req, "created", "pathway", newPathway.id, newPathway.name);
     res.status(201).json(newPathway);
   } catch (error) {
@@ -45,16 +49,14 @@ router.post("/pathways", async (req, res) => {
   }
 });
 
-// Update pathway
 router.put("/pathways/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    const orgId = getOrgId(req);
     const data = insertPathwaySchema.partial().parse(req.body);
-    const [updatedPathway] = await db.update(pathwaysTable).set(data).where(eq(pathwaysTable.id, id)).returning();
-    if (!updatedPathway) {
-      res.status(404).json({ error: "Pathway not found" });
-      return;
-    }
+    const where = orgId ? and(eq(pathwaysTable.id, id), eq(pathwaysTable.orgId, orgId)) : eq(pathwaysTable.id, id);
+    const [updatedPathway] = await db.update(pathwaysTable).set(data).where(where).returning();
+    if (!updatedPathway) { res.status(404).json({ error: "Pathway not found" }); return; }
     await logAudit(req, "updated", "pathway", id, updatedPathway.name);
     res.json(updatedPathway);
   } catch (error) {
@@ -63,15 +65,13 @@ router.put("/pathways/:id", async (req, res) => {
   }
 });
 
-// Delete pathway
 router.delete("/pathways/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const [deleted] = await db.delete(pathwaysTable).where(eq(pathwaysTable.id, id)).returning();
-    if (!deleted) {
-      res.status(404).json({ error: "Pathway not found" });
-      return;
-    }
+    const orgId = getOrgId(req);
+    const where = orgId ? and(eq(pathwaysTable.id, id), eq(pathwaysTable.orgId, orgId)) : eq(pathwaysTable.id, id);
+    const [deleted] = await db.delete(pathwaysTable).where(where).returning();
+    if (!deleted) { res.status(404).json({ error: "Pathway not found" }); return; }
     await logAudit(req, "deleted", "pathway", id, deleted.name);
     res.status(200).json({ success: true });
   } catch (error) {
@@ -80,11 +80,11 @@ router.delete("/pathways/:id", async (req, res) => {
   }
 });
 
-// Bulk import pathways
 router.post("/pathways/import", async (req, res) => {
   try {
     const rows: unknown[] = req.body;
     if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
+    const orgId = getOrgId(req);
     const results = { imported: 0, ids: [] as number[], errors: [] as { row: number; message: string }[] };
     for (let i = 0; i < rows.length; i++) {
       try {
@@ -97,7 +97,7 @@ router.post("/pathways/import", async (req, res) => {
         row.projects = row.projects ? row.projects.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
         row.readinessCriteria = row.readinessCriteria ? row.readinessCriteria.split("|").map((s: string) => s.trim()).filter(Boolean) : null;
         const data = insertPathwaySchema.parse(row);
-        const [created] = await db.insert(pathwaysTable).values(data).returning();
+        const [created] = await db.insert(pathwaysTable).values({ ...data, orgId }).returning();
         results.imported++;
         results.ids.push(created.id);
       } catch (e: any) {
@@ -111,22 +111,22 @@ router.post("/pathways/import", async (req, res) => {
   }
 });
 
-// Bulk delete pathways
 router.post("/pathways/bulk-delete", async (req, res) => {
   try {
     const ids: number[] = req.body.ids;
     if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids array is required" }); return; }
-    const learners = await db.select().from(learnersTable);
-    const blocked: { id: number; reason: string }[] = [];
+    const orgId = getOrgId(req);
     const deleted: number[] = [];
+    const blocked: { id: number; reason: string }[] = [];
     for (const id of ids) {
-      const [pathway] = await db.select().from(pathwaysTable).where(eq(pathwaysTable.id, id));
+      const where = orgId ? and(eq(pathwaysTable.id, id), eq(pathwaysTable.orgId, orgId)) : eq(pathwaysTable.id, id);
+      const [pathway] = await db.select().from(pathwaysTable).where(where);
       if (!pathway) continue;
-      const assigned = learners.filter(l => l.pathway === pathway.name);
-      if (assigned.length > 0) {
-        blocked.push({ id, reason: `${assigned.length} learner${assigned.length > 1 ? "s" : ""} assigned` });
+      const learners = await db.select().from(learnersTable).where(eq(learnersTable.pathway, pathway.name));
+      if (learners.length > 0) {
+        blocked.push({ id, reason: `${learners.length} learner${learners.length > 1 ? "s" : ""} assigned` });
       } else {
-        await db.delete(pathwaysTable).where(eq(pathwaysTable.id, id));
+        await db.delete(pathwaysTable).where(where);
         deleted.push(id);
         await logAudit(req, "deleted", "pathway", id, pathway.name);
       }
@@ -138,18 +138,14 @@ router.post("/pathways/bulk-delete", async (req, res) => {
   }
 });
 
-// Get programs for a pathway
 router.get("/pathways/:id/programs", async (req, res) => {
   try {
     const pathwayId = parseInt(req.params.id);
     const links = await db.select().from(pathwayProgramsTable).where(eq(pathwayProgramsTable.pathwayId, pathwayId));
     res.json(links.map(l => l.programId));
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch pathway programs" });
-  }
+  } catch (error) { res.status(500).json({ error: "Failed to fetch pathway programs" }); }
 });
 
-// Set programs for a pathway (replace all)
 router.put("/pathways/:id/programs", async (req, res) => {
   try {
     const pathwayId = parseInt(req.params.id);
@@ -159,19 +155,14 @@ router.put("/pathways/:id/programs", async (req, res) => {
       await db.insert(pathwayProgramsTable).values(programIds.map(programId => ({ pathwayId, programId })));
     }
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to update pathway programs" });
-  }
+  } catch (error) { res.status(500).json({ error: "Failed to update pathway programs" }); }
 });
 
-// Get all pathway-program associations
 router.get("/pathway-programs", async (req, res) => {
   try {
     const all = await db.select().from(pathwayProgramsTable);
     res.json(all);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch pathway programs" });
-  }
+  } catch (error) { res.status(500).json({ error: "Failed to fetch pathway programs" }); }
 });
 
 export default router;

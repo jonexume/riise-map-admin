@@ -15,10 +15,26 @@ import FundingSources from "@/pages/FundingSources";
 import SettingsPage from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
 import Login from "@/pages/Login";
-import { isAuthenticated, getAccessToken, onAuthStateChange } from "@/lib/auth";
+import Signup from "@/pages/Signup";
+import ConfirmSignup from "@/pages/ConfirmSignup";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import ProfileSetup from "@/pages/ProfileSetup";
+import { isAuthenticated, getAccessToken, onAuthStateChange, fetchUserAttributes } from "@/lib/auth";
+import { UserProvider } from "@/lib/UserContext";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
 
 const queryClient = new QueryClient();
+
+type AuthState =
+  | { status: "loading" }
+  | { status: "login" }
+  | { status: "signup" }
+  | { status: "confirm_signup"; email: string }
+  | { status: "forgot_password" }
+  | { status: "reset_password"; email: string }
+  | { status: "needs_profile" }
+  | { status: "authenticated" };
 
 function Router() {
   return (
@@ -39,7 +55,7 @@ function Router() {
 }
 
 function App() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
   const [onboarded, setOnboarded] = useState<boolean>(
     () => !!localStorage.getItem("riisemap_onboarding")
   );
@@ -49,13 +65,42 @@ function App() {
     setBaseUrl(baseUrl);
     setAuthTokenGetter(getAccessToken);
 
-    isAuthenticated().then(setAuthed);
+    checkAuth();
 
-    const { unsubscribe } = onAuthStateChange(setAuthed);
+    const { unsubscribe } = onAuthStateChange((authenticated) => {
+      if (authenticated) {
+        checkProfile();
+      } else {
+        setAuthState({ status: "login" });
+      }
+    });
     return () => unsubscribe();
   }, []);
 
-  if (authed === null) {
+  async function checkAuth() {
+    const authed = await isAuthenticated();
+    if (!authed) {
+      setAuthState({ status: "login" });
+      return;
+    }
+    await checkProfile();
+  }
+
+  async function checkProfile() {
+    try {
+      const attrs = await fetchUserAttributes();
+      if (!attrs.given_name) {
+        setAuthState({ status: "needs_profile" });
+      } else {
+        setAuthState({ status: "authenticated" });
+      }
+    } catch {
+      // Can't fetch attributes — user session isn't valid
+      setAuthState({ status: "login" });
+    }
+  }
+
+  if (authState.status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -63,17 +108,66 @@ function App() {
     );
   }
 
+  function renderAuthPage() {
+    switch (authState.status) {
+      case "login":
+        return (
+          <Login
+            onLogin={() => checkProfile()}
+            onGoToSignup={() => setAuthState({ status: "signup" })}
+            onGoToForgotPassword={() => setAuthState({ status: "forgot_password" })}
+          />
+        );
+      case "signup":
+        return (
+          <Signup
+            onNeedConfirmation={(email) => setAuthState({ status: "confirm_signup", email })}
+            onGoToLogin={() => setAuthState({ status: "login" })}
+          />
+        );
+      case "confirm_signup":
+        return (
+          <ConfirmSignup
+            email={authState.email}
+            onConfirmed={() => setAuthState({ status: "login" })}
+            onGoToLogin={() => setAuthState({ status: "login" })}
+          />
+        );
+      case "forgot_password":
+        return (
+          <ForgotPassword
+            onCodeSent={(email) => setAuthState({ status: "reset_password", email })}
+            onGoToLogin={() => setAuthState({ status: "login" })}
+          />
+        );
+      case "reset_password":
+        return (
+          <ResetPassword
+            email={authState.email}
+            onReset={() => setAuthState({ status: "login" })}
+            onGoToLogin={() => setAuthState({ status: "login" })}
+          />
+        );
+      case "needs_profile":
+        return <ProfileSetup onComplete={() => setAuthState({ status: "authenticated" })} />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {!authed ? (
-          <Login onLogin={() => setAuthed(true)} />
+        {authState.status !== "authenticated" ? (
+          renderAuthPage()
         ) : !onboarded ? (
           <Onboarding onComplete={() => setOnboarded(true)} />
         ) : (
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
+          <UserProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+          </UserProvider>
         )}
         <Toaster />
       </TooltipProvider>

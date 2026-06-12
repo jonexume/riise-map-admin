@@ -293,7 +293,7 @@ Riise-Map-Admin/
 | E2E | Playwright (Chromium, headless) | Deployed site on Amplify |
 | API direct | Playwright test runner | API Gateway endpoints |
 
-Tests run against `https://rollback-may27.dxzx9111fv2of.amplifyapp.com` with 60s timeout. Screenshots captured on failure.
+Tests run against `https://app.riisemap.org` with 60s timeout. Screenshots captured on failure.
 
 ---
 

@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './tests',
   timeout: 60000,
   use: {
-    baseURL: 'https://rollback-may27.dxzx9111fv2of.amplifyapp.com',
+    baseURL: 'https://app.riisemap.org',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     viewport: { width: 1440, height: 900 },

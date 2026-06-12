@@ -49,6 +49,16 @@ npx playwright show-report
 
 ### What the tests cover
 
+**Auth Flow Tests** (`tests/auth-flow.spec.ts`) — 20 tests
+
+| Section | What it tests |
+|---------|--------------|
+| Login Page (5) | Form renders, "Create one" link, "Forgot password?" link, invalid credentials error, loading state |
+| Signup Page (5) | Navigation from login, form fields, password hint, back-to-login link, duplicate email error, loading state |
+| Forgot Password Page (4) | Navigation from login, form fields, back-to-login link, submitting navigates to reset page |
+| Reset Password Page (4) | Code & password fields render, displays target email, back-to-login link, invalid code error |
+| Cross-Page Navigation (3) | Login↔Signup round trip, Login→Forgot→Reset→Login round trip, successful login reaches app |
+
 **CRUD Tests** (`tests/crud.spec.ts`) — 10 tests
 
 | Test | What it does |
@@ -87,7 +97,7 @@ open test-results/
 
 ### Configuration
 
-- **Target URL:** `https://rollback-may27.dxzx9111fv2of.amplifyapp.com`
+- **Target URL:** `https://app.riisemap.org`
 - **Browser:** Chromium (headless)
 - **Timeout:** 60 seconds per test
 - **Config file:** `playwright.config.ts`
