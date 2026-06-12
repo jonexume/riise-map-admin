@@ -1,0 +1,132 @@
+%% RiiseMap Full Architecture — AWS Account 991258367031, us-east-1
+%% Last updated: 2026-06-12
+
+graph TB
+    %% ===== EXTERNAL ACTORS =====
+    Users["🧑‍💻 End Users<br/>Browser / Desktop<br/>app.riisemap.org"]
+    Visitors["🌐 Visitors<br/>Browser<br/>riisemap.org"]
+    Dev["👨‍💻 Developer<br/>git push rollback-may27"]
+
+    %% ===== DNS =====
+    subgraph Route53["Route 53 — riisemap.org hosted zone"]
+        DNS_App["app.riisemap.org<br/>A record → CloudFront"]
+        DNS_Root["riisemap.org<br/>A record → CloudFront"]
+    end
+
+    %% ===== ADMIN APP (app.riisemap.org) =====
+    subgraph AdminApp["ADMIN APP — app.riisemap.org"]
+        direction TB
+
+        subgraph Frontend["Frontend"]
+            Amplify["AWS Amplify<br/>React 18 + Vite 7 + Tailwind<br/>CloudFront: d1gv27o9przjo5"]
+        end
+
+        subgraph API["API Layer"]
+            APIGW["API Gateway<br/>HTTP API<br/>/{proxy+} catch-all<br/>Stage: prod"]
+            Lambda["AWS Lambda<br/>Express 5 / Node.js 24<br/>serverless-http<br/>512MB / 30s timeout"]
+        end
+
+        subgraph Auth["Authentication"]
+            Cognito["Amazon Cognito<br/>User Pool: us-east-1_butP7gqf1<br/>JWT token issuer"]
+            AuthMW["Auth Middleware<br/>Validates Cognito JWT<br/>All routes except /health"]
+        end
+
+        subgraph Database["Database"]
+            RDS["Amazon RDS<br/>PostgreSQL<br/>riisemap-db.c3gqvgjgm49n<br/>SSL required (rds.force_ssl=1)<br/>Drizzle ORM"]
+        end
+    end
+
+    %% ===== DATA MODEL =====
+    subgraph DataModel["Core Data Model — 17 Tables"]
+        direction LR
+        T1["learners"]
+        T2["programs"]
+        T3["pathways"]
+        T4["coaches"]
+        T5["funding_sources"]
+        T6["funding_source_goals"]
+        T7["funding_source_learners"]
+        T8["funding_source_programs"]
+        T9["funding_source_pathways"]
+        T10["learner_roadmaps"]
+        T11["learner_projects"]
+        T12["learner_events"]
+        T13["learner_notes"]
+        T14["learner_readiness_scores"]
+        T15["learner_activities"]
+        T16["success_stories"]
+        T17["learner_statuses"]
+        T18["pathway_programs"]
+        T19["audit_log"]
+    end
+
+    %% ===== PRODUCT LAUNCH SITE (riisemap.org) =====
+    subgraph LaunchSite["PRODUCT LAUNCH SITE — riisemap.org"]
+        CF_Launch["CloudFront<br/>d3dgctik5hvb46<br/>ACM TLS cert"]
+        S3_Launch["Amazon S3<br/>riisemap-product-launch-site<br/>Static HTML/CSS/JS"]
+        APIGW_Launch["API Gateway<br/>POST /checkout<br/>POST /contact"]
+        Lambda_Checkout["Lambda<br/>Stripe checkout session"]
+        Lambda_Contact["Lambda<br/>Contact form email"]
+    end
+
+    %% ===== EXTERNAL SERVICES =====
+    subgraph External["External Services"]
+        Stripe["Stripe Checkout<br/>Subscription payments"]
+        Resend["Resend<br/>Transactional email"]
+    end
+
+    %% ===== CI/CD =====
+    subgraph CICD["CI/CD & Deployment"]
+        GitHub["GitHub<br/>lawscause/Riise-Map-Admin<br/>Branch: rollback-may27<br/>pnpm monorepo"]
+        AmplifyBuild["Amplify Build<br/>amplify.yml<br/>Auto-deploy on push"]
+        GHA["GitHub Actions<br/>deploy-api.yml<br/>pnpm + esbuild + SAM"]
+        S3_Artifacts["S3 Artifacts Bucket<br/>Lambda deployment zip"]
+        CFN["CloudFormation<br/>Stack: riisemap-api<br/>Function + HTTP API"]
+    end
+
+    %% ===== RUNTIME FLOW — ADMIN APP =====
+    Users --> DNS_App
+    DNS_App --> Amplify
+    Amplify -->|"API calls<br/>/api/*"| APIGW
+    APIGW --> Lambda
+    Lambda --> RDS
+    RDS --- DataModel
+
+    %% ===== AUTH FLOW =====
+    Amplify -.->|"Login / JWT"| Cognito
+    Cognito -.->|"Token validation"| AuthMW
+    AuthMW -.-> Lambda
+
+    %% ===== RUNTIME FLOW — LAUNCH SITE =====
+    Visitors --> DNS_Root
+    DNS_Root --> CF_Launch
+    CF_Launch --> S3_Launch
+    S3_Launch -->|"checkout.js<br/>script.js"| APIGW_Launch
+    APIGW_Launch --> Lambda_Checkout
+    APIGW_Launch --> Lambda_Contact
+    Lambda_Checkout --> Stripe
+    Lambda_Contact --> Resend
+
+    %% ===== DEPLOYMENT FLOW =====
+    Dev --> GitHub
+    GitHub -->|"git push"| AmplifyBuild
+    AmplifyBuild -->|"Builds & deploys"| Amplify
+    GitHub -->|"git push triggers"| GHA
+    GHA -->|"sam deploy"| S3_Artifacts
+    S3_Artifacts --> CFN
+    CFN -->|"Updates"| Lambda
+    CFN -->|"Updates"| APIGW
+
+    %% ===== STYLING =====
+    classDef aws fill:#FF9900,stroke:#232F3E,color:#fff,stroke-width:2px
+    classDef external fill:#6B7280,stroke:#374151,color:#fff,stroke-width:1px
+    classDef user fill:#DBEAFE,stroke:#2563EB,color:#1E40AF,stroke-width:2px
+    classDef database fill:#3B82F6,stroke:#1D4ED8,color:#fff,stroke-width:2px
+    classDef data fill:#F3F4F6,stroke:#9CA3AF,color:#374151,stroke-width:1px
+
+    class Users,Visitors,Dev user
+    class Amplify,APIGW,Lambda,Cognito,CF_Launch,S3_Launch,APIGW_Launch,Lambda_Checkout,Lambda_Contact,AmplifyBuild,GHA,S3_Artifacts,CFN aws
+    class RDS database
+    class Stripe,Resend,GitHub external
+    class T1,T2,T3,T4,T5,T6,T7,T8,T9,T10,T11,T12,T13,T14,T15,T16,T17,T18,T19 data
+    class DNS_App,DNS_Root,AuthMW aws

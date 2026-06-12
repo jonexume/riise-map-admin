@@ -23,6 +23,7 @@ import {
   useGetPrograms, useGetPathways
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@/lib/UserContext";
 import { cn } from "@/lib/utils";
 import { authFetch } from "@/lib/auth-fetch";
 
@@ -30,6 +31,7 @@ export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
   const learnerId = parseInt(id || "0");
   const queryClient = useQueryClient();
+  const { user } = useUser();
   const { data: learner, isLoading } = useGetLearner(learnerId);
   const { data: programs = [] } = useGetPrograms();
   const { data: pathways = [] } = useGetPathways();
@@ -130,7 +132,7 @@ export default function LearnerDetail() {
     const trimmed = newNote.trim();
     if (!trimmed) return;
     createNoteMutation.mutate(
-      { author: "Denise Carter", date: new Date().toISOString().split("T")[0], content: trimmed },
+      { author: user.fullName || "Unknown", date: new Date().toISOString().split("T")[0], content: trimmed },
       { onSuccess: () => { setNewNote(""); setNoteSaved(true); setTimeout(() => setNoteSaved(false), 2000); } }
     );
   }

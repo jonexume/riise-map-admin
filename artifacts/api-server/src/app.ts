@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { requireAuth } from "./middlewares/auth";
+import { resolveUser } from "./middlewares/resolve-user";
 
 const app: Express = express();
 
@@ -34,6 +35,6 @@ app.get("/", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-app.use("/api", requireAuth, router);
+app.use("/api", requireAuth, resolveUser, router);
 
 export default app;

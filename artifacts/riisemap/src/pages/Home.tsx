@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { MetricCard } from "@/components/MetricCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { authFetch } from "@/lib/auth-fetch";
+import { useUser } from "@/lib/UserContext";
 import { cn } from "@/lib/utils";
 
 const quickActions = [
@@ -24,6 +25,7 @@ export default function Home() {
   const [dismissedPriorities, setDismissedPriorities] = useState<number[]>([]);
   const [priorities, setPriorities] = useState<{ text: string; href: string; urgency: string }[]>([]);
   const [counts, setCounts] = useState<{ learners: number; atRisk: number; programs: number; fundingSources: number }>({ learners: 0, atRisk: 0, programs: 0, fundingSources: 0 });
+  const { user } = useUser();
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
@@ -43,7 +45,7 @@ export default function Home() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold text-foreground" data-testid="greeting-header">
-          {greeting}, Denise
+          {greeting}{user.firstName ? `, ${user.firstName}` : ""}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Here's what needs your attention today — May 16, 2026

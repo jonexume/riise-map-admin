@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { signIn } from "@/lib/auth";
+import { signUp } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface LoginProps {
-  onLogin: (nextStep?: string) => void;
-  onGoToSignup: () => void;
-  onGoToForgotPassword: () => void;
+interface SignupProps {
+  onNeedConfirmation: (email: string) => void;
+  onGoToLogin: () => void;
 }
 
-export default function Login({ onLogin, onGoToSignup, onGoToForgotPassword }: LoginProps) {
+export default function Signup({ onNeedConfirmation, onGoToLogin }: SignupProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,10 +20,12 @@ export default function Login({ onLogin, onGoToSignup, onGoToForgotPassword }: L
     setError("");
     setLoading(true);
     try {
-      const result = await signIn(email.trim(), password);
-      onLogin(result.nextStep?.signInStep);
-    } catch {
-      setError("Invalid email or password");
+      const { nextStep } = await signUp(email.trim(), password);
+      if (nextStep.signUpStep === "CONFIRM_SIGN_UP") {
+        onNeedConfirmation(email.trim());
+      }
+    } catch (err: any) {
+      setError(err?.message || "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -39,10 +40,9 @@ export default function Login({ onLogin, onGoToSignup, onGoToForgotPassword }: L
           </div>
           <span className="text-xl font-semibold text-foreground">RiiseMap</span>
         </div>
-        <p className="text-sm text-muted-foreground mb-6">Funding impact, clearly tracked.</p>
 
-        <h1 className="text-2xl font-semibold text-foreground mb-1">Sign In</h1>
-        <p className="text-sm text-muted-foreground mb-6">Enter your credentials to access the platform.</p>
+        <h1 className="text-2xl font-semibold text-foreground mb-1">Create Account</h1>
+        <p className="text-sm text-muted-foreground mb-6">Enter your email and password to get started.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -50,21 +50,19 @@ export default function Login({ onLogin, onGoToSignup, onGoToForgotPassword }: L
             <Input type="email" className="mt-1.5 h-10 text-sm" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Password</Label>
-              <button type="button" onClick={onGoToForgotPassword} className="text-xs text-primary hover:underline">Forgot password?</button>
-            </div>
-            <Input type="password" className="mt-1.5 h-10 text-sm" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Label className="text-sm font-medium">Password</Label>
+            <Input type="password" className="mt-1.5 h-10 text-sm" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+            <p className="text-xs text-muted-foreground mt-1">Min 8 chars, uppercase, lowercase, number, special character</p>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" className="w-full h-10" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Creating account..." : "Create Account"}
           </Button>
         </form>
 
         <p className="text-sm text-muted-foreground mt-6 text-center">
-          Don't have an account?{" "}
-          <button type="button" onClick={onGoToSignup} className="text-primary hover:underline font-medium">Create one</button>
+          Already have an account?{" "}
+          <button type="button" onClick={onGoToLogin} className="text-primary hover:underline font-medium">Sign in</button>
         </p>
       </div>
     </div>
