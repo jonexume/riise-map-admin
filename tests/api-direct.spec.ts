@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
 const PASSWORD = 'RiiseMap2026!';
-const BASE_URL = 'https://rollback-may27.dxzx9111fv2of.amplifyapp.com';
+const BASE_URL = 'https://app.riisemap.org';
 const TS = Date.now();
 
 let authToken: string;

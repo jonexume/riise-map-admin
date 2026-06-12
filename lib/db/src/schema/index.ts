@@ -8,9 +8,33 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   fromDriver(value: Buffer) { return value; },
 });
 
+// Organizations Table
+export const organizationsTable = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+export type Organization = typeof organizationsTable.$inferSelect;
+
+// Users Table
+export const usersTable = pgTable("users", {
+  id: serial("id").primaryKey(),
+  cognitoSub: varchar("cognito_sub", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull(),
+  givenName: varchar("given_name", { length: 255 }),
+  familyName: varchar("family_name", { length: 255 }),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
+  provider: varchar("provider", { length: 50 }).notNull().default("cognito"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).defaultNow(),
+});
+export type User = typeof usersTable.$inferSelect;
+
 // Learners Table
 export const learnersTable = pgTable("learners", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   pathway: varchar("pathway", { length: 255 }).notNull(),
   program: varchar("program", { length: 255 }).notNull(),
@@ -31,7 +55,7 @@ export const learnersTable = pgTable("learners", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
-export const insertLearnerSchema = createInsertSchema(learnersTable).omit({ id: true, createdAt: true });
+export const insertLearnerSchema = createInsertSchema(learnersTable).omit({ id: true, orgId: true, createdAt: true });
 export type InsertLearner = z.infer<typeof insertLearnerSchema>;
 export type Learner = typeof learnersTable.$inferSelect;
 
@@ -56,6 +80,7 @@ export type Coach = typeof coachesTable.$inferSelect;
 // Programs Table
 export const programsTable = pgTable("programs", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   programTag: varchar("programTag", { length: 100 }).notNull().unique(),
   description: text("description").notNull(),
@@ -72,13 +97,14 @@ export const programsTable = pgTable("programs", {
   pathways: jsonb("pathways"),
 });
 
-export const insertProgramSchema = createInsertSchema(programsTable).omit({ id: true });
+export const insertProgramSchema = createInsertSchema(programsTable).omit({ id: true, orgId: true });
 export type InsertProgram = z.infer<typeof insertProgramSchema>;
 export type Program = typeof programsTable.$inferSelect;
 
 // Pathways Table
 export const pathwaysTable = pgTable("pathways", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
   targetProfile: text("targetProfile").notNull(),
@@ -91,7 +117,7 @@ export const pathwaysTable = pgTable("pathways", {
   readinessCriteria: jsonb("readinessCriteria"),
 });
 
-export const insertPathwaySchema = createInsertSchema(pathwaysTable).omit({ id: true });
+export const insertPathwaySchema = createInsertSchema(pathwaysTable).omit({ id: true, orgId: true });
 export type InsertPathway = z.infer<typeof insertPathwaySchema>;
 export type Pathway = typeof pathwaysTable.$inferSelect;
 
@@ -175,6 +201,7 @@ export type LearnerActivity = typeof learnerActivitiesTable.$inferSelect;
 // Funding Sources Table
 export const fundingSourcesTable = pgTable("funding_sources", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   objectives: text("objectives"),
   narrative: text("narrative"),
@@ -188,7 +215,7 @@ export const fundingSourcesTable = pgTable("funding_sources", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
-export const insertFundingSourceSchema = createInsertSchema(fundingSourcesTable).omit({ id: true, createdAt: true, updatedAt: true, narrativeFile: true, narrativeFileName: true });
+export const insertFundingSourceSchema = createInsertSchema(fundingSourcesTable).omit({ id: true, orgId: true, createdAt: true, updatedAt: true, narrativeFile: true, narrativeFileName: true });
 export type InsertFundingSource = z.infer<typeof insertFundingSourceSchema>;
 export type FundingSource = typeof fundingSourcesTable.$inferSelect;
 

@@ -20,6 +20,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/lib/UserContext";
 import Papa from "papaparse";
 
 interface InviteForm {
@@ -41,12 +42,12 @@ const BLANK_INVITE: InviteForm = {
   program: "",
   pathway: "",
   coach: "",
-  message:
-    "Hi,\n\nYou've been invited to join the Atlanta Workforce Tech Alliance's workforce development program.\n\nThrough RiiseMap, you'll have access to career pathways, coaching, projects, and events designed to help you break into tech.\n\nClick the link below to get started.\n\nLooking forward to supporting your journey,\nDenise Carter\nProgram Manager, Atlanta Workforce Tech Alliance",
+  message: "",
 };
 
 export default function Learners() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
   const { data: allLearners = [], isLoading } = useGetLearners();
   const createLearnerMutation = useCreateLearner({
     mutation: {
@@ -108,8 +109,9 @@ export default function Learners() {
   const [importRows, setImportRows] = useState<Record<string, string>[]>([]);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const defaultMessage = `Hi,\n\nYou've been invited to join ${user.orgName || "our"} workforce development program.\n\nThrough RiiseMap, you'll have access to career pathways, coaching, projects, and events designed to help you succeed.\n\nClick the link below to get started.\n\nLooking forward to supporting your journey,\n${user.fullName}\n${user.orgName}`;
   const [inviteStep, setInviteStep] = useState<0 | 1>(0);
-  const [inviteForm, setInviteForm] = useState<InviteForm>(BLANK_INVITE);
+  const [inviteForm, setInviteForm] = useState<InviteForm>({ ...BLANK_INVITE, message: defaultMessage });
   const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
 
   const filtered = allLearners.filter((l) => {
