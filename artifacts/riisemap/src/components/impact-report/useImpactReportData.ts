@@ -159,11 +159,11 @@ export function useImpactReportData(): UseImpactReportDataResult {
             milestoneCount: Array.isArray(pw.milestones) ? pw.milestones.length : 0,
           }));
 
-        // 3. Enrolled learners = sum of activeLearners from linked programs
-        const enrolledLearners = linkedPrograms.reduce(
-          (sum, p) => sum + p.activeLearners,
-          0,
-        );
+        // 3. Enrolled learners = count of learners whose program matches a linked program
+        const linkedProgramNames = linkedPrograms.map(p => p.name);
+        const enrolledLearners = _learners.filter(
+          (l: any) => linkedProgramNames.includes(l.program),
+        ).length;
 
         // 4. Goals for this funding source
         const sourceGoals: GoalData[] = rawGoals
@@ -255,7 +255,7 @@ export function useImpactReportData(): UseImpactReportDataResult {
     );
 
     // Compute portfolio summary across all funding sources
-    const portfolio = computePortfolioSummary(fundingSourceReports);
+    const portfolio = computePortfolioSummary(fundingSourceReports, _learners.length);
 
     return {
       fundingSources: fundingSourceReports,

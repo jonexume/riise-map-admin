@@ -11,6 +11,7 @@ import {
   FileText,
   AlertCircle,
   ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -230,7 +231,25 @@ export function ImpactReport() {
           <Card className="mt-6">
             <CardContent className="p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Status</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm font-medium text-foreground">Status</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-muted-foreground hover:text-foreground"><HelpCircle className="h-3.5 w-3.5" /></button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 text-sm space-y-2" align="start">
+                      <p className="font-semibold text-foreground mb-2">Status Definitions</p>
+                      <div className="space-y-2 text-muted-foreground">
+                        <p><span className="font-medium text-emerald-600">On Track</span> — Enrollment is keeping pace with the grant timeline. You're meeting or ahead of your targets.</p>
+                        <p><span className="font-medium text-amber-600">At Risk</span> — Enrollment is falling slightly behind schedule. Consider reviewing recruitment or outreach.</p>
+                        <p><span className="font-medium text-red-600">Off Track</span> — Enrollment is significantly behind where it should be given the time elapsed.</p>
+                        <p><span className="font-medium text-orange-600">Expiring Soon</span> — This grant period ends within 30 days.</p>
+                        <p><span className="font-medium text-gray-600">Not Started</span> — This funding source hasn't reached its start date yet.</p>
+                        <p><span className="font-medium text-gray-500">No Targets</span> — No learner targets or goals have been set for this funding source.</p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
                   <SelectTrigger className="w-[180px] min-h-[44px]">
                     <SelectValue />
@@ -382,8 +401,13 @@ function PortfolioSummary({ data }: { data: PortfolioSummaryData }) {
       value: data.totalLearnerTarget > 0 ? String(data.totalLearnerTarget) : 'N/A',
     },
     {
-      label: 'Enrolled Learners',
+      label: 'Funded Learners',
       value: String(data.totalEnrolledLearners),
+    },
+    {
+      label: 'Unfunded Learners',
+      value: String(data.totalLearnersInSystem - data.totalEnrolledLearners),
+      badgeClass: (data.totalLearnersInSystem - data.totalEnrolledLearners) > 0 ? 'text-amber-600 bg-amber-50' : '',
     },
     {
       label: 'Progress Rate',
@@ -697,7 +721,7 @@ function KPICards({ data }: { data: FundingSourceReportData }) {
 
   const kpis = [
     {
-      label: 'Enrolled Learners',
+      label: 'Funded Learners',
       value: String(data.enrolledLearners),
     },
     {

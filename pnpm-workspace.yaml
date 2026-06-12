@@ -33,6 +33,12 @@ minimumReleaseAgeExclude:
   # this setting guards against does not apply to our own packages.
   - '@replit/*'
   - stripe-replit-sync
+  - '@aws-amplify/api-graphql@4.8.8'
+  - '@aws-amplify/api@6.3.27'
+  - '@aws-amplify/core@6.16.4'
+  - '@aws-amplify/datastore@5.1.8'
+  - '@aws-amplify/storage@6.16.0'
+  - aws-amplify@6.18.0
 
 packages:
   - artifacts/*

@@ -14,6 +14,7 @@ export interface PortfolioSummaryData {
   totalFundingAmount: number;
   totalLearnerTarget: number;
   totalEnrolledLearners: number;
+  totalLearnersInSystem: number;
   overallProgressRate: number | null;
   healthStatusCounts: {
     onTrack: number;
