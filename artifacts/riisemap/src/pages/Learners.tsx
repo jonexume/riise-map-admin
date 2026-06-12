@@ -431,10 +431,7 @@ export default function Learners() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {learner.photo
-                                ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-                                : <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("")}</span>
-                              }
+                              <span className="text-xs font-semibold text-primary">{learner.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}</span>
                             </div>
                             <div>
                               <div className="font-medium text-foreground flex items-center gap-1.5">

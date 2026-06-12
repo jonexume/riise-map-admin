@@ -253,20 +253,9 @@ export default function LearnerDetail() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div 
-            className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:bg-primary/20 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
+            className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden"
           >
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            {learner.photo
-              ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-              : <Upload size={24} className="text-primary/60" />
-            }
+            <span className="text-lg font-semibold text-primary/80">{learner.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</span>
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">

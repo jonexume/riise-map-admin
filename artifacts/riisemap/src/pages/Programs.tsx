@@ -330,10 +330,7 @@ export default function Programs() {
                 {programLearners.map(l => (
                   <div key={l.id} className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {l.photo
-                        ? <img src={l.photo} alt={l.name} className="w-full h-full object-cover" />
-                        : <span className="text-xs font-bold text-primary">{l.name.split(" ").map(n => n[0]).join("")}</span>
-                      }
+                      <span className="text-xs font-bold text-primary">{l.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
