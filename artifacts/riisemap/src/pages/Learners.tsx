@@ -81,7 +81,7 @@ export default function Learners() {
     authFetch(`${baseUrl}/api/learner-statuses`).then(r => r.json()).then((data: any[]) => setStatusOptions(data.map(s => s.name))).catch(() => {});
   }, []);
 
-  type SortKey = "name" | "pathway" | "coach" | "progress" | "readiness" | "status" | "lastActive" | "createdAt";
+  type SortKey = "name" | "pathway" | "coach" | "progress" | "readiness" | "status" | "createdAt";
   type SortDir = "asc" | "desc";
   const sortParam = new URLSearchParams(searchString).get("sort") as SortKey | null;
   const dirParam = new URLSearchParams(searchString).get("dir") as SortDir | null;
@@ -393,7 +393,7 @@ export default function Learners() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 w-8" />
-                    {([["name","Learner"],["pathway","Pathway"],["coach","Coach"],["progress","Progress"],["readiness","Readiness"],["status","Status"],["lastActive","Last Active"],["createdAt","Created"]] as [SortKey, string][]).map(([key, label]) => (
+                    {([["name","Learner"],["pathway","Pathway"],["coach","Coach"],["progress","Progress"],["readiness","Readiness"],["status","Status"],["createdAt","Created"]] as [SortKey, string][]).map(([key, label]) => (
                       <th key={key} className={`text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors${key === "progress" ? " w-40" : ""}`} onClick={() => handleSort(key)}>
                         {label}{sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : ""}
                       </th>
@@ -466,7 +466,6 @@ export default function Learners() {
                         <td className="px-4 py-3">
                           <StatusBadge status={learner.status} />
                         </td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">{learner.lastActive}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">{learner.createdAt ? new Date(learner.createdAt).toLocaleDateString() : "—"}</td>
                         <td className="px-4 py-3">
                           <Link href={`/learners/${learner.id}`}>
@@ -531,7 +530,6 @@ export default function Learners() {
                         <span className="font-medium text-foreground">{learner.readiness}/100</span>
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3">Active {learner.lastActive}</p>
                   </CardContent>
                 </Card>
               </Link>

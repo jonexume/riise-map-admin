@@ -435,6 +435,7 @@ export function generateTemplateNarrative(
  */
 export function computePortfolioSummary(
   sources: FundingSourceReportData[],
+  totalLearnersInSystem: number,
 ): PortfolioSummaryData {
   const totalFundingAmount = sources.reduce(
     (sum, s) => sum + (s.amount ?? 0),
@@ -489,6 +490,7 @@ export function computePortfolioSummary(
     totalFundingAmount,
     totalLearnerTarget,
     totalEnrolledLearners,
+    totalLearnersInSystem,
     overallProgressRate,
     healthStatusCounts,
   };
