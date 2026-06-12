@@ -1,21 +1,27 @@
 import { test, expect } from '@playwright/test';
 
 const EMAIL = 'info@techsofcolor.org';
-const PASSWORD = 'testUser1234!';
+const PASSWORD = 'RiiseMap2026!';
 const BASE_URL = 'https://rollback-may27.dxzx9111fv2of.amplifyapp.com';
 const TS = Date.now();
 
 let authToken: string;
 
-// Helper to get auth token
+// Helper to get auth token via Cognito
 async function getToken(request: any): Promise<string> {
-  // Login via Supabase auth directly
-  const res = await request.post('https://lmirhhmprmotogdyubyv.supabase.co/auth/v1/token?grant_type=password', {
-    headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtaXJoaG1wcm1vdG9nZHl1Ynl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1Mzk2MjEsImV4cCI6MjA5NTExNTYyMX0.WnZf5hSx9x4jJiEDgebkeSuFMXngDeK8huCx3-_kENQ', 'Content-Type': 'application/json' },
-    data: { email: EMAIL, password: PASSWORD },
+  const res = await request.post('https://cognito-idp.us-east-1.amazonaws.com/', {
+    headers: {
+      'Content-Type': 'application/x-amz-json-1.1',
+      'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth',
+    },
+    data: {
+      AuthFlow: 'USER_PASSWORD_AUTH',
+      ClientId: 'dvgl229nmkojnubqeupiasp28',
+      AuthParameters: { USERNAME: EMAIL, PASSWORD: PASSWORD },
+    },
   });
   const body = await res.json();
-  return body.access_token;
+  return body.AuthenticationResult.IdToken;
 }
 
 // Get API URL from the deployed Lambda
