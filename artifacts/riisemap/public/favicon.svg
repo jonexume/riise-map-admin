@@ -1,3 +1,16 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="32" fill="#0d2847"/>
+  <defs>
+    <linearGradient id="arrowGrad" x1="0.3" y1="1" x2="0.7" y2="0">
+      <stop offset="0%" stop-color="#2980d4"/>
+      <stop offset="100%" stop-color="#3ddc84"/>
+    </linearGradient>
+  </defs>
+  <!-- M shape: two rises with a valley -->
+  <path d="M24 145 L44 55 L66 145 L88 55 L108 145"
+        stroke="#4a9fdf" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Arrow shaft (consistent width parallelogram) -->
+  <path d="M100 150 L118 150 L140 52 L122 52 Z" fill="url(#arrowGrad)"/>
+  <!-- Arrowhead (wide triangle at top of shaft) -->
+  <path d="M148 16 L160 72 L112 48 Z" fill="#3ddc84"/>
 </svg>
