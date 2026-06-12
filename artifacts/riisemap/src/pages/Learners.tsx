@@ -224,6 +224,7 @@ export default function Learners() {
         }
       });
       setNewLearnerId(String(newLearner.id));
+      await navigator.clipboard.writeText(inviteForm.message);
       setInviteStep(1);
     } catch (error: any) {
       if (error.response?.status === 409) {
@@ -550,12 +551,12 @@ export default function Learners() {
                 <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
                   <Check size={30} className="text-emerald-600" />
                 </div>
-                <h2 className="text-xl font-semibold text-foreground mb-2">Learner added</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Learner added — message copied!</h2>
                 <p className="text-sm text-muted-foreground mb-6 max-w-xs">
                   <span className="font-medium text-foreground">
                     {inviteForm.firstName} {inviteForm.lastName}
                   </span>{" "}
-                  has been added to your learner list and an invitation email has been sent to{" "}
+                  has been added to your learner list. The invitation message has been copied to your clipboard — paste it into an email to{" "}
                   <span className="font-medium text-foreground">{inviteForm.email}</span>.
                 </p>
 
@@ -598,7 +599,7 @@ export default function Learners() {
                   </div>
                   <div className="flex items-center gap-2 pt-1 border-t border-border text-xs mt-1">
                     <Mail size={11} className="text-muted-foreground" />
-                    <span className="text-muted-foreground">Invitation email delivered · Learner record created</span>
+                    <span className="text-muted-foreground">Invitation message copied to clipboard · Paste into your email client</span>
                   </div>
                 </div>
 
@@ -619,7 +620,7 @@ export default function Learners() {
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
                   <div>
                     <h2 className="text-base font-semibold text-foreground">Invite a Learner</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">Add them to the program and send a personal invitation</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Add them to the program and copy a personal invitation to your clipboard</p>
                   </div>
                   <button onClick={closeInvite} className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors">
                     <X size={18} />
@@ -772,7 +773,7 @@ export default function Learners() {
                 <div className="flex gap-3 px-6 pb-6">
                   <Button variant="outline" onClick={closeInvite}>Cancel</Button>
                   <Button className="flex-1" onClick={handleSendInvite} data-testid="send-invite-btn">
-                    <Mail size={13} className="mr-2" /> Add Learner & Send Invitation
+                    <Mail size={13} className="mr-2" /> Add Learner & Copy Invitation
                   </Button>
                 </div>
               </>
