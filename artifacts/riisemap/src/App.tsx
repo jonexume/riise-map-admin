@@ -15,9 +15,8 @@ import FundingSources from "@/pages/FundingSources";
 import SettingsPage from "@/pages/Settings";
 import Onboarding from "@/pages/Onboarding";
 import Login from "@/pages/Login";
-import { supabase } from "@/lib/supabase";
+import { isAuthenticated, getAccessToken, onAuthStateChange } from "@/lib/auth";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
-import type { Session } from "@supabase/supabase-js";
 
 const queryClient = new QueryClient();
 
@@ -40,8 +39,7 @@ function Router() {
 }
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authed, setAuthed] = useState<boolean | null>(null);
   const [onboarded, setOnboarded] = useState<boolean>(
     () => !!localStorage.getItem("riisemap_onboarding")
   );
@@ -49,24 +47,15 @@ function App() {
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_URL || "";
     setBaseUrl(baseUrl);
-    setAuthTokenGetter(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token ?? null;
-    });
+    setAuthTokenGetter(getAccessToken);
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-    });
+    isAuthenticated().then(setAuthed);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    const { unsubscribe } = onAuthStateChange(setAuthed);
+    return () => unsubscribe();
   }, []);
 
-  if (loading) {
+  if (authed === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
@@ -77,8 +66,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        {!session ? (
-          <Login onLogin={() => {}} />
+        {!authed ? (
+          <Login onLogin={() => setAuthed(true)} />
         ) : !onboarded ? (
           <Onboarding onComplete={() => setOnboarded(true)} />
         ) : (
