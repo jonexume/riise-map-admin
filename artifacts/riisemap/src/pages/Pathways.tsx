@@ -155,7 +155,6 @@ export default function Pathways() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseUrl = import.meta.env.VITE_API_URL || "";
 
-  const pathways = Array.isArray(pathwayData) ? pathwayData : [];
 
   if (pathwaysLoading) {
     return (
