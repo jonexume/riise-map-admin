@@ -1,9 +1,7 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
-  title: Api
-  version: 0.1.0
-  description: API specification
+  title: Riise Map API
+  version: 1.0.0
 servers:
   - url: /api
     description: Base API path
@@ -18,6 +16,8 @@ tags:
     description: Pathway operations
   - name: funding-sources
     description: Funding Source operations
+  - name: coaches
+    description: Coach operations
 paths:
   /healthz:
     get:
@@ -347,6 +347,37 @@ paths:
         "404":
           description: Funding source not found
 
+  /coaches:
+    get:
+      operationId: getCoaches
+      tags: [coaches]
+      summary: List all coaches
+      responses:
+        "200":
+          description: A list of coaches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coach"
+    post:
+      operationId: createCoach
+      tags: [coaches]
+      summary: Create a new coach
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCoach"
+      responses:
+        "201":
+          description: Coach created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coach"
 components:
   schemas:
     HealthStatus:
@@ -888,3 +919,73 @@ components:
           items:
             type: integer
 
+    Coach:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+        learnersCount:
+          type: integer
+        atRisk:
+          type: integer
+        workload:
+          type: string
+        upcomingCheckIns:
+          type: integer
+        overdueCheckIns:
+          type: integer
+        assignedLearners:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - role
+        - email
+        - learnersCount
+        - atRisk
+        - workload
+        - upcomingCheckIns
+        - overdueCheckIns
+
+    CreateCoach:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: string
+        learnersCount:
+          type: integer
+        atRisk:
+          type: integer
+        workload:
+          type: string
+        upcomingCheckIns:
+          type: integer
+        overdueCheckIns:
+          type: integer
+        assignedLearners:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - name
+        - role
+        - email
+        - learnersCount
+        - atRisk
+        - workload
+        - upcomingCheckIns
+        - overdueCheckIns

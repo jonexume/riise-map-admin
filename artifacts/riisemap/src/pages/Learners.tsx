@@ -46,6 +46,7 @@ const BLANK_INVITE: InviteForm = {
 };
 
 export default function Learners() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useUser();
   const { data: allLearners = [], isLoading } = useGetLearners();
