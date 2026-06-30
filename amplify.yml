@@ -7,6 +7,9 @@ frontend:
         - pnpm install --no-frozen-lockfile
     build:
       commands:
+        # Build the Lambda bundle for the API
+        - cd artifacts/api-server && node ./build.mjs --lambda
+        # Build the frontend
         - pnpm --filter @workspace/riisemap build
   artifacts:
     baseDirectory: artifacts/riisemap/dist/public

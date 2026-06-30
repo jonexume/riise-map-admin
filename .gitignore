@@ -48,7 +48,15 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+_env copy
+_env copy.zip
+
+# Playwright
+test-results/
+playwright-report/
 
 # Replit
 .cache/
 .local/
+artifacts/api-server/dist-lambda/
+samconfig.toml

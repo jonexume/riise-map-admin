@@ -76,10 +76,10 @@
   --elevate-2: rgba(0,0,0, .08);
 
   --background: 215 30% 97%;
-  --foreground: 215 40% 12%;
+  --foreground: 220 40% 12%;
   --border: 215 20% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 215 40% 12%;
+  --card-foreground: 220 40% 12%;
   --card-border: 215 20% 90%;
   --sidebar: 218 40% 17%;
   --sidebar-foreground: 215 25% 88%;
@@ -90,7 +90,7 @@
   --sidebar-accent-foreground: 0 0% 95%;
   --sidebar-ring: 195 72% 55%;
   --popover: 0 0% 100%;
-  --popover-foreground: 215 40% 12%;
+  --popover-foreground: 220 40% 12%;
   --popover-border: 215 20% 88%;
   --primary: 213 65% 46%;
   --primary-foreground: 0 0% 100%;
@@ -279,3 +279,38 @@
     inset: -1px;
   }
 }
+
+@media print {
+  body { background: white !important; }
+  nav, header, [data-sidebar], [role="tablist"], aside { display: none !important; }
+  .flex.h-screen { height: auto !important; overflow: visible !important; display: block !important; }
+  .flex-1.flex.flex-col.min-w-0.overflow-hidden { overflow: visible !important; height: auto !important; }
+  main.flex-1.overflow-y-auto { overflow: visible !important; height: auto !important; }
+
+  /* Impact report: expand all collapsible sections */
+  [data-collapsible] [role="button"] { display: none !important; }
+  [data-collapsible] .hidden { display: block !important; }
+
+  /* Impact report: hide interactive controls */
+  .print\:hidden { display: none !important; }
+  select, button { display: none !important; }
+
+  /* Impact report: page breaks between funding source sections */
+  .print\:break-before-page { break-before: page; }
+
+  /* Impact report: show print header */
+  .print\:block { display: block !important; }
+
+  /* Impact report: single column layout */
+  .grid { display: block !important; }
+  .grid > * + * { margin-top: 1rem; }
+
+  /* General print utilities */
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:border { border: 1px solid #e5e7eb !important; }
+  .print\:space-y-4 > * + * { margin-top: 1rem; }
+
+  /* Prevent content breaking inside sections */
+  [data-collapsible] { break-inside: avoid; page-break-inside: avoid; }
+}
+

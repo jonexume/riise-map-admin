@@ -1,89 +1,69 @@
-import { useState, useRef } from "react";
-import { useParams, Link } from "wouter";
+import { useState, useRef, useEffect } from "react";
+import { useParams, Link, useLocation } from "wouter";
 import {
   ArrowLeft, User, BookOpen, FolderKanban, Calendar,
   FileText, BarChart3, Activity, Plus, Flag, CheckSquare,
-  Sparkles, Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check,
-  Upload
+  Clock, ChevronRight, CheckCircle2, Circle, AlertCircle, Check,
+  Upload, Edit, Trash2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
 import { StatusBadge } from "@/components/StatusBadge";
-import { useGetLearner, useUpdateLearner, useGetLearnerProjects, type Learner } from "@workspace/api-client-react";
+import {
+  useGetLearner, useUpdateLearner, type Learner,
+  useGetLearnerRoadmaps, useGetLearnerProjects, useGetLearnerEvents,
+  useGetLearnerNotes, useCreateLearnerNote, useUpdateLearnerNote, useDeleteLearnerNote,
+  useGetLearnerReadiness, useGetLearnerActivities,
+  useGetPrograms, useGetPathways
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUser } from "@/lib/UserContext";
 import { cn } from "@/lib/utils";
-
-// Mock details structure (will be replaced with real API data later)
-interface MockLearnerDetails {
-  profileStrength: number;
-  background: string | null;
-  strengths: string[];
-  risks: string[];
-  roadmap: Array<{ id: string; title: string; dueDate: string; state: "completed" | "in-progress" | "overdue" | "upcoming" }>;
-  projects: Array<{ id: string; title: string; completion: number; status: "completed" | "in-progress" | "upcoming" }>;
-  events: Array<{ id: string; title: string; date: string; status: "attended" | "upcoming" | "missed" }>;
-  notes: Array<{ id: string; author: string; date: string; content: string }>;
-  readiness: Array<{ dimension: string; score: number }>;
-  activity: Array<{ id: string; type: string; event: string; date: string }>;
-}
-
-function getMockDetails(learner: Learner): MockLearnerDetails {
-  // Parse JSON fields if they exist
-  const strengths = typeof learner.strengths === 'string' ? JSON.parse(learner.strengths) : learner.strengths || [];
-  const risks = typeof learner.risks === 'string' ? JSON.parse(learner.risks) : learner.risks || [];
-
-  return {
-    profileStrength: learner.profileStrength || 0,
-    background: learner.background || "Background information not yet added.",
-    strengths,
-    risks,
-    roadmap: [
-      { id: "1", title: "Career Assessment", dueDate: "2 weeks ago", state: "completed" },
-      { id: "2", title: "Resume Review", dueDate: "1 week ago", state: "in-progress" },
-      { id: "3", title: "LinkedIn Optimization", dueDate: "Tomorrow", state: "upcoming" },
-    ],
-    projects: [
-      { id: "1", title: "Customer Onboarding Simulation", completion: 75, status: "in-progress" },
-      { id: "2", title: "Help Ticket System Walkthrough", completion: 100, status: "completed" },
-    ],
-    events: [
-      { id: "1", title: "Career Readiness Workshop", date: "Last week", status: "attended" },
-      { id: "2", title: "Mock Interview Session", date: "Next Tuesday", status: "upcoming" },
-    ],
-    notes: [
-      { id: "1", author: "Denise Carter", date: "May 20, 2025", content: "Great progress on the career assessment! Very thoughtful responses to the situational questions." },
-    ],
-    readiness: [
-      { dimension: "Technical Skills", score: 65 },
-      { dimension: "Communication", score: 85 },
-      { dimension: "Professionalism", score: 80 },
-      { dimension: "Interview Readiness", score: 55 },
-    ],
-    activity: [
-      { id: "1", type: "login", event: "Logged into RiiseMap", date: "2 hours ago" },
-      { id: "2", type: "milestone", event: "Completed Career Assessment", date: "2 days ago" },
-    ],
-  };
-}
+import { authFetch } from "@/lib/auth-fetch";
 
 export default function LearnerDetail() {
   const { id } = useParams<{ id: string }>();
   const learnerId = parseInt(id || "0");
   const queryClient = useQueryClient();
-  const { data: learner, isLoading: isLearnerLoading } = useGetLearner(learnerId);
-  const { data: projectsData, isLoading: areProjectsLoading } = useGetLearnerProjects(learnerId);
-  const projects = projectsData?.data || [];
+  const { user } = useUser();
+  const { data: learner, isLoading } = useGetLearner(learnerId);
+  const { data: programs = [] } = useGetPrograms();
+  const { data: pathways = [] } = useGetPathways();
   const updateLearnerMutation = useUpdateLearner({ mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/learners/${learnerId}`] }) } });
+  const { data: roadmap = [] } = useGetLearnerRoadmaps(learnerId);
+  const { data: projects = [] } = useGetLearnerProjects(learnerId);
+  const { data: events = [] } = useGetLearnerEvents(learnerId);
+  const { data: notes = [] } = useGetLearnerNotes(learnerId);
+  const { data: readiness = [] } = useGetLearnerReadiness(learnerId);
+  const { data: activity = [] } = useGetLearnerActivities(learnerId);
+  const createNoteMutation = useCreateLearnerNote(learnerId);
+  const updateNoteMutation = useUpdateLearnerNote(learnerId);
+  const deleteNoteMutation = useDeleteLearnerNote(learnerId);
   const [newNote, setNewNote] = useState("");
-  const [notes, setNotes] = useState<MockLearnerDetails["notes"]>([]);
   const [noteSaved, setNoteSaved] = useState(false);
-  const [flagged, setFlagged] = useState(false);
-  const [showSuccessStory, setShowSuccessStory] = useState(false);
+  const [activeTab, setActiveTab] = useState("notes");
+  const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [, navigate] = useLocation();
+  const [statusOptions, setStatusOptions] = useState<string[]>([]);
+  const [pathwayProgramLinks, setPathwayProgramLinks] = useState<{ pathwayId: number; programId: number }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    authFetch(`${baseUrl}/api/learner-statuses`).then(r => r.json()).then((data: any[]) => setStatusOptions(data.map(s => s.name))).catch(() => {});
+    authFetch(`${baseUrl}/api/pathway-programs`).then(r => r.json()).then(setPathwayProgramLinks).catch(() => {});
+  }, []);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,7 +77,7 @@ export default function LearnerDetail() {
     }
   };
 
-  if (isLearnerLoading) {
+  if (isLoading) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <div className="text-center py-12">
@@ -122,26 +102,39 @@ export default function LearnerDetail() {
     );
   }
 
-  const details = getMockDetails(learner);
+  const strengths: string[] = typeof learner.strengths === 'string' ? JSON.parse(learner.strengths) : learner.strengths || [];
+  const risks: string[] = typeof learner.risks === 'string' ? JSON.parse(learner.risks) : learner.risks || [];
 
   function handleFlag() {
-    setFlagged(true);
-    setTimeout(() => setFlagged(false), 3000);
+    updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, flaggedForSupport: !learner!.flaggedForSupport } });
+  }
+
+  function startEditing() {
+    setEditForm({ name: learner!.name, email: learner!.email, pathway: learner!.pathway, program: learner!.program, coach: learner!.coach, status: learner!.status, readiness: String(learner!.readiness), progress: String(learner!.progress), lastActive: learner!.lastActive });
+    setIsEditing(true);
+  }
+
+  function saveEdit() {
+    updateLearnerMutation.mutate({ id: learnerId, data: { ...learner!, ...editForm, readiness: Number(editForm.readiness), progress: Number(editForm.progress) } });
+    setIsEditing(false);
+  }
+
+  async function handleDeleteLearner() {
+    if (deleteConfirmText !== learner!.name) return;
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    try {
+      await authFetch(`${baseUrl}/api/learners/${learnerId}`, { method: "DELETE" });
+      navigate("/learners");
+    } catch {}
   }
 
   function handleSaveNote() {
     const trimmed = newNote.trim();
     if (!trimmed) return;
-    const saved = {
-      id: String(Date.now()),
-      author: "Denise Carter",
-      date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-      content: trimmed,
-    };
-    setNotes(prev => [saved, ...prev]);
-    setNewNote("");
-    setNoteSaved(true);
-    setTimeout(() => setNoteSaved(false), 2000);
+    createNoteMutation.mutate(
+      { author: user.fullName || "Unknown", date: new Date().toISOString().split("T")[0], content: trimmed },
+      { onSuccess: () => { setNewNote(""); setNoteSaved(true); setTimeout(() => setNoteSaved(false), 2000); } }
+    );
   }
 
   const milestoneIcon = (state: string) => {
@@ -162,23 +155,107 @@ export default function LearnerDetail() {
       </Link>
 
       {/* Header */}
+      {isEditing ? (
+        <div className="bg-card border border-card-border rounded-lg p-5 mb-6 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label className="text-xs font-medium text-muted-foreground">Name</label><Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Email</label><Input value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} className="mt-1" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground">Pathway</label>
+              <Select value={editForm.pathway} onValueChange={v => setEditForm(f => ({ ...f, pathway: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select pathway..." /></SelectTrigger>
+                <SelectContent>
+                  {pathways.filter((p: any) => p.name).map((p: any) => <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-xs font-medium text-muted-foreground">Program</label>
+              <Select value={editForm.program} onValueChange={v => setEditForm(f => ({ ...f, program: v }))} disabled={!editForm.pathway}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={editForm.pathway ? "Select program..." : "Select pathway first"} /></SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    const selectedPathway = pathways.find((p: any) => p.name === editForm.pathway);
+                    const linkedProgramIds = selectedPathway ? pathwayProgramLinks.filter(l => l.pathwayId === selectedPathway.id).map(l => l.programId) : [];
+                    return programs.filter((p: any) => p.name).map((p: any) => (
+                      <SelectItem key={p.id} value={p.name}>{linkedProgramIds.includes(p.id) ? `★ ${p.name}` : p.name}</SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-xs font-medium text-muted-foreground">Coach</label><Input value={editForm.coach} onChange={e => setEditForm(f => ({ ...f, coach: e.target.value }))} className="mt-1" /></div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Status</label>
+              <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {statusOptions.filter(s => s).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t">
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Readiness Score</label>
+              <div className="flex items-center gap-2 mt-2">
+                <Slider
+                  value={[Number(editForm.readiness) || 0]}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                  trackColor={Number(editForm.readiness) <= 25 ? "#9ca3af" : Number(editForm.readiness) <= 50 ? "#3b82f6" : Number(editForm.readiness) <= 75 ? "#f59e0b" : "#22c55e"}
+                  onValueChange={([val]) => setEditForm(f => ({ ...f, readiness: String(val) }))}
+                />
+                <input type="number" min={0} max={100} value={editForm.readiness} onChange={e => setEditForm(f => ({ ...f, readiness: String(Math.min(100, Math.max(0, parseInt(e.target.value) || 0))) }))} className="w-12 h-7 text-sm text-center border rounded-md" />
+              </div>
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Roadmap Progress</label>
+              <div className="flex items-center gap-2 mt-2">
+                <Slider
+                  value={[Number(editForm.progress) || 0]}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                  trackColor={Number(editForm.progress) <= 25 ? "#9ca3af" : Number(editForm.progress) <= 50 ? "#3b82f6" : Number(editForm.progress) <= 75 ? "#f59e0b" : "#22c55e"}
+                  onValueChange={([val]) => setEditForm(f => ({ ...f, progress: String(val) }))}
+                />
+                <input type="number" min={0} max={100} value={editForm.progress} onChange={e => setEditForm(f => ({ ...f, progress: String(Math.min(100, Math.max(0, parseInt(e.target.value) || 0))) }))} className="w-12 h-7 text-sm text-center border rounded-md" />
+              </div>
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Profile Strength</label>
+              {(() => {
+                const fields = [editForm.name, editForm.email, editForm.program, editForm.pathway, editForm.coach, editForm.status];
+                const filled = fields.filter(f => f && f.trim()).length + (Number(editForm.readiness) > 0 ? 1 : 0) + (Number(editForm.progress) > 0 ? 1 : 0);
+                const pct = Math.round((filled / 8) * 100);
+                const color = pct <= 25 ? "#ef4444" : pct <= 50 ? "#3b82f6" : pct <= 75 ? "#f59e0b" : "#22c55e";
+                return (
+                  <>
+                    <p className="text-2xl font-semibold text-foreground mt-2">{pct}%</p>
+                    <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+            <div className="bg-muted/30 border rounded-lg p-3">
+              <label className="text-xs font-medium text-muted-foreground">Created</label>
+              <p className="text-sm font-semibold text-foreground mt-2">{learner.createdAt ? new Date(learner.createdAt).toLocaleDateString() : "—"}</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" className="text-xs h-8" onClick={saveEdit}><Check size={12} className="mr-1.5" />Save</Button>
+            <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => setIsEditing(false)}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div 
-            className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer hover:bg-primary/20 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
+            className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden"
           >
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-            />
-            {learner.photo
-              ? <img src={learner.photo} alt={learner.name} className="w-full h-full object-cover" />
-              : <Upload size={24} className="text-primary/60" />
-            }
+            <span className="text-lg font-semibold text-primary/80">{learner.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}</span>
           </div>
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -189,219 +266,63 @@ export default function LearnerDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="text-xs h-8" data-testid="btn-add-note" onClick={() => document.querySelector('[data-testid="add-note-input"]')?.scrollIntoView({ behavior: 'smooth' })}>
-            <Plus size={12} className="mr-1.5" /> Add Note
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={startEditing}>
+            <Edit size={12} className="mr-1.5" /> Edit
           </Button>
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-8"
-              onClick={handleFlag}
-              data-testid="btn-flag"
-            >
-              {flagged
-                ? <><Check size={12} className="mr-1.5 text-emerald-600" /><span className="text-emerald-600">Support notified</span></>
-                : <><Flag size={12} className="mr-1.5" /> Flag for Support</>
-              }
-            </Button>
-            {flagged && (
-              <div className="absolute top-full left-0 mt-2 z-50 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 shadow-md whitespace-nowrap">
-                <p className="text-xs font-semibold text-emerald-800">Support team notified</p>
-                <p className="text-[11px] text-emerald-700 mt-0.5">{learner.name}'s coach has been alerted.</p>
-              </div>
-            )}
-          </div>
-          <Button size="sm" className="text-xs h-8" data-testid="btn-success-story" onClick={() => setShowSuccessStory(true)}>
-            <Sparkles size={12} className="mr-1.5" /> Create Success Story
+          <Button variant="outline" size="sm" className="text-xs h-8 text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
+            <Trash2 size={12} className="mr-1.5" /> Delete
           </Button>
         </div>
       </div>
+      )}
 
       {/* Key metrics */}
+      {!isEditing && (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Readiness Score</p>
-          <p className="text-2xl font-semibold text-foreground mt-0.5" data-testid="readiness-score">{learner.readiness}</p>
-          <p className="text-xs text-muted-foreground">out of 100</p>
+          <p className="text-2xl font-semibold mt-0.5" style={{ color: learner.readiness <= 25 ? "#9ca3af" : learner.readiness <= 50 ? "#3b82f6" : learner.readiness <= 75 ? "#f59e0b" : "#22c55e" }} data-testid="readiness-score">{learner.readiness}</p>
+          <p className="text-xs text-muted-foreground mt-1">out of 100</p>
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Roadmap Progress</p>
           <p className="text-2xl font-semibold text-foreground mt-0.5">{learner.progress}%</p>
-          <Progress value={learner.progress} className="h-1 mt-1.5" />
+          <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${learner.progress}%`, backgroundColor: learner.progress <= 25 ? "#9ca3af" : learner.progress <= 50 ? "#3b82f6" : learner.progress <= 75 ? "#f59e0b" : "#22c55e" }} />
+          </div>
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
           <p className="text-xs text-muted-foreground">Profile Strength</p>
-          <p className="text-2xl font-semibold text-foreground mt-0.5">{details.profileStrength}%</p>
-          <Progress value={details.profileStrength} className="h-1 mt-1.5" />
+          {(() => {
+            const fields = [learner.name, learner.email, learner.program, learner.pathway, learner.coach, learner.status];
+            const filled = fields.filter(f => f && f.trim()).length
+              + (learner.readiness > 0 ? 1 : 0)
+              + (learner.progress > 0 ? 1 : 0);
+            const pct = Math.round((filled / 8) * 100);
+            const color = pct <= 25 ? "#ef4444" : pct <= 50 ? "#3b82f6" : pct <= 75 ? "#f59e0b" : "#22c55e";
+            return (
+              <>
+                <p className="text-2xl font-semibold text-foreground mt-0.5">{pct}%</p>
+                <div className="h-1 mt-1.5 w-full rounded-full bg-primary/20 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                </div>
+              </>
+            );
+          })()}
         </div>
         <div className="bg-card border border-card-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Last Active</p>
-          <p className="text-sm font-semibold text-foreground mt-1">{learner.lastActive}</p>
-          <p className="text-xs text-muted-foreground">Joined {learner.joinDate}</p>
+          <p className="text-xs text-muted-foreground">Created</p>
+          <p className="text-sm font-semibold text-foreground mt-1">{learner.createdAt ? new Date(learner.createdAt).toLocaleDateString() : "—"}</p>
         </div>
       </div>
+      )}
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      {!isEditing && (
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-5 bg-muted/50">
-          <TabsTrigger value="overview" className="text-xs"><User size={12} className="mr-1" />Overview</TabsTrigger>
-          <TabsTrigger value="roadmap" className="text-xs"><BookOpen size={12} className="mr-1" />Roadmap</TabsTrigger>
-          <TabsTrigger value="projects" className="text-xs"><FolderKanban size={12} className="mr-1" />Projects</TabsTrigger>
-          <TabsTrigger value="events" className="text-xs"><Calendar size={12} className="mr-1" />Events</TabsTrigger>
           <TabsTrigger value="notes" className="text-xs"><FileText size={12} className="mr-1" />Notes</TabsTrigger>
-          <TabsTrigger value="readiness" className="text-xs"><BarChart3 size={12} className="mr-1" />Readiness</TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs"><Activity size={12} className="mr-1" />Activity</TabsTrigger>
         </TabsList>
-
-        {/* Overview */}
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <Card className="border-card-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">About</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <p className="text-sm text-muted-foreground">{details.background || "Background information not yet added."}</p>
-                {details.strengths.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-foreground mb-2">Strengths</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {details.strengths.map(s => (
-                        <span key={s} className="text-xs bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded-full">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="border-card-border">
-              <CardHeader className="pb-3"><CardTitle className="text-sm">Next Recommended Action</CardTitle></CardHeader>
-              <CardContent className="pt-0">
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                  <p className="text-sm text-blue-800">{learner.nextAction}</p>
-                </div>
-                {details.risks.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-foreground mb-2">Attention Areas</p>
-                    <div className="space-y-1.5">
-                      {details.risks.map(r => (
-                        <div key={r} className="flex items-center gap-2 text-xs text-amber-700">
-                          <AlertCircle size={12} className="text-amber-500 flex-shrink-0" />
-                          {r}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Roadmap */}
-        <TabsContent value="roadmap">
-          <Card className="border-card-border">
-            <CardContent className="pt-5">
-              {details.roadmap.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">Roadmap milestones not yet configured.</p>
-              ) : (
-                <div className="space-y-2">
-                  {(["completed", "in-progress", "overdue", "upcoming"] as const).map(state => {
-                    const items = details.roadmap.filter(m => m.state === state);
-                    if (items.length === 0) return null;
-                    const labels = { completed: "Completed", "in-progress": "In Progress", overdue: "Overdue", upcoming: "Upcoming" };
-                    return (
-                      <div key={state} className="mb-4">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{labels[state]}</p>
-                        <div className="space-y-2">
-                          {items.map(m => (
-                            <div key={m.id} className={cn(
-                              "flex items-center gap-3 p-3 rounded-lg border",
-                              state === "completed" ? "bg-emerald-50/50 border-emerald-100" :
-                              state === "in-progress" ? "bg-blue-50/50 border-blue-100" :
-                              state === "overdue" ? "bg-red-50/50 border-red-100" :
-                              "bg-muted/30 border-border"
-                            )}>
-                              {milestoneIcon(state)}
-                              <div className="flex-1">
-                                <p className="text-sm text-foreground">{m.title}</p>
-                                <p className="text-xs text-muted-foreground">Due {m.dueDate}</p>
-                              </div>
-                              {state !== "completed" && state !== "upcoming" && (
-                                <Button size="sm" variant="outline" className="text-xs h-7 px-2.5" data-testid={`milestone-action-${m.id}`}>
-                                  {state === "overdue" ? "Mark complete" : "Update"}
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Projects */}
-        <TabsContent value="projects">
-          <div className="space-y-3">
-            {areProjectsLoading ? (
-              <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">Loading projects...</CardContent></Card>
-            ) : projects.length === 0 ? (
-              <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">No projects assigned yet.</CardContent></Card>
-            ) : projects.map(p => (
-              <Card key={p.id} className="border-card-border">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <FolderKanban size={14} className="text-primary" />
-                      <p className="text-sm font-medium text-foreground">{p.title}</p>
-                    </div>
-                    <StatusBadge status={p.status === "completed" ? "On Track" : p.status === "in-progress" ? "Needs Support" : "New Learner"} />
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Progress value={p.completion} className="h-1.5 flex-1" />
-                    <span className="text-xs text-muted-foreground">{p.completion}%</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Events */}
-        <TabsContent value="events">
-          <div className="space-y-2">
-            {details.events.length === 0 ? (
-              <Card className="border-card-border"><CardContent className="py-8 text-center text-sm text-muted-foreground">No events recorded yet.</CardContent></Card>
-            ) : details.events.map(e => (
-              <div key={e.id} className={cn(
-                "flex items-center gap-3 p-3.5 rounded-lg border",
-                e.status === "attended" ? "bg-emerald-50/40 border-emerald-100" :
-                e.status === "upcoming" ? "bg-blue-50/40 border-blue-100" :
-                "bg-red-50/30 border-red-100"
-              )}>
-                <Calendar size={14} className={cn(
-                  e.status === "attended" ? "text-emerald-600" :
-                  e.status === "upcoming" ? "text-blue-600" : "text-red-500"
-                )} />
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">{e.title}</p>
-                  <p className="text-xs text-muted-foreground">{e.date}</p>
-                </div>
-                <span className={cn(
-                  "text-xs font-medium px-2 py-0.5 rounded-full",
-                  e.status === "attended" ? "bg-emerald-100 text-emerald-700" :
-                  e.status === "upcoming" ? "bg-blue-100 text-blue-700" :
-                  "bg-red-100 text-red-700"
-                )}>
-                  {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
 
         {/* Notes */}
         <TabsContent value="notes">
@@ -438,90 +359,70 @@ export default function LearnerDetail() {
                       </div>
                       <span className="text-xs font-semibold text-foreground">{n.author}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">{n.date}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{n.date}</span>
+                      {editingNoteId !== n.id && (
+                        <>
+                          <button onClick={() => { setEditingNoteId(n.id); setEditingContent(n.content); }} className="text-muted-foreground hover:text-foreground"><Edit size={12} /></button>
+                          <button onClick={() => deleteNoteMutation.mutate(n.id)} className="text-muted-foreground hover:text-red-600"><Trash2 size={12} /></button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{n.content}</p>
+                  {editingNoteId === n.id ? (
+                    <div>
+                      <Textarea value={editingContent} onChange={(e) => setEditingContent(e.target.value)} className="text-sm min-h-16 resize-none" />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setEditingNoteId(null)}><X size={12} className="mr-1" />Cancel</Button>
+                        <Button size="sm" className="text-xs h-7" onClick={() => updateNoteMutation.mutate({ noteId: n.id, content: editingContent }, { onSuccess: () => setEditingNoteId(null) })}>Save</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{n.content}</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         </TabsContent>
-
-        {/* Readiness */}
-        <TabsContent value="readiness">
-          <Card className="border-card-border">
-            <CardHeader className="pb-3"><CardTitle className="text-sm">Readiness Dimensions</CardTitle></CardHeader>
-            <CardContent className="pt-0 space-y-4">
-              {details.readiness.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Readiness data not yet available.</p>
-              ) : details.readiness.map(r => (
-                <div key={r.dimension}>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-foreground font-medium">{r.dimension}</span>
-                    <span className={cn(
-                      "font-semibold",
-                      r.score >= 80 ? "text-emerald-600" : r.score >= 60 ? "text-blue-600" : "text-amber-600"
-                    )}>{r.score}</span>
-                  </div>
-                  <Progress value={r.score} className="h-2" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Activity */}
-        <TabsContent value="activity">
-          <Card className="border-card-border">
-            <CardContent className="pt-5">
-              {details.activity.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No activity recorded yet.</p>
-              ) : (
-                <div className="space-y-0">
-                  {details.activity.map((a, i) => {
-                    const icons = {
-                      milestone: CheckSquare, event: Calendar,
-                      note: FileText, login: User, project: FolderKanban,
-                    };
-                    const Icon = icons[a.type] ?? Activity;
-                    return (
-                      <div key={a.id} className="flex gap-4 pb-4">
-                        <div className="flex flex-col items-center">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <Icon size={12} className="text-primary" />
-                          </div>
-                          {i < details.activity.length - 1 && <div className="w-px flex-1 bg-border mt-1" />}
-                        </div>
-                        <div className="flex-1 pb-1 pt-1">
-                          <p className="text-sm text-foreground">{a.event}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{a.date}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+      )}
 
-      {/* Success Story Dialog */}
-      <Dialog open={showSuccessStory} onOpenChange={setShowSuccessStory}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Success Story</DialogTitle>
-            <DialogDescription>Create a success story to celebrate {learner.name}'s achievements!</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">Success story functionality coming soon!</p>
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
+          <div className="bg-background rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-2">Delete Learner</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              This will permanently delete <span className="font-medium text-foreground">{learner.name}</span> and all their associated data. This cannot be undone.
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Type <span className="font-mono font-medium text-foreground">{learner.name}</span> to confirm:
+            </p>
+            <Input
+              className="h-10 text-sm mb-4"
+              placeholder="Type learner name to confirm..."
+              value={deleteConfirmText}
+              onChange={e => setDeleteConfirmText(e.target.value)}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                disabled={deleteConfirmText !== learner.name}
+                onClick={handleDeleteLearner}
+              >
+                Delete Learner
+              </Button>
+            </div>
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setShowSuccessStory(false)}>Cancel</Button>
-            <Button onClick={() => setShowSuccessStory(false)}>Create</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
+
     </div>
   );
 }

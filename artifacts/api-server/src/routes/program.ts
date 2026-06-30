@@ -1,41 +1,69 @@
 import { Router, type IRouter } from "express";
-import { db, programsTable, insertProgramSchema } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, programsTable, insertProgramSchema, pathwaysTable, learnersTable, fundingSourcesTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
+import { logAudit } from "./audit-log";
 
 const router: IRouter = Router();
 
-// Get all programs
+function getOrgId(req: any): number | null {
+  return req.dbUser?.orgId ?? null;
+}
+
+function computeMetrics(program: any, learners: any[]) {
+  const pl = learners.filter(l => l.program === program.name);
+  const count = pl.length;
+  return {
+    ...program,
+    activeLearners: count,
+    completionRate: count > 0 ? Math.round(pl.filter(l => l.progress >= 100).length / count * 100) : 0,
+    readinessScore: count > 0 ? Math.round(pl.reduce((s, l) => s + l.readiness, 0) / count) : 0,
+    placementReady: pl.filter(l => l.status === "Placement Ready").length,
+  };
+}
+
 router.get("/programs", async (req, res) => {
   try {
-    const programs = await db.select().from(programsTable);
-    res.json(programs);
+    const orgId = getOrgId(req);
+    const programs = orgId
+      ? await db.select().from(programsTable).where(eq(programsTable.orgId, orgId))
+      : await db.select().from(programsTable);
+    const learners = orgId
+      ? await db.select().from(learnersTable).where(eq(learnersTable.orgId, orgId))
+      : await db.select().from(learnersTable);
+    res.json(programs.map(p => computeMetrics(p, learners)));
   } catch (error) {
     console.error("Error fetching programs:", error);
     res.status(500).json({ error: "Failed to fetch programs" });
   }
 });
 
-// Get single program
 router.get("/programs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const program = await db.select().from(programsTable).where(eq(programsTable.id, id));
-    if (program.length === 0) {
-      res.status(404).json({ error: "Program not found" });
-      return;
-    }
-    res.json(program[0]);
+    const orgId = getOrgId(req);
+    const where = orgId ? and(eq(programsTable.id, id), eq(programsTable.orgId, orgId)) : eq(programsTable.id, id);
+    const program = await db.select().from(programsTable).where(where);
+    if (program.length === 0) { res.status(404).json({ error: "Program not found" }); return; }
+    const learners = orgId
+      ? await db.select().from(learnersTable).where(eq(learnersTable.orgId, orgId))
+      : await db.select().from(learnersTable);
+    res.json(computeMetrics(program[0], learners));
   } catch (error) {
     console.error("Error fetching program:", error);
     res.status(500).json({ error: "Failed to fetch program" });
   }
 });
 
-// Create program
 router.post("/programs", async (req, res) => {
   try {
     const data = insertProgramSchema.parse(req.body);
-    const [newProgram] = await db.insert(programsTable).values(data).returning();
+    const orgId = getOrgId(req);
+    const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+    if (existing.length > 0) {
+      return res.status(409).json({ error: "A program with this tag already exists." });
+    }
+    const [newProgram] = await db.insert(programsTable).values({ ...data, orgId }).returning();
+    await logAudit(req, "created", "program", newProgram.id, newProgram.name);
     res.status(201).json(newProgram);
   } catch (error) {
     console.error("Error creating program:", error);
@@ -43,20 +71,92 @@ router.post("/programs", async (req, res) => {
   }
 });
 
-// Update program
 router.put("/programs/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const data = insertProgramSchema.parse(req.body);
-    const [updatedProgram] = await db.update(programsTable).set(data).where(eq(programsTable.id, id)).returning();
-    if (!updatedProgram) {
-      res.status(404).json({ error: "Program not found" });
-      return;
+    const orgId = getOrgId(req);
+    const data = insertProgramSchema.partial().parse(req.body);
+    const where = orgId ? and(eq(programsTable.id, id), eq(programsTable.orgId, orgId)) : eq(programsTable.id, id);
+    const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+    if (existing.length > 0 && existing[0].id !== id) {
+      return res.status(409).json({ error: "A program with this tag already exists." });
     }
+    const [updatedProgram] = await db.update(programsTable).set(data).where(where).returning();
+    if (!updatedProgram) { res.status(404).json({ error: "Program not found" }); return; }
+    await logAudit(req, "updated", "program", id, updatedProgram.name);
     res.json(updatedProgram);
   } catch (error) {
     console.error("Error updating program:", error);
     res.status(400).json({ error: "Invalid data" });
+  }
+});
+
+router.delete("/programs/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const orgId = getOrgId(req);
+    const where = orgId ? and(eq(programsTable.id, id), eq(programsTable.orgId, orgId)) : eq(programsTable.id, id);
+    const program = await db.select().from(programsTable).where(where);
+    if (program.length === 0) { res.status(404).json({ error: "Program not found" }); return; }
+    await db.delete(programsTable).where(where);
+    await logAudit(req, "deleted", "program", id, program[0].name);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error deleting program:", error);
+    res.status(500).json({ error: "Failed to delete program" });
+  }
+});
+
+router.post("/programs/bulk-delete", async (req, res) => {
+  try {
+    const ids: number[] = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) { res.status(400).json({ error: "ids array is required" }); return; }
+    const orgId = getOrgId(req);
+    const deleted: number[] = [];
+    const blocked: { id: number; reason: string }[] = [];
+    for (const id of ids) {
+      const where = orgId ? and(eq(programsTable.id, id), eq(programsTable.orgId, orgId)) : eq(programsTable.id, id);
+      const [program] = await db.select().from(programsTable).where(where);
+      if (!program) continue;
+      await db.delete(programsTable).where(where);
+      deleted.push(id);
+      await logAudit(req, "deleted", "program", id, program.name);
+    }
+    res.json({ deleted: deleted.length, blocked });
+  } catch (error) {
+    console.error("Error bulk deleting programs:", error);
+    res.status(500).json({ error: "Bulk delete failed" });
+  }
+});
+
+router.post("/programs/import", async (req, res) => {
+  try {
+    const rows: unknown[] = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) { res.status(400).json({ error: "Request body must be a non-empty array" }); return; }
+    const orgId = getOrgId(req);
+    const results = { imported: 0, errors: [] as { row: number; message: string }[] };
+    for (let i = 0; i < rows.length; i++) {
+      try {
+        const row: any = rows[i];
+        row.activeLearners = parseInt(row.activeLearners) || 0;
+        row.completionRate = parseInt(row.completionRate) || 0;
+        row.readinessScore = parseInt(row.readinessScore) || 0;
+        row.eventParticipation = parseInt(row.eventParticipation) || 0;
+        row.placementReady = parseInt(row.placementReady) || 0;
+        if (!row.pathways) row.pathways = null;
+        const data = insertProgramSchema.parse(row);
+        const existing = await db.select().from(programsTable).where(eq(programsTable.programTag, data.programTag));
+        if (existing.length > 0) { results.errors.push({ row: i + 1, message: `programTag "${data.programTag}" already exists` }); continue; }
+        await db.insert(programsTable).values({ ...data, orgId });
+        results.imported++;
+      } catch (e: any) {
+        results.errors.push({ row: i + 1, message: e.message || "Invalid data" });
+      }
+    }
+    res.json(results);
+  } catch (error) {
+    console.error("Error importing programs:", error);
+    res.status(500).json({ error: "Import failed" });
   }
 });
 

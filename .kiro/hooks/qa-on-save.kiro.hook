@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "QA Review on Save",
+  "description": "Automatically reviews saved files for bugs, edge cases, security issues, and best-practice violations.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the changed file for: 1) Bugs or logic errors, 2) Unhandled edge cases, 3) Security concerns (e.g., exposed secrets, injection risks), 4) Performance issues, 5) Violations of project conventions. Provide a concise summary of any findings. If the file looks good, say so briefly."
+  }
+}
