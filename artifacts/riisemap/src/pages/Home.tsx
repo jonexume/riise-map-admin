@@ -48,7 +48,7 @@ export default function Home() {
           {greeting}{user.firstName ? `, ${user.firstName}` : ""}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Here's what needs your attention today — May 16, 2026
+          Here's a snapshot of your programs and learners.
         </p>
       </div>
 

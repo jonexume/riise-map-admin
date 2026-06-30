@@ -87,6 +87,7 @@ export default function Programs() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const baseUrl = import.meta.env.VITE_API_URL || "";
 
+  const programList = Array.isArray(programData) ? programData : [];
   const program = programList.find(p => p.id === selected);
 
   const validateForm = () => {

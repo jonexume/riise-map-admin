@@ -6,10 +6,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,19 +32,24 @@ interface InviteForm {
   lastName: string;
   email: string;
   phone: string;
-  program: string;
   pathway: string;
+  program: string;
   coach: string;
-  message: string;
 }
+
+const PROGRAM_LABELS: Record<string, string> = {
+  "aws-cwi-2024": "AWS CWI Program 2024",
+  "google-data-2024": "Google Data Analytics 2024",
+  "meta-social-2024": "Meta Social Media Marketing 2024",
+};
 
 const BLANK_INVITE: InviteForm = {
   firstName: "",
   lastName: "",
   email: "",
   phone: "",
-  program: "",
   pathway: "",
+  program: "",
   coach: "",
   message: "",
 };
@@ -54,6 +63,17 @@ export default function Learners() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['/api/learners'] });
+        toast({
+          title: "Success!",
+          description: "New learner has been invited.",
+        });
+      },
+      onError: (error) => {
+        toast({
+          variant: "destructive",
+          title: "Uh oh! Something went wrong.",
+          description: "There was a problem with your request. Please try again.",
+        });
       }
     }
   });
@@ -114,6 +134,7 @@ export default function Learners() {
   const [inviteStep, setInviteStep] = useState<0 | 1>(0);
   const [inviteForm, setInviteForm] = useState<InviteForm>({ ...BLANK_INVITE, message: defaultMessage });
   const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
+  const [newLearnerId, setNewLearnerId] = useState("");
 
   const filtered = allLearners.filter((l) => {
     const matchSearch =
@@ -253,7 +274,8 @@ export default function Learners() {
   };
 
   return (
-    <div className="px-6 py-8 max-w-7xl mx-auto">
+    <div className="p-5 lg:p-8">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-semibold text-foreground">Learners</h1>
@@ -601,22 +623,35 @@ export default function Learners() {
                     <span className="text-muted-foreground">Invitation message copied to clipboard · Paste into your email client</span>
                   </div>
                 </div>
-
-                <div className="flex gap-3 w-full">
-                  <Button variant="outline" className="flex-1" onClick={closeInvite}>View Learner List</Button>
-                  <Button className="flex-1" onClick={() => {
-                    setInviteForm(BLANK_INVITE);
-                    setInviteStep(0);
-                    setInviteErrors({});
-                  }}>
-                    Invite Another
-                  </Button>
+                <div className="space-y-1.5">
+                  <Label>Last Name</Label>
+                  <Input
+                    placeholder="e.g. Doe"
+                    value={inviteForm.lastName}
+                    onChange={(e) => setField("lastName", e.target.value)}
+                    className={cn(inviteErrors.lastName && "border-destructive")}
+                  />
                 </div>
-              </div>
-            ) : (
-              /* ── Compose invitation ── */
-              <>
-                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="e.g. jane.doe@example.com"
+                    value={inviteForm.email}
+                    onChange={(e) => setField("email", e.target.value)}
+                    className={cn(inviteErrors.email && "border-destructive")}
+                  />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Phone Number (optional)</Label>
+                  <Input
+                    type="tel"
+                    placeholder="e.g. (123) 456-7890"
+                    value={inviteForm.phone}
+                    onChange={(e) => setField("phone", e.target.value)}
+                  />
+                </div>
+                <div className="col-span-2 grid grid-cols-2 gap-4 pt-2">
                   <div>
                     <h2 className="text-base font-semibold text-foreground">Invite a Learner</h2>
                     <p className="text-xs text-muted-foreground mt-0.5">Add them to the program and copy a personal invitation to your clipboard</p>
@@ -749,8 +784,6 @@ export default function Learners() {
                       onChange={(e) => setField("coach", e.target.value)}
                     />
                   </div>
-
-                  {/* Personal message */}
                   <div>
                     <Label className="text-sm font-medium text-foreground">Personal Message</Label>
                     <Textarea
@@ -767,6 +800,21 @@ export default function Learners() {
                       <span className="text-xs text-muted-foreground">{inviteForm.message.length}/500</span>
                     </div>
                   </div>
+                  {/*
+                  <div className="col-span-2">
+                    <Label>Assign Coach</Label>
+                    <Select onValueChange={v => setField("coach", v)} value={inviteForm.coach}>
+                      <SelectTrigger className="border-card-border">
+                        <SelectValue placeholder="Select a coach" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {coaches.map(c => (
+                          <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  */}
                 </div>
 
                 <div className="flex gap-3 px-6 pb-6">
