@@ -60,7 +60,7 @@ test.describe('RiiseMap CRUD Tests', () => {
         await page.waitForTimeout(500);
         await page.click('button:has-text("Delete Selected")');
         await page.waitForTimeout(500);
-        await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+        await page.locator('button:has-text("Confirm Delete")').click({ timeout: 10000 });
         await page.waitForTimeout(2000);
       }
     });
@@ -277,28 +277,38 @@ test.describe('RiiseMap CRUD Tests', () => {
     test('Create', async ({ page }) => {
       await page.click('text=Pathways');
       await page.click('button:has-text("Add Pathway")');
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000);
       await page.locator('input').first().fill(name);
       await page.fill('textarea', 'Bulk delete pathway test');
       const durationSelect = page.locator('text=Select weeks');
       if (await durationSelect.isVisible()) {
         await durationSelect.click();
         await page.locator('[role="option"]:has-text("12")').click();
+        await page.waitForTimeout(300);
       }
-      const nextBtn = page.locator('button:has-text("Next")');
-      if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
-      const nextBtn2 = page.locator('button:has-text("Next")');
-      if (await nextBtn2.isVisible()) { await nextBtn2.click(); await page.waitForTimeout(300); }
+      // Step 1 → Step 2
+      await page.locator('button:has-text("Next"), button:has-text("Continue")').first().click();
+      await page.waitForTimeout(1000);
+      // Step 2 → Step 3
+      const next2 = page.locator('button:has-text("Next"), button:has-text("Continue")');
+      if (await next2.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+        await next2.first().click();
+        await page.waitForTimeout(1000);
+      }
+      // Create
       const createBtn = page.locator('button:has-text("Create Pathway"), button:has-text("Save")');
-      if (await createBtn.first().isVisible()) {
-        await createBtn.first().click();
-        await page.waitForTimeout(3000);
-      }
+      await createBtn.first().click({ timeout: 5000 });
+      await page.waitForTimeout(3000);
+      // Verify the pathway was created
+      await page.click('text=Pathways');
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('Update', async ({ page }) => {
       await page.click('text=Pathways');
       await page.waitForTimeout(2000);
+      // Wait for the card to appear (may need page to fully load)
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 15000 });
       const card = page.locator('[class*="card"], [class*="Card"]').filter({ hasText: name }).first();
       await card.locator('button:has-text("Edit")').click();
       await page.waitForTimeout(1000);
@@ -335,34 +345,50 @@ test.describe('RiiseMap CRUD Tests', () => {
     test('Create', async ({ page }) => {
       await page.click('text=Pathways');
       await page.click('button:has-text("Add Pathway")');
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(1000);
       await page.locator('input').first().fill(name);
       await page.fill('textarea', 'Detail delete pathway test');
       const durationSelect = page.locator('text=Select weeks');
       if (await durationSelect.isVisible()) {
         await durationSelect.click();
         await page.locator('[role="option"]:has-text("16")').click();
+        await page.waitForTimeout(300);
       }
-      const nextBtn = page.locator('button:has-text("Next")');
-      if (await nextBtn.isVisible()) { await nextBtn.click(); await page.waitForTimeout(300); }
-      const nextBtn2 = page.locator('button:has-text("Next")');
-      if (await nextBtn2.isVisible()) { await nextBtn2.click(); await page.waitForTimeout(300); }
+      // Step 1 → Step 2
+      await page.locator('button:has-text("Next"), button:has-text("Continue")').first().click();
+      await page.waitForTimeout(1000);
+      // Step 2 → Step 3
+      const next2 = page.locator('button:has-text("Next"), button:has-text("Continue")');
+      if (await next2.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+        await next2.first().click();
+        await page.waitForTimeout(1000);
+      }
+      // Create
       const createBtn = page.locator('button:has-text("Create Pathway"), button:has-text("Save")');
-      if (await createBtn.first().isVisible()) {
-        await createBtn.first().click();
-        await page.waitForTimeout(3000);
-      }
+      await createBtn.first().click({ timeout: 5000 });
+      await page.waitForTimeout(3000);
+      // Verify the pathway was created
+      await page.click('text=Pathways');
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('Delete via detail page', async ({ page }) => {
       await page.click('text=Pathways');
       await page.waitForTimeout(2000);
+      // Wait for the card to appear
+      await expect(page.locator(`text=${name}`).first()).toBeVisible({ timeout: 15000 });
       const card = page.locator('[class*="card"], [class*="Card"]').filter({ hasText: name }).first();
       await card.locator('button:has-text("View Details")').click();
       await page.waitForTimeout(2000);
       await page.click('button:has-text("Delete")');
       await page.waitForTimeout(500);
-      await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+      // Type confirmation name if required
+      const confirmInput = page.locator('input[placeholder*="Type"]');
+      if (await confirmInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await confirmInput.fill(name);
+        await page.waitForTimeout(300);
+      }
+      await page.locator('button:has-text("Delete Pathway"), button:has-text("Confirm Delete")').first().click({ timeout: 10000 });
       await page.waitForTimeout(2000);
     });
   });

@@ -179,20 +179,42 @@ test.describe('GUI CRUD — Full Lifecycle', () => {
       await page.waitForTimeout(300);
     }
     // Submit
-    await page.locator('[data-testid="send-invite-btn"]').click();
+    const sendInviteBtn = page.locator('[data-testid="send-invite-btn"]');
+    const addLearnerBtn = page.locator('button:has-text("Add Learner & Copy Invitation"), button:has-text("Send Invite"), button:has-text("Add Learner")');
+    if (await sendInviteBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await sendInviteBtn.click();
+    } else {
+      await addLearnerBtn.first().click();
+    }
     await page.waitForTimeout(3000);
-    // Close the confirmation modal
+    // Close any modal that's still open
     const closeBtn = page.locator('button:has-text("View Learner List"), button:has-text("Close"), button:has-text("Done")');
     if (await closeBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
       await closeBtn.first().click();
       await page.waitForTimeout(1000);
     }
-    // Verify
-    await page.click('a:has-text("Learners")');
+    // If modal is still open, use the X button in the modal header
+    const modalXBtn = page.locator('[role="dialog"] button:has(img), .fixed button:has(img)').first();
+    if (await page.locator('.fixed.inset-0').first().isVisible({ timeout: 1000 }).catch(() => false)) {
+      // Try X button first
+      const xBtn = page.locator('button').filter({ has: page.locator('img') }).filter({ hasNotText: /\w{2,}/ });
+      if (await xBtn.first().isVisible({ timeout: 1000 }).catch(() => false)) {
+        await xBtn.first().click();
+        await page.waitForTimeout(500);
+      }
+      // If still open, press Escape
+      if (await page.locator('.fixed.inset-0').first().isVisible({ timeout: 500 }).catch(() => false)) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(1000);
+      }
+    }
+    // Navigate using force to bypass any remaining overlay
+    await page.goto('/learners');
+    await page.waitForSelector('h1:has-text("Learners")', { timeout: 10000 });
     await expect(page.locator(`text=${firstName}`).first()).toBeVisible({ timeout: 5000 });
 
     // ── UPDATE ──
-    await page.click('a:has-text("Learners")');
+    await page.goto('/learners');
     await page.waitForTimeout(1000);
     // Find the View button in the row containing our learner
     const allViewBtns = page.locator('button:has-text("View")');
