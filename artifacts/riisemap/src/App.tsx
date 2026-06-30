@@ -57,8 +57,8 @@ function App() {
   const [authState, setAuthState] = useState<AuthState>({ status: "loading" });
 
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_URL || "";
-    setBaseUrl(baseUrl);
+    const apiUrl = import.meta.env.VITE_API_URL;
+    setBaseUrl(apiUrl ? `${apiUrl}/api` : "/api");
     setAuthTokenGetter(getAccessToken);
 
     checkAuth();

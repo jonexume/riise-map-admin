@@ -201,8 +201,6 @@ export default function Learners() {
     return Object.keys(e).length === 0;
   };
 
-  const { toast } = useToast();
-
   const handleSendInvite = async () => {
     if (!validateInvite()) return;
 
