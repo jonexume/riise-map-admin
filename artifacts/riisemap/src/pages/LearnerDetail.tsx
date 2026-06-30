@@ -77,7 +77,7 @@ export default function LearnerDetail() {
     }
   };
 
-  if (isLearnerLoading) {
+  if (isLoading) {
     return (
       <div className="px-6 py-8 max-w-5xl mx-auto">
         <div className="text-center py-12">
