@@ -58,7 +58,7 @@ function App() {
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL;
-    setBaseUrl(apiUrl ? `${apiUrl}/api` : "/api");
+    setBaseUrl(apiUrl || "");
     setAuthTokenGetter(getAccessToken);
 
     checkAuth();
