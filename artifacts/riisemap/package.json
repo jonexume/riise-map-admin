@@ -10,9 +10,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "catalog:",
     "@aws-sdk/client-cloudfront": "catalog:",
-    "@aws-sdk/client-iam": "catalog:"
+    "@aws-sdk/client-iam": "catalog:",
+    "@aws-sdk/client-s3": "catalog:",
+    "aws-amplify": "^6.18.0",
+    "papaparse": "5.5.2"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -50,6 +52,7 @@
     "@tailwindcss/vite": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@types/node": "catalog:",
+    "@types/papaparse": "5.3.15",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",

@@ -3,9 +3,13 @@ import healthRouter from "./health";
 import learnersRouter from "./learner";
 import programsRouter from "./program";
 import pathwaysRouter from "./pathway";
-import fundingSourcesRouter from "./funding-sources";
-import { coachRouter } from "./coach";
-import { projectRouter } from "./project";
+import fundingSourcesRouter from "./funding-source";
+import fundingSourceGoalsRouter from "./funding-source-goals";
+import successStoriesRouter from "./success-story";
+import learnerStatusesRouter from "./learner-statuses";
+import dashboardPrioritiesRouter from "./dashboard-priorities";
+import resetWorkspaceRouter from "./reset-workspace";
+import auditLogRouter from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -14,7 +18,11 @@ router.use(learnersRouter);
 router.use(programsRouter);
 router.use(pathwaysRouter);
 router.use(fundingSourcesRouter);
-router.use(coachRouter);
-router.use(projectRouter);
+router.use(fundingSourceGoalsRouter);
+router.use(successStoriesRouter);
+router.use(learnerStatusesRouter);
+router.use(dashboardPrioritiesRouter);
+router.use(resetWorkspaceRouter);
+router.use(auditLogRouter);
 
 export default router;

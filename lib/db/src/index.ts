@@ -1,31 +1,36 @@
-import { config } from "dotenv";
-import { join } from "path";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
+import { config } from "dotenv";
+import { resolve } from "path";
 
-// When the api-server runs, its current working directory is `artifacts/api-server`.
-// Therefore, the .env file is located in the current directory.
-const envPath = join(process.cwd(), ".env");
+// Load .env files from common locations
+const paths = [
+  resolve(process.cwd(), ".env"),
+  resolve(process.cwd(), "../../.env"),
+  resolve(process.cwd(), "../.env"),
+  resolve(process.cwd(), "../../lib/db/.env"),
+];
 
-const result = config({ path: envPath });
+for (const p of paths) {
+  const result = config({ path: p });
+  if (!result.error) break;
+}
 
-if (result.error) {
-  // If there's an error loading the .env file, we throw a detailed error.
+const { Pool } = pg;
+
+if (!process.env.DATABASE_URL) {
   throw new Error(
     `Failed to load .env file from path: ${envPath}. Error: ${result.error.message}`
   );
 }
 
-// Now, we can safely check for the DATABASE_URL.
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    `DATABASE_URL must be set. Check your .env file at: ${envPath}`
-  );
-}
-
-const { Pool } = pg;
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes("rds.amazonaws.com")
+    ? { rejectUnauthorized: false }
+    : undefined,
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
