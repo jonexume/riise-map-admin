@@ -21,7 +21,7 @@ const { Pool } = pg;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    `Failed to load .env file from path: ${envPath}. Error: ${result.error.message}`
   );
 }
 

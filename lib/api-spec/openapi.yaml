@@ -110,6 +110,27 @@ paths:
                 $ref: "#/components/schemas/Learner"
         "404":
           description: Learner not found
+  
+  /learners/{learnerId}/projects:
+    get:
+      operationId: getLearnerProjects
+      tags: [learners]
+      summary: Get projects for a specific learner
+      parameters:
+        - name: learnerId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A list of learner projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LearnerProject"
 
   /programs:
     get:
@@ -989,3 +1010,23 @@ components:
         - workload
         - upcomingCheckIns
         - overdueCheckIns
+
+    LearnerProject:
+      type: object
+      properties:
+        id:
+          type: integer
+        learnerId:
+          type: integer
+        title:
+          type: string
+        completion:
+          type: integer
+        status:
+          type: string
+      required:
+        - id
+        - learnerId
+        - title
+        - completion
+        - status
