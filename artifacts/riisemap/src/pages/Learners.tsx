@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ interface InviteForm {
   pathway: string;
   program: string;
   coach: string;
+  message: string;
 }
 
 const PROGRAM_LABELS: Record<string, string> = {
@@ -134,7 +136,6 @@ export default function Learners() {
   const [inviteStep, setInviteStep] = useState<0 | 1>(0);
   const [inviteForm, setInviteForm] = useState<InviteForm>({ ...BLANK_INVITE, message: defaultMessage });
   const [inviteErrors, setInviteErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
-  const [newLearnerId, setNewLearnerId] = useState("");
 
   const filtered = allLearners.filter((l) => {
     const matchSearch =
@@ -623,35 +624,22 @@ export default function Learners() {
                     <span className="text-muted-foreground">Invitation message copied to clipboard · Paste into your email client</span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>Last Name</Label>
-                  <Input
-                    placeholder="e.g. Doe"
-                    value={inviteForm.lastName}
-                    onChange={(e) => setField("lastName", e.target.value)}
-                    className={cn(inviteErrors.lastName && "border-destructive")}
-                  />
+
+                <div className="flex gap-3 w-full">
+                  <Button variant="outline" className="flex-1" onClick={closeInvite}>View Learner List</Button>
+                  <Button className="flex-1" onClick={() => {
+                    setInviteForm(BLANK_INVITE);
+                    setInviteStep(0);
+                    setInviteErrors({});
+                  }}>
+                    Invite Another
+                  </Button>
                 </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="e.g. jane.doe@example.com"
-                    value={inviteForm.email}
-                    onChange={(e) => setField("email", e.target.value)}
-                    className={cn(inviteErrors.email && "border-destructive")}
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <Label>Phone Number (optional)</Label>
-                  <Input
-                    type="tel"
-                    placeholder="e.g. (123) 456-7890"
-                    value={inviteForm.phone}
-                    onChange={(e) => setField("phone", e.target.value)}
-                  />
-                </div>
-                <div className="col-span-2 grid grid-cols-2 gap-4 pt-2">
+              </div>
+            ) : (
+              /* ── Compose invitation ── */
+              <>
+                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-border">
                   <div>
                     <h2 className="text-base font-semibold text-foreground">Invite a Learner</h2>
                     <p className="text-xs text-muted-foreground mt-0.5">Add them to the program and copy a personal invitation to your clipboard</p>
